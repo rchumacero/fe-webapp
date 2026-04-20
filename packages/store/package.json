@@ -1,0 +1,16 @@
+{
+  "name": "@kplian/store",
+  "version": "0.0.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.0.0",
+    "react-redux": "^9.0.0",
+    "redux-persist": "^6.0.0",
+    "@kplian/core": "*",
+    "@kplian/infrastructure": "*"
+  },
+  "devDependencies": {
+    "typescript": "latest"
+  }
+}

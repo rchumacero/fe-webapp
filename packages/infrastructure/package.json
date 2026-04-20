@@ -1,0 +1,15 @@
+{
+  "name": "@kplian/infrastructure",
+  "version": "0.0.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "crypto-js": "^4.2.0",
+    "@kplian/core": "*"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "@types/crypto-js": "^4.2.0"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "common": {
+    "language": "Langue",
+    "profile": "Profil",
+    "settings": "Paramètres",
+    "logout": "Déconnexion",
+    "notifications": "Notifications",
+    "welcome": "Bienvenue",
+    "products_sold": "Produits Vendus",
+    "total_balance": "Solde Total",
+    "open_crm": "Ouvrir le CRM",
+    "last_week": "la semaine dernière"
+  }
+}

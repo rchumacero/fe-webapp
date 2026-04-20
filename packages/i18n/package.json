@@ -1,0 +1,13 @@
+{
+  "name": "@kplian/i18n",
+  "version": "0.0.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "i18next": "^23.0.0",
+    "react-i18next": "^14.0.0"
+  },
+  "devDependencies": {
+    "typescript": "latest"
+  }
+}
