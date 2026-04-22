@@ -13,10 +13,13 @@ const getEnv = (key: string): string | undefined => {
 };
 
 //const GATEWAY_BASE_URL = getEnv('API_GATEWAY_URL') || 'http://localhost:4566/restapis/dvtemzaznn/dev/_user_request_';
-const GATEWAY_BASE_URL = getEnv('API_GATEWAY_URL') || 'https://dev-api.kplian.com';
+const GATEWAY_BASE_URL = getEnv('API_GATEWAY_URL') || 'https://api-dev-local.kplian.com';
 
 type TokenProvider = () => Promise<string | null> | string | null;
+type ErrorHandler = (message: string, code?: string, details?: any) => void;
+
 let globalTokenProvider: TokenProvider | null = null;
+let globalErrorHandler: ErrorHandler | null = null;
 
 /** 
  * Allows the consuming platform (Web/Mobile) to define how tokens are retrieved 
@@ -24,6 +27,13 @@ let globalTokenProvider: TokenProvider | null = null;
  */
 export const setTokenProvider = (provider: TokenProvider) => {
   globalTokenProvider = provider;
+};
+
+/**
+ * Allows the consuming platform to register a global error handler (e.g., toast)
+ */
+export const setGlobalErrorHandler = (handler: ErrorHandler) => {
+  globalErrorHandler = handler;
 };
 
 /**
@@ -54,8 +64,18 @@ export const createApiClient = (moduleName: string) => {
   instance.interceptors.response.use(
     (response) => response,
     (error) => {
-      const message = error.response?.data?.message || error.message;
+      const message = error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message;
+      const code = error.response?.status?.toString();
+      const details = error.response?.data?.details;
+
       console.error(`[API Error] Module: ${moduleName} | Message: ${message}`);
+
+      if (globalErrorHandler) {
+        globalErrorHandler(message, code, details);
+      }
+
       return Promise.reject(error);
     }
   );
