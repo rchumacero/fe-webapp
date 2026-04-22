@@ -1,7 +1,7 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import ZitadelProvider from "next-auth/providers/zitadel";
 
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
   providers: [
     ZitadelProvider({
       issuer: process.env.ZITADEL_ISSUER as string || "https://api-dev-local.kplian.com",
