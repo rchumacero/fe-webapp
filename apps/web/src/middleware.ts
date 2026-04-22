@@ -1,21 +1,29 @@
-import { withAuth } from "next-auth/middleware";
+import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-export default withAuth(
-  function middleware(req) {
-    // We can add role-based authorization here if needed
-    // e.g. checking req.nextauth.token?.roles
+export default auth((req) => {
+  const isAuth = !!req.auth;
+  const isLoginPage = req.nextUrl.pathname === "/login";
+
+  if (isLoginPage) {
+    if (isAuth) {
+      return NextResponse.redirect(new URL("/", req.nextUrl));
+    }
     return NextResponse.next();
-  },
-  {
-    pages: {
-      // Redirect to our custom auto-login page, not the default next-auth page
-      signIn: "/login",
-    },
   }
-);
+
+  if (!isAuth) {
+    let from = req.nextUrl.pathname;
+    if (req.nextUrl.search) from += req.nextUrl.search;
+
+    return NextResponse.redirect(
+      new URL(`/login?callbackUrl=${encodeURIComponent(from)}`, req.nextUrl)
+    );
+  }
+
+  return NextResponse.next();
+});
 
 export const config = {
-  // Exclude auth endpoints, static files, and our custom login page from protection
   matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|login).*)"],
 };
