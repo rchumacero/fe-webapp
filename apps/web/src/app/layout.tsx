@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-
-export const runtime = 'edge';
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import "@kplian/i18n";
