@@ -1,6 +1,8 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import ZitadelProvider from "next-auth/providers/zitadel";
 
+export const runtime = 'edge';
+
 const authOptions: NextAuthOptions = {
   providers: [
     ZitadelProvider({
