@@ -1,44 +1,27 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-/**
- * Auto-redirect Login Page
- *
- * This page is the entry point for unauthenticated users.
- * Instead of showing a login form or button, it immediately
- * triggers the Zitadel OIDC flow as soon as it mounts.
- *
- * Flow:
- *  1. Middleware detects no session → redirects here.
- *  2. This page auto-calls signIn('zitadel') on mount.
- *  3. Browser is redirected to Zitadel for authentication.
- *  4. Zitadel redirects back to /api/auth/callback/zitadel.
- *  5. Next-Auth creates the session and sends user to callbackUrl (default: /).
- */
-export default function LoginPage() {
+function LoginContent() {
   const { status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     if (status === "authenticated") {
-      // Already logged in — go to the requested page or home
       const callbackUrl = searchParams.get("callbackUrl") || "/";
       router.replace(callbackUrl);
       return;
     }
 
     if (status === "unauthenticated") {
-      // Auto-trigger Zitadel OIDC flow, no button needed
       const callbackUrl = searchParams.get("callbackUrl") || "/";
       signIn("zitadel", { callbackUrl });
     }
   }, [status, router, searchParams]);
 
-  // Minimal loading state while session is resolving or Zitadel is loading
   return (
     <div
       style={{
@@ -73,5 +56,13 @@ export default function LoginPage() {
       </p>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 }
