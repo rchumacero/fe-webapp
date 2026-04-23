@@ -12,8 +12,8 @@ const getEnv = (key: string): string | undefined => {
   return undefined;
 };
 
-//const GATEWAY_BASE_URL = getEnv('API_GATEWAY_URL') || 'http://localhost:4566/restapis/dvtemzaznn/dev/_user_request_';
-const GATEWAY_BASE_URL = getEnv('API_GATEWAY_URL') || 'https://api-dev-local.kplian.com';
+// Try to get from API_GATEWAY_URL first, then API_URL (used in Cloudflare Terraform), then fallback
+const GATEWAY_BASE_URL = getEnv('API_GATEWAY_URL') || getEnv('API_URL') || 'https://dev-api.kplian.com';
 
 type TokenProvider = () => Promise<string | null> | string | null;
 type ErrorHandler = (message: string, code?: string, details?: any) => void;
