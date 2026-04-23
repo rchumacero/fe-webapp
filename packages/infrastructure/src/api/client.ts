@@ -1,19 +1,27 @@
 import axios from 'axios';
 
 /**
- * Normalizes environment variable access across different build tools (Vite/Next.js/Node)
+ * Use static references for Next.js to allow Webpack to inline the environment variables at build time.
+ * Dynamic access like process.env[key] returns undefined on the client in Next.js.
  */
-const getEnv = (key: string): string | undefined => {
-  // Check process.env (Next.js, Node, React Native, and Vite with 'define')
+const getGatewayUrl = () => {
   if (typeof process !== 'undefined' && process.env) {
-    const value = process.env[key] || process.env[`NEXT_PUBLIC_${key}`] || process.env[`VITE_${key}`];
-    if (value) return value;
+    if (process.env.NEXT_PUBLIC_API_GATEWAY_URL) return process.env.NEXT_PUBLIC_API_GATEWAY_URL;
+    if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+    if (process.env.API_GATEWAY_URL) return process.env.API_GATEWAY_URL;
+    if (process.env.API_URL) return process.env.API_URL;
+    // @ts-ignore (for Vite support if needed)
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      // @ts-ignore
+      if (import.meta.env.VITE_API_GATEWAY_URL) return import.meta.env.VITE_API_GATEWAY_URL;
+      // @ts-ignore
+      if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+    }
   }
-  return undefined;
+  return 'https://dev-api.kplian.com';
 };
 
-// Try to get from API_GATEWAY_URL first, then API_URL (used in Cloudflare Terraform), then fallback
-const GATEWAY_BASE_URL = getEnv('API_GATEWAY_URL') || getEnv('API_URL') || 'https://dev-api.kplian.com';
+const GATEWAY_BASE_URL = getGatewayUrl();
 
 type TokenProvider = () => Promise<string | null> | string | null;
 type ErrorHandler = (message: string, code?: string, details?: any) => void;
