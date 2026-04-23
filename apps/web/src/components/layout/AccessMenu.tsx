@@ -198,17 +198,19 @@ export const AccessMenu = ({ isCollapsed }: AccessMenuProps) => {
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const pathname = usePathname();
 
+  const userCode = (session?.user as any)?.username || (session?.user as any)?.id;
+
   useEffect(() => {
     const fetchMenu = async () => {
-      const userCode = (session?.user as any)?.username || 'guest';
+      if (!userCode) return;
       const data = await getMenuByUser(userCode);
       setMenuData(data);
     };
 
-    if (session) {
+    if (userCode) {
       fetchMenu();
     }
-  }, [session]);
+  }, [userCode]);
 
   const handleToggle = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
