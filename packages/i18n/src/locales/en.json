@@ -107,6 +107,7 @@
     "selectGender": "Select Gender",
     "selectLocation": "Select location",
     "create": "Register person",
+    "identificationNumberExample": "Ex.: 123456789"
   },
   "dashboard": {
     "congratulations": "Congratulations 🎉",
