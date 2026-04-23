@@ -18,7 +18,7 @@ const getGatewayUrl = () => {
       if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
     }
   }
-  return 'https://dev-api.kplian.com';
+  return 'https://api-dev-local.kplian.com';
 };
 
 const GATEWAY_BASE_URL = getGatewayUrl();

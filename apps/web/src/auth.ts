@@ -44,7 +44,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async signIn({ user, account, profile }) {
       const userCode = (user as any).username || (profile as any)?.preferred_username;
       if (account?.provider === 'zitadel' && userCode) {
-        const crmApiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_GATEWAY_URL || 'https://dev-api.kplian.com';
+        const crmApiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_GATEWAY_URL || 'https://api-dev-local.kplian.com';
         const token = account.access_token;
 
         try {
