@@ -207,7 +207,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
       } else {
         const result = await personRepository.create({ ...data, vendorCode: currentUser });
         personId = result.id;
-        
+
         // Multi-step persist for new record
         if (personId) {
           // 1. Identification
@@ -349,6 +349,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                   {errors.type && <p className="text-[10px] text-destructive font-medium ml-1">{errors.type.message}</p>}
                 </div>
                 <div className="space-y-2">
+                  NUEVO TEXTO
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(PERSON_CONSTANTS.FORM.CODE)}</label>
                   <Input {...register("code")} className={errors.code ? "border-destructive focus-visible:ring-destructive/20" : ""} />
                   {errors.code && <p className="text-[10px] text-destructive font-medium ml-1">{errors.code.message}</p>}
@@ -473,7 +474,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
               {!id && (
                 <div className="space-y-4 pt-4">
                   <Separator className="bg-border/10 mb-4" />
-                  
+
                   <div className="px-1 mb-2">
                     <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary/70">
                       Additional Details
@@ -493,7 +494,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                       </div>
                       {expandedSections.identification ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                     </button>
-                    
+
                     {expandedSections.identification && (
                       <div className="p-6 pt-2 border-t border-border/10 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-200">
                         <div className="space-y-2">
@@ -537,7 +538,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                       </div>
                       {expandedSections.communication ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                     </button>
-                    
+
                     {expandedSections.communication && (
                       <div className="p-6 pt-2 border-t border-border/10 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-200">
                         <div className="space-y-2">
@@ -601,7 +602,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                       </div>
                       {expandedSections.digitalContent ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                     </button>
-                    
+
                     {expandedSections.digitalContent && (
                       <div className="p-6 pt-2 border-t border-border/10 space-y-4 animate-in slide-in-from-top-2 duration-200">
                         <div className="space-y-2">
@@ -625,7 +626,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                           />
                         </div>
 
-                        <div 
+                        <div
                           className={cn(
                             "border-2 border-dashed rounded-xl p-6 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer group",
                             selectedFile ? "border-primary/40 bg-primary/5" : "border-border/40 hover:border-primary/20 hover:bg-accent/5"
@@ -641,14 +642,14 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                               if (file) setSelectedFile(file);
                             }}
                           />
-                          
+
                           {selectedFile ? (
                             <div className="flex items-center gap-3">
                               <FileText size={18} className="text-primary" />
                               <span className="text-xs font-bold truncate max-w-[150px]">{selectedFile.name}</span>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 className="h-6 w-6 p-0 text-destructive"
                                 onClick={(e) => { e.stopPropagation(); setSelectedFile(null); }}
                               >
