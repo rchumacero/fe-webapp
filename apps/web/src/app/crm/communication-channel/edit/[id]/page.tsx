@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import { CommunicationChannelFormPage } from "@/modules/crm/personal-data/communication-channel/presentation/pages/CommunicationChannelFormPage";
 import { Suspense } from "react";
 
