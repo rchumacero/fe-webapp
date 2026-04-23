@@ -349,7 +349,6 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                   {errors.type && <p className="text-[10px] text-destructive font-medium ml-1">{errors.type.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  NUEVO TEXTO
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(PERSON_CONSTANTS.FORM.CODE)}</label>
                   <Input {...register("code")} className={errors.code ? "border-destructive focus-visible:ring-destructive/20" : ""} />
                   {errors.code && <p className="text-[10px] text-destructive font-medium ml-1">{errors.code.message}</p>}

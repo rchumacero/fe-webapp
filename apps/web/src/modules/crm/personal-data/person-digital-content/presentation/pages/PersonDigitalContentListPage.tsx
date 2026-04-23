@@ -66,43 +66,31 @@ export const PersonDigitalContentListPage = ({ personId }: PersonDigitalContentL
       setContents(data);
 
       // Fetch images for all records that represent an image
-      const imageMap: Record<string, string> = {};
       const imageRecords = data.filter(content => {
         const tLower = content.type.toLowerCase();
         return !tLower.includes('video') && !tLower.includes('doc') && !tLower.includes('pdf');
       });
 
-      await Promise.all(imageRecords.map(async (content) => {
-        if (content.digitalContentCode && content.digitalContentCode !== 'PENDING_UPLOAD') {
-          try {
-            const presignedData = await bucketService.getPresignedUrl(content.digitalContentCode);
-            
-            let imageUrl: string | undefined;
+      const idsToFetch = imageRecords
+        .map(c => c.digitalContentCode)
+        .filter((code): code is string => !!code && code !== 'PENDING_UPLOAD');
 
-            if (Array.isArray(presignedData)) {
-              // Old format: Array of objects
-              const imageRecord = presignedData.find((r: any) => 
-                r.type?.toLowerCase().includes('image') || 
-                (r.url || r.URL)?.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)/)
-              );
-              imageUrl = imageRecord?.url || imageRecord?.URL;
-            } else if (presignedData && typeof presignedData === 'object') {
-              // New format suggested by user: Object with URL
-              imageUrl = presignedData.url || presignedData.URL;
-            } else if (typeof presignedData === 'string' && presignedData.startsWith('http')) {
-              // Possible format: Plain string URL
-              imageUrl = presignedData;
+      if (idsToFetch.length > 0) {
+        try {
+          const batchUrls = await bucketService.getPresignedUrlsBatch(idsToFetch);
+          const imageMap: Record<string, string> = {};
+          
+          batchUrls.forEach((item: { id: string; presignedUrl: string }) => {
+            if (item.presignedUrl) {
+              imageMap[item.id] = item.presignedUrl;
             }
-
-            if (imageUrl) {
-              imageMap[content.digitalContentCode] = imageUrl;
-            }
-          } catch (e) {
-            console.error(`Failed to get presigned URL for ${content.digitalContentCode}`, e);
-          }
+          });
+          
+          setImages(imageMap);
+        } catch (e) {
+          console.error("Failed to get batch presigned URLs", e);
         }
-      }));
-      setImages(imageMap);
+      }
 
     } catch (error) {
       console.error("Error fetching contents:", error);
