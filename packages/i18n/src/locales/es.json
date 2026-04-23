@@ -10,5 +10,20 @@
     "total_balance": "Balance Total",
     "open_crm": "Abrir CRM",
     "last_week": "última semana"
+  },
+  "dashboard": {
+    "congratulations": "¡Felicidades 🎉",
+    "best_seller": "Mejor vendedor del mes, hoy has logrado un {{percentage}}% más de ventas.",
+    "go_now": "Ir ahora",
+    "new": "Nuevo",
+    "mountain_boots": "Botas de montaña",
+    "buy_now": "Comprar ahora",
+    "product_sold": "Productos vendidos",
+    "total_balance": "Balance total",
+    "sales_profit": "Beneficio de ventas",
+    "last_week": "última semana",
+    "sale_by_gender": "Ventas por género",
+    "yearly_sales": "Ventas anuales",
+    "more_than_last_year": "(+{{percentage}}%) que el año pasado"
   }
 }

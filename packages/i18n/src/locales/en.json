@@ -107,6 +107,20 @@
     "selectGender": "Select Gender",
     "selectLocation": "Select location",
     "create": "Register person",
-    "identificationNumberExample": "Ex.: 123456789"
+  },
+  "dashboard": {
+    "congratulations": "Congratulations 🎉",
+    "best_seller": "Best seller of the month you have done {{percentage}}% more sales today.",
+    "go_now": "Go now",
+    "new": "New",
+    "mountain_boots": "Mountain Trekking Boots",
+    "buy_now": "Buy now",
+    "product_sold": "Product sold",
+    "total_balance": "Total balance",
+    "sales_profit": "Sales profit",
+    "last_week": "last week",
+    "sale_by_gender": "Sale by gender",
+    "yearly_sales": "Yearly sales",
+    "more_than_last_year": "(+{{percentage}}%) than last year"
   }
 }
