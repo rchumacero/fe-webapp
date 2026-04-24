@@ -1,6 +1,6 @@
 export const COMMUNICATION_CHANNEL_CONSTANTS = {
   TITLE: "common.communicationChannel",
-  LIST_TITLE: "common.communicationChannelsList",
+  LIST_TITLE: "common.communicationChannel",
   CREATE_TITLE: "common.communicationChannel",
   DESCRIPTION_TITLE: "common.createDescription",
   EDIT_TITLE: "crm.communicationChannel",
