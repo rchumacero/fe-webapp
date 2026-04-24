@@ -19,6 +19,7 @@ import { PersonSkillRepositoryImpl } from '../../infrastructure/repositories/Per
 import { PERSON_SKILL_DOMAIN_PARAMETERS, P_SKILL } from '../../constants/parameter';
 import { useDomainParameters } from '@/hooks/use-domain-parameters';
 import { cn } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 const personSkillSchema = z.object({
   personId: z.string().min(1, "Person ID is required"),
@@ -40,6 +41,7 @@ export const PersonSkillFormPage = ({ params }: PersonSkillFormPageProps) => {
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
 
   const id = resolvedParams?.id || null;
   const personId = searchParams.get('personId') || null;
@@ -114,10 +116,14 @@ export const PersonSkillFormPage = ({ params }: PersonSkillFormPageProps) => {
 
   const handleCancel = () => {
     if (isDirty) {
-      if (!confirm(t(PERSON_SKILL_CONSTANTS.FORM.DIRTY_WARNING) || "Unsaved changes. Cancel?")) {
-        return;
-      }
+      setShowConfirmCancel(true);
+      return;
     }
+    router.back();
+  };
+
+  const confirmCancel = () => {
+    setShowConfirmCancel(false);
     router.back();
   };
 
@@ -162,7 +168,7 @@ export const PersonSkillFormPage = ({ params }: PersonSkillFormPageProps) => {
                       errors.skillCode ? "border-destructive focus:ring-destructive/10" : "focus:border-primary/40"
                     )}
                   >
-                    <option value="">{t('common.selectOption') || 'Select Skill'}</option>
+                    <option value="">{t(PERSON_SKILL_CONSTANTS.FORM.SELECT_OPTION) || 'Select Skill'}</option>
                     {skillOptions.map((p: any, idx: number) => {
                       const val = p.KEY ?? p.CODE ?? p.VALUE ?? p.ID ?? p.code ?? p.value ?? p.id ?? p.valueStr ?? p.fullCode ?? p;
                       const label = p.NAME || p.name || p.label || p.description || p.valueStr || val || `Item ${idx}`;
@@ -198,6 +204,16 @@ export const PersonSkillFormPage = ({ params }: PersonSkillFormPageProps) => {
           </CardFooter>
         </form>
       </Card>
+      <ConfirmDialog
+        open={showConfirmCancel}
+        onOpenChange={setShowConfirmCancel}
+        title={t(PERSON_SKILL_CONSTANTS.FORM.CONFIRM_CANCEL, 'Discard Changes?')}
+        description={t(PERSON_SKILL_CONSTANTS.FORM.DIRTY_WARNING) || "You have unsaved changes. Are you sure you want to cancel?"}
+        confirmText={t(PERSON_SKILL_CONSTANTS.FORM.YES_DISCARD, 'Yes, Discard')}
+        cancelText={t(PERSON_SKILL_CONSTANTS.FORM.NO_STAY, 'No, Stay')}
+        onConfirm={confirmCancel}
+        type="warning"
+      />
     </div>
   );
 };

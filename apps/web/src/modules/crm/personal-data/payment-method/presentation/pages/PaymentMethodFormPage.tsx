@@ -20,6 +20,7 @@ import { PaymentMethodRepositoryImpl } from '../../infrastructure/repositories/P
 import { PAYMENT_METHOD_DOMAIN_PARAMETERS, P_PAYMENT_TYPE } from '../../constants/parameter';
 import { useDomainParameters } from '@/hooks/use-domain-parameters';
 import { cn } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 const paymentMethodSchema = z.object({
   personId: z.string().min(1, "Person ID is required"),
@@ -44,6 +45,7 @@ export const PaymentMethodFormPage = ({ params }: PaymentMethodFormPageProps) =>
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
 
   const id = resolvedParams?.id || null;
   const personId = searchParams.get('personId') || null;
@@ -124,10 +126,14 @@ export const PaymentMethodFormPage = ({ params }: PaymentMethodFormPageProps) =>
 
   const handleCancel = () => {
     if (isDirty) {
-      if (!confirm(t(PAYMENT_METHOD_CONSTANTS.FORM.DIRTY_WARNING) || "Unsaved changes. Cancel?")) {
-        return;
-      }
+      setShowConfirmCancel(true);
+      return;
     }
+    router.back();
+  };
+
+  const confirmCancel = () => {
+    setShowConfirmCancel(false);
     router.back();
   };
 
@@ -173,7 +179,7 @@ export const PaymentMethodFormPage = ({ params }: PaymentMethodFormPageProps) =>
                         errors.type ? "border-destructive" : "focus:border-primary/40"
                       )}
                     >
-                      <option value="">{t('common.selectOption') || 'Select Type'}</option>
+                      <option value="">{t(PAYMENT_METHOD_CONSTANTS.FORM.SELECT_OPTION) || 'Select Type'}</option>
                       {typeOptions.map((p: any, idx: number) => {
                         const val = p.KEY ?? p.CODE ?? p.VALUE ?? p.ID ?? p.code ?? p.value ?? p.id ?? p.valueStr ?? p.fullCode ?? p;
                         const label = p.NAME || p.name || p.label || p.description || p.valueStr || val || `Item ${idx}`;
@@ -195,7 +201,7 @@ export const PaymentMethodFormPage = ({ params }: PaymentMethodFormPageProps) =>
                 </label>
                 <Input
                   {...register("name")}
-                  placeholder="e.g. My Visa"
+                  placeholder={t(PAYMENT_METHOD_CONSTANTS.FORM.EX_NAME) || 'e.g. My Visa'}
                   className={errors.name ? "border-destructive focus-visible:ring-destructive/20" : ""}
                 />
                 {errors.name && <p className="text-[10px] text-destructive font-bold uppercase">{errors.name.message}</p>}
@@ -245,6 +251,16 @@ export const PaymentMethodFormPage = ({ params }: PaymentMethodFormPageProps) =>
           </CardFooter>
         </form>
       </Card>
+      <ConfirmDialog
+        open={showConfirmCancel}
+        onOpenChange={setShowConfirmCancel}
+        title={t(PAYMENT_METHOD_CONSTANTS.FORM.CONFIRM_CANCEL, 'Discard Changes?')}
+        description={t(PAYMENT_METHOD_CONSTANTS.FORM.DIRTY_WARNING) || "You have unsaved changes. Are you sure you want to cancel?"}
+        confirmText={t(PAYMENT_METHOD_CONSTANTS.FORM.YES_DISCARD, 'Yes, Discard')}
+        cancelText={t(PAYMENT_METHOD_CONSTANTS.FORM.NO_STAY, 'No, Stay')}
+        onConfirm={confirmCancel}
+        type="warning"
+      />
     </div>
   );
 };

@@ -43,7 +43,17 @@
     "prefix": "Prefix",
     "sufix": "Sufix",
     "priority": "Priority",
-    "selectOption": "Select Option"
+    "selectOption": "Select Option",
+    "communicationChannel": "Communication Channel",
+    "economicActivity": "Economic Activity",
+    "files": "Files",
+    "file": "File",
+    "uploadClick": "Click or drag to upload",
+    "uploadHint": "PDF, images, or documents",
+    "uploadRemoveFile": "Remove file",
+    "formStatus": "Form Status",
+    "formModified": "Form Modified",
+    "formWarning": "Verify all information before saving."
   },
   "crm": {
     "code": "Person Code",
@@ -86,7 +96,7 @@
     "contact": "Contact",
     "contactType": "Contact Type",
     "contactPersonComp": "Linked Person ID",
-    "relationDescription": "Relationship Detail",
+    "relationDescription": "Relationship type",
     "workExperience": "Work Experience",
     "workExperiencesList": "Employment History",
     "companyName": "Company Name",
@@ -107,7 +117,16 @@
     "selectGender": "Select Gender",
     "selectLocation": "Select location",
     "create": "Register person",
-    "identificationNumberExample": "Ex.: 123456789"
+    "identificationNumberPlaceholder": "Ex.: 123456789",
+    "identificationPrefixPlaceholder": "Document Prefix",
+    "identificationSufixPlaceholder": "Document Sufix",
+    "paymentMethodNamePlaceholder": "Payment method name",
+    "communicationChannelDataPlaceholder": "Information contact",
+    "economicActivityTypePlaceholder": "Type",
+    "contactPersonCompPlaceholder": "Select person to associate",
+    "contactDescriptionPlaceholder": "Type of relationship",
+    "workExperienceCompanyPlaceholder": "Register company name",
+    "workExperienceDescriptionPlaceholder": "Type the most relevant things"
   },
   "dashboard": {
     "congratulations": "Congratulations 🎉",

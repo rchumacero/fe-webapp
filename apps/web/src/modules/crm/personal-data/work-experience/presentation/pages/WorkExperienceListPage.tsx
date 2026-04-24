@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { useTranslation } from '@kplian/i18n';
 import { WORK_EXPERIENCE_CONSTANTS } from '../../constants/work-experience-constants';
 import { WORK_EXPERIENCE_ROUTES } from '../../routes/work-experience-routes';
@@ -34,6 +35,8 @@ export const WorkExperienceListPage = ({ personId }: WorkExperienceListPageProps
   const [experiences, setExperiences] = useState<WorkExperience[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const { data: parametersData } = useDomainParameters({
     parameters: WORK_EXPERIENCE_DOMAIN_PARAMETERS
@@ -73,13 +76,21 @@ export const WorkExperienceListPage = ({ personId }: WorkExperienceListPageProps
     fetchExperiences();
   }, [fetchExperiences]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('common.confirmDelete') || "Are you sure?")) return;
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id);
+    setShowConfirmDelete(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setShowConfirmDelete(false);
     try {
-      await workExperienceRepository.delete(id);
+      await workExperienceRepository.delete(deleteTargetId);
       fetchExperiences();
     } catch (error) {
       console.error("Error deleting work experience:", error);
+    } finally {
+      setDeleteTargetId(null);
     }
   };
 
@@ -164,10 +175,20 @@ export const WorkExperienceListPage = ({ personId }: WorkExperienceListPageProps
         {!isLoading && filteredExperiences.length === 0 && (
           <div className="col-span-full py-12 text-center border-2 border-dashed border-border/40 rounded-xl bg-accent/5">
             <Briefcase size={40} className="mx-auto text-muted-foreground/20 mb-4" />
-            <p className="text-muted-foreground font-medium">{t('common.noDataAvailable')}</p>
+            <p className="text-muted-foreground font-medium">{t(WORK_EXPERIENCE_CONSTANTS.RECORD_NOT_FOUND)}</p>
           </div>
         )}
       </div>
+      <ConfirmDialog
+        open={showConfirmDelete}
+        onOpenChange={setShowConfirmDelete}
+        title={t(WORK_EXPERIENCE_CONSTANTS.CONFIRM_DELETE)}
+        description={t(WORK_EXPERIENCE_CONSTANTS.FORM.DIRTY_WARNING) || "This action cannot be undone."}
+        confirmText={t(WORK_EXPERIENCE_CONSTANTS.FORM.SUBMIT)}
+        cancelText={t(WORK_EXPERIENCE_CONSTANTS.FORM.CANCEL)}
+        onConfirm={confirmDelete}
+        type="danger"
+      />
     </div>
   );
 };

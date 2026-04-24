@@ -81,7 +81,7 @@ export const IdentificationListPage = ({ personId }: IdentificationListPageProps
   }, [identifications, search]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t("common.confirmDelete") || "Are you sure you want to delete this record?")) return;
+    if (!confirm(t(IDENTIFICATION_CONSTANTS.CONFIRM_DELETE) || "Are you sure you want to delete this record?")) return;
     try {
       await identificationRepository.delete(id);
       setIdentifications(prev => prev.filter(item => item.id !== id));
@@ -153,8 +153,10 @@ export const IdentificationListPage = ({ personId }: IdentificationListPageProps
           ))
         )}
         {!isLoading && filteredIdentifications.length === 0 && (
-          <div className="col-span-full py-12 text-center text-muted-foreground italic">
-            {t("common.recordNotFound")}
+
+          <div className="col-span-full py-12 text-center border-2 border-dashed border-border/40 rounded-xl bg-accent/5">
+            <Fingerprint size={40} className="mx-auto text-muted-foreground/20 mb-4" />
+            <p className="text-muted-foreground font-medium">{t(IDENTIFICATION_CONSTANTS.RECORD_NOT_FOUND)}</p>
           </div>
         )}
       </div>

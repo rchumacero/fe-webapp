@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { useTranslation } from '@kplian/i18n';
 import { PAYMENT_METHOD_CONSTANTS } from '../../constants/payment-method-constants';
 import { PAYMENT_METHOD_ROUTES } from '../../routes/payment-method-routes';
@@ -33,6 +34,8 @@ export const PaymentMethodListPage = ({ personId }: PaymentMethodListPageProps) 
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const { data: parametersData } = useDomainParameters({
     parameters: PAYMENT_METHOD_DOMAIN_PARAMETERS
@@ -72,13 +75,21 @@ export const PaymentMethodListPage = ({ personId }: PaymentMethodListPageProps) 
     fetchMethods();
   }, [fetchMethods]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('common.confirmDelete') || "Are you sure?")) return;
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id);
+    setShowConfirmDelete(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setShowConfirmDelete(false);
     try {
-      await paymentMethodRepository.delete(id);
+      await paymentMethodRepository.delete(deleteTargetId);
       fetchMethods();
     } catch (error) {
       console.error("Error deleting payment method:", error);
+    } finally {
+      setDeleteTargetId(null);
     }
   };
 
@@ -154,10 +165,20 @@ export const PaymentMethodListPage = ({ personId }: PaymentMethodListPageProps) 
         {!isLoading && filteredMethods.length === 0 && (
           <div className="col-span-full py-12 text-center border-2 border-dashed border-border/40 rounded-xl bg-accent/5">
             <CreditCard size={40} className="mx-auto text-muted-foreground/20 mb-4" />
-            <p className="text-muted-foreground font-medium">{t('common.noDataAvailable')}</p>
+            <p className="text-muted-foreground font-medium">{t(PAYMENT_METHOD_CONSTANTS.RECORD_NOT_FOUND)}</p>
           </div>
         )}
       </div>
+      <ConfirmDialog
+        open={showConfirmDelete}
+        onOpenChange={setShowConfirmDelete}
+        title={t(PAYMENT_METHOD_CONSTANTS.CONFIRM_DELETE)}
+        description={t(PAYMENT_METHOD_CONSTANTS.FORM.DIRTY_WARNING) || "This action cannot be undone."}
+        confirmText={t(PAYMENT_METHOD_CONSTANTS.FORM.SUBMIT)}
+        cancelText={t(PAYMENT_METHOD_CONSTANTS.FORM.CANCEL)}
+        onConfirm={confirmDelete}
+        type="danger"
+      />
     </div>
   );
 };

@@ -180,7 +180,7 @@ export const CommunicationChannelFormPage = ({ params }: CommunicationChannelFor
                         errors.type ? "border-destructive" : "focus:border-primary/40"
                       )}
                     >
-                      <option value="">{t('common.selectOption') || 'Select Type'}</option>
+                      <option value="">{t(COMMUNICATION_CHANNEL_CONSTANTS.FORM.SELECT_OPTION) || 'Select Type'}</option>
                       {typeOptions.map((p: any, idx: number) => {
                         const val = p.KEY ?? p.CODE ?? p.VALUE ?? p.ID ?? p.code ?? p.value ?? p.id ?? p.valueStr ?? p.fullCode ?? p;
                         const label = p.NAME || p.name || p.label || p.description || p.valueStr || val || `Item ${idx}`;
@@ -211,7 +211,7 @@ export const CommunicationChannelFormPage = ({ params }: CommunicationChannelFor
                         errors.kind ? "border-destructive" : "focus:border-primary/40"
                       )}
                     >
-                      <option value="">{t('common.selectOption') || 'Select Kind'}</option>
+                      <option value="">{t(COMMUNICATION_CHANNEL_CONSTANTS.FORM.SELECT_OPTION) || 'Select Kind'}</option>
                       {kindOptions.map((p: any, idx: number) => {
                         const val = p.KEY ?? p.CODE ?? p.VALUE ?? p.ID ?? p.code ?? p.value ?? p.id ?? p.valueStr ?? p.fullCode ?? p;
                         const label = p.NAME || p.name || p.label || p.description || p.valueStr || val || `Item ${idx}`;
@@ -233,7 +233,7 @@ export const CommunicationChannelFormPage = ({ params }: CommunicationChannelFor
                 </label>
                 <Input
                   {...register("contactData")}
-                  placeholder="e.g. email@example.com or phone number"
+                  placeholder={t(COMMUNICATION_CHANNEL_CONSTANTS.FORM.EX_DATA) || 'e.g. email@example.com or phone number'}
                   className={errors.contactData ? "border-destructive focus-visible:ring-destructive/20" : ""}
                 />
                 {errors.contactData && <p className="text-[10px] text-destructive font-bold uppercase">{errors.contactData.message}</p>}
@@ -275,10 +275,10 @@ export const CommunicationChannelFormPage = ({ params }: CommunicationChannelFor
       <ConfirmDialog
         open={showConfirmCancel}
         onOpenChange={setShowConfirmCancel}
-        title={t('common.confirmCancel', 'Discard Changes?')}
+        title={t(COMMUNICATION_CHANNEL_CONSTANTS.FORM.CONFIRM_CANCEL, 'Discard Changes?')}
         description={t(COMMUNICATION_CHANNEL_CONSTANTS.FORM.DIRTY_WARNING) || "You have unsaved changes. Are you sure you want to cancel?"}
-        confirmText={t('common.yesDiscard', 'Yes, Discard')}
-        cancelText={t('common.noStay', 'No, Stay')}
+        confirmText={t(COMMUNICATION_CHANNEL_CONSTANTS.FORM.YES_DISCARD, 'Yes, Discard')}
+        cancelText={t(COMMUNICATION_CHANNEL_CONSTANTS.FORM.NO_STAY, 'No, Stay')}
         onConfirm={confirmCancel}
         type="warning"
       />

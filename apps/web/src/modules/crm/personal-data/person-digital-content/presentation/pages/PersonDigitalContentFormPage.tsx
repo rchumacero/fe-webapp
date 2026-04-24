@@ -210,7 +210,7 @@ export const PersonDigitalContentFormPage = ({ params }: PersonDigitalContentFor
                       errors.type ? "border-destructive" : "focus:border-primary/40"
                     )}
                   >
-                    <option value="">{t('common.selectOption') || 'Select Media Type'}</option>
+                    <option value="">{t(PERSON_DIGITAL_CONTENT_CONSTANTS.FORM.SELECT_OPTION) || 'Select Media Type'}</option>
                     {typeOptions.map((p: any, idx: number) => {
                       const val = p.KEY ?? p.CODE ?? p.VALUE ?? p.ID ?? p.code ?? p.value ?? p.id ?? p.valueStr ?? p.fullCode ?? p;
                       const label = p.NAME || p.name || p.label || p.description || p.valueStr || val || `Item ${idx}`;
@@ -288,6 +288,7 @@ export const PersonDigitalContentFormPage = ({ params }: PersonDigitalContentFor
                         }}
                       >
                         Remove file
+                        {t(PERSON_DIGITAL_CONTENT_CONSTANTS.FORM.REMOVE_FILE) || 'Remove file'}
                       </Button>
                     </>
                   ) : (
@@ -297,10 +298,10 @@ export const PersonDigitalContentFormPage = ({ params }: PersonDigitalContentFor
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-bold text-muted-foreground">
-                          Click or drag to upload
+                          {t(PERSON_DIGITAL_CONTENT_CONSTANTS.FORM.UPLOAD_LABEL) || 'Click or drag to upload'}
                         </p>
                         <p className="text-[10px] text-muted-foreground/60 uppercase mt-1">
-                          PDF, Images, or Documents
+                          {t(PERSON_DIGITAL_CONTENT_CONSTANTS.FORM.UPLOAD_HINT) || 'PDF, Images, or Documents'}
                         </p>
                       </div>
                     </>
@@ -333,10 +334,10 @@ export const PersonDigitalContentFormPage = ({ params }: PersonDigitalContentFor
       <ConfirmDialog
         open={showConfirmCancel}
         onOpenChange={setShowConfirmCancel}
-        title={t('common.confirmCancel', 'Discard Changes?')}
+        title={t(PERSON_DIGITAL_CONTENT_CONSTANTS.FORM.CONFIRM_CANCEL, 'Discard Changes?')}
         description={t(PERSON_DIGITAL_CONTENT_CONSTANTS.FORM.DIRTY_WARNING) || "You have unsaved changes. Are you sure you want to cancel?"}
-        confirmText={t('common.yesDiscard', 'Yes, Discard')}
-        cancelText={t('common.noStay', 'No, Stay')}
+        confirmText={t(PERSON_DIGITAL_CONTENT_CONSTANTS.FORM.YES_DISCARD, 'Yes, Discard')}
+        cancelText={t(PERSON_DIGITAL_CONTENT_CONSTANTS.FORM.NO_STAY, 'No, Stay')}
         onConfirm={confirmCancel}
         type="warning"
       />

@@ -476,7 +476,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
 
                   <div className="px-1 mb-2">
                     <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary/70">
-                      Additional Details
+                      {t(PERSON_CONSTANTS.FORM.ADDITIONAL_DETAILS) || 'Additional Details'}
                     </h3>
                   </div>
 
@@ -489,7 +489,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                     >
                       <div className="flex items-center gap-3">
                         <Fingerprint size={18} className={cn("transition-colors", expandedSections.identification ? "text-primary" : "text-muted-foreground")} />
-                        <span className="text-sm font-bold uppercase tracking-wider">Identification Document</span>
+                        <span className="text-sm font-bold uppercase tracking-wider">{t(PERSON_CONSTANTS.FORM.SECTION_IDENTIFICATION) || 'Identification Document'}</span>
                       </div>
                       {expandedSections.identification ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                     </button>
@@ -497,7 +497,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                     {expandedSections.identification && (
                       <div className="p-6 pt-2 border-t border-border/10 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-200">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Type</label>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t(PERSON_CONSTANTS.FORM.IDENT_TYPE) || 'Type'}</label>
                           <Controller
                             name="identification.type"
                             control={control}
@@ -506,7 +506,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                                 {...field}
                                 className="flex h-10 w-full rounded-md border border-border/50 bg-card/50 px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                               >
-                                <option value="">Select Type</option>
+                                <option value="">{t(PERSON_CONSTANTS.FORM.SELECT_OPTION) || 'Select Type'}</option>
                                 {parameters[P_IDENT_TYPE]?.map((p: any, idx: number) => {
                                   const val = p.KEY ?? p.CODE ?? p.VALUE ?? p.ID ?? p.code ?? p.value ?? p.id ?? p.valueStr ?? p.fullCode ?? p;
                                   const label = p.NAME || p.name || p.label || p.description || p.valueStr || val || `Item ${idx}`;
@@ -517,8 +517,8 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Number</label>
-                          <Input {...register("identification.numberIdent")} placeholder="ID Number" className="h-10 bg-card/50" />
+                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t(PERSON_CONSTANTS.FORM.IDENT_NUMBER) || 'Number'}</label>
+                          <Input {...register("identification.numberIdent")} placeholder={t(PERSON_CONSTANTS.FORM.IDENT_NUMBER_PLACEHOLDER) || 'ID Number'} className="h-10 bg-card/50" />
                         </div>
                       </div>
                     )}
@@ -533,7 +533,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                     >
                       <div className="flex items-center gap-3">
                         <MessageSquare size={18} className={cn("transition-colors", expandedSections.communication ? "text-primary" : "text-muted-foreground")} />
-                        <span className="text-sm font-bold uppercase tracking-wider">Communication Channel</span>
+                        <span className="text-sm font-bold uppercase tracking-wider">{t(PERSON_CONSTANTS.FORM.SECTION_COMMUNICATION) || 'Communication Channel'}</span>
                       </div>
                       {expandedSections.communication ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                     </button>
@@ -541,7 +541,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                     {expandedSections.communication && (
                       <div className="p-6 pt-2 border-t border-border/10 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-200">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Type</label>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t(PERSON_CONSTANTS.FORM.COMM_TYPE) || 'Type'}</label>
                           <Controller
                             name="communication.type"
                             control={control}
@@ -550,7 +550,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                                 {...field}
                                 className="flex h-10 w-full rounded-md border border-border/50 bg-card/50 px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                               >
-                                <option value="">Select Type</option>
+                                <option value="">{t(PERSON_CONSTANTS.FORM.SELECT_OPTION) || 'Select Type'}</option>
                                 {parameters[P_COMM_CHANNNEL]?.map((p: any, idx: number) => {
                                   const val = p.KEY ?? p.CODE ?? p.VALUE ?? p.ID ?? p.code ?? p.value ?? p.id ?? p.valueStr ?? p.fullCode ?? p;
                                   const label = p.NAME || p.name || p.label || p.description || p.valueStr || val || `Item ${idx}`;
@@ -561,7 +561,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Kind</label>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t(PERSON_CONSTANTS.FORM.COMM_KIND) || 'Kind'}</label>
                           <Controller
                             name="communication.kind"
                             control={control}
@@ -570,7 +570,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                                 {...field}
                                 className="flex h-10 w-full rounded-md border border-border/50 bg-card/50 px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                               >
-                                <option value="">Select Kind</option>
+                                <option value="">{t(PERSON_CONSTANTS.FORM.SELECT_OPTION) || 'Select Kind'}</option>
                                 {parameters[P_COMM_CHANNNEL_KIND]?.map((p: any, idx: number) => {
                                   const val = p.KEY ?? p.CODE ?? p.VALUE ?? p.ID ?? p.code ?? p.value ?? p.id ?? p.valueStr ?? p.fullCode ?? p;
                                   const label = p.NAME || p.name || p.label || p.description || p.valueStr || val || `Item ${idx}`;
@@ -581,8 +581,8 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                           />
                         </div>
                         <div className="space-y-2 md:col-span-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Contact Data</label>
-                          <Input {...register("communication.contactData")} placeholder="Email, phone, etc." className="h-10 bg-card/50" />
+                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t(PERSON_CONSTANTS.FORM.COMM_DATA) || 'Contact Data'}</label>
+                          <Input {...register("communication.contactData")} placeholder={t(PERSON_CONSTANTS.FORM.COMM_DATA_PLACEHOLDER) || 'Email, phone, etc.'} className="h-10 bg-card/50" />
                         </div>
                       </div>
                     )}
@@ -597,7 +597,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                     >
                       <div className="flex items-center gap-3">
                         <ImageIcon size={18} className={cn("transition-colors", expandedSections.digitalContent ? "text-primary" : "text-muted-foreground")} />
-                        <span className="text-sm font-bold uppercase tracking-wider">Upload Document</span>
+                        <span className="text-sm font-bold uppercase tracking-wider">{t(PERSON_CONSTANTS.FORM.SECTION_UPLOAD) || 'Upload Document'}</span>
                       </div>
                       {expandedSections.digitalContent ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                     </button>
@@ -605,7 +605,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                     {expandedSections.digitalContent && (
                       <div className="p-6 pt-2 border-t border-border/10 space-y-4 animate-in slide-in-from-top-2 duration-200">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Media Type</label>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t(PERSON_CONSTANTS.FORM.MEDIA_TYPE) || 'Media Type'}</label>
                           <Controller
                             name="digitalContent.type"
                             control={control}
@@ -614,7 +614,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                                 {...field}
                                 className="flex h-10 w-full rounded-md border border-border/50 bg-card/50 px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                               >
-                                <option value="">Select Media Type</option>
+                                <option value="">{t(PERSON_CONSTANTS.FORM.SELECT_OPTION) || 'Select Media Type'}</option>
                                 {parameters[P_MEDIA_TYPE]?.map((p: any, idx: number) => {
                                   const val = p.KEY ?? p.CODE ?? p.VALUE ?? p.ID ?? p.code ?? p.value ?? p.id ?? p.valueStr ?? p.fullCode ?? p;
                                   const label = p.NAME || p.name || p.label || p.description || p.valueStr || val || `Item ${idx}`;
@@ -658,7 +658,7 @@ export default function PersonFormPage({ id }: PersonFormProps) {
                           ) : (
                             <div className="flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
                               <Upload size={16} />
-                              <span className="text-xs font-bold">Upload document</span>
+                              <span className="text-xs font-bold">{t(PERSON_CONSTANTS.FORM.UPLOAD_LABEL) || 'Upload document'}</span>
                             </div>
                           )}
                         </div>
@@ -675,17 +675,17 @@ export default function PersonFormPage({ id }: PersonFormProps) {
         <div className="space-y-8">
           <Card className="border-primary/20 bg-primary/5 shadow-xl border-dashed">
             <CardHeader>
-              <CardTitle className="text-base font-bold text-primary">Form Status</CardTitle>
+              <CardTitle className="text-base font-bold text-primary">{t(PERSON_CONSTANTS.FORM.FORM_STATUS) || 'Form Status'}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Modified:</span>
+                <span className="text-muted-foreground">{t(PERSON_CONSTANTS.FORM.FORM_MODIFIED) || 'Modified:'}</span>
                 <span className={isDirty ? "text-amber-500 font-bold" : "text-emerald-500 font-bold"}>
                   {isDirty ? "YES" : "NO"}
                 </span>
               </div>
               <p className="text-[10px] text-muted-foreground leading-relaxed italic border-t border-border/10 pt-4">
-                Verify all information before saving. National identity data is sensitive and requires accuracy.
+                {t(PERSON_CONSTANTS.FORM.FORM_WARNING) || 'Verify all information before saving. National identity data is sensitive and requires accuracy.'}
               </p>
             </CardContent>
             <CardFooter className="flex flex-col gap-3 pt-6 pb-8 px-6">
@@ -714,10 +714,10 @@ export default function PersonFormPage({ id }: PersonFormProps) {
       <ConfirmDialog
         open={showConfirmCancel}
         onOpenChange={setShowConfirmCancel}
-        title={t('common.confirmCancel', 'Discard Changes?')}
+        title={t(PERSON_CONSTANTS.FORM.CONFIRM_CANCEL, 'Discard Changes?')}
         description={t(PERSON_CONSTANTS.FORM.DIRTY_WARNING) || "You have unsaved changes. Are you sure you want to cancel and lose your progress?"}
-        confirmText={t('common.yesDiscard', 'Yes, Discard')}
-        cancelText={t('common.noStay', 'No, Stay')}
+        confirmText={t(PERSON_CONSTANTS.FORM.YES_DISCARD, 'Yes, Discard')}
+        cancelText={t(PERSON_CONSTANTS.FORM.NO_STAY, 'No, Stay')}
         onConfirm={confirmCancel}
         type="warning"
       />

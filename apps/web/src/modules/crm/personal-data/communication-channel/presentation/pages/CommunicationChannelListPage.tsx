@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { useTranslation } from '@kplian/i18n';
 import { COMMUNICATION_CHANNEL_CONSTANTS } from '../../constants/communication-channel-constants';
 import { COMMUNICATION_CHANNEL_ROUTES } from '../../routes/communication-channel-routes';
@@ -35,6 +36,8 @@ export const CommunicationChannelListPage = ({ personId }: CommunicationChannelL
   const [channels, setChannels] = useState<CommunicationChannel[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const { data: parametersData } = useDomainParameters({
     parameters: COMMUNICATION_CHANNEL_DOMAIN_PARAMETERS
@@ -74,13 +77,21 @@ export const CommunicationChannelListPage = ({ personId }: CommunicationChannelL
     fetchChannels();
   }, [fetchChannels]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('common.confirmDelete') || "Are you sure?")) return;
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id);
+    setShowConfirmDelete(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setShowConfirmDelete(false);
     try {
-      await communicationChannelRepository.delete(id);
+      await communicationChannelRepository.delete(deleteTargetId);
       fetchChannels();
     } catch (error) {
       console.error("Error deleting channel:", error);
+    } finally {
+      setDeleteTargetId(null);
     }
   };
 
@@ -170,10 +181,20 @@ export const CommunicationChannelListPage = ({ personId }: CommunicationChannelL
         {!isLoading && filteredChannels.length === 0 && (
           <div className="col-span-full py-12 text-center border-2 border-dashed border-border/40 rounded-xl bg-accent/5">
             <MessageSquare size={40} className="mx-auto text-muted-foreground/20 mb-4" />
-            <p className="text-muted-foreground font-medium">{t('common.noDataAvailable')}</p>
+            <p className="text-muted-foreground font-medium">{t(COMMUNICATION_CHANNEL_CONSTANTS.RECORD_NOT_FOUND)}</p>
           </div>
         )}
       </div>
+      <ConfirmDialog
+        open={showConfirmDelete}
+        onOpenChange={setShowConfirmDelete}
+        title={t(COMMUNICATION_CHANNEL_CONSTANTS.CONFIRM_DELETE)}
+        description={t(COMMUNICATION_CHANNEL_CONSTANTS.FORM.DIRTY_WARNING) || "This action cannot be undone."}
+        confirmText={t(COMMUNICATION_CHANNEL_CONSTANTS.FORM.SUBMIT)}
+        cancelText={t(COMMUNICATION_CHANNEL_CONSTANTS.FORM.CANCEL)}
+        onConfirm={confirmDelete}
+        type="danger"
+      />
     </div>
   );
 };

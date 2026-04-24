@@ -228,16 +228,16 @@ export default function PersonListPage() {
                 <DropdownMenuContent align="end" className="w-40">
                   <DropdownMenuItem className="cursor-pointer">
                     <Link href={PERSON_ROUTES.DETAIL(person.id)} className="flex items-center w-full">
-                      <Eye className="mr-2 h-4 w-4" /> Detail
+                      <Eye className="mr-2 h-4 w-4" /> {t('common.detail') || 'Detail'}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer">
                     <Link href={PERSON_ROUTES.EDIT(person.id)} className="flex items-center w-full">
-                      <Edit2 className="mr-2 h-4 w-4" /> Edit
+                      <Edit2 className="mr-2 h-4 w-4" /> {t('common.edit') || 'Edit'}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-destructive cursor-pointer focus:bg-destructive/10">
-                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                    <Trash2 className="mr-2 h-4 w-4" /> {t(PERSON_CONSTANTS.CONFIRM_DELETE) || 'Delete'}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -301,7 +301,7 @@ export default function PersonListPage() {
 
       {!hasMore && persons.length > 0 && (
         <p className="text-center text-muted-foreground text-sm py-8 border-t border-border/5">
-          End of records
+          {t(PERSON_CONSTANTS.END_OF_RECORDS) || 'End of records'}
         </p>
       )}
     </div>

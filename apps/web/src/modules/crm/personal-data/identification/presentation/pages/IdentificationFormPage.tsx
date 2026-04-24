@@ -189,7 +189,7 @@ export const IdentificationFormPage = ({ params }: IdentificationFormPageProps &
                         errors.type ? "border-destructive focus:ring-destructive/20" : "focus:border-primary/40"
                       )}
                     >
-                      <option value="">{t('common.selectOption') || 'Select Option'}</option>
+                      <option value="">{t(IDENTIFICATION_CONSTANTS.FORM.SELECT_OPTION) || 'Select Option'}</option>
                       {typeOptions.map((p: any, idx: number) => {
                         const val = p.KEY ?? p.CODE ?? p.VALUE ?? p.ID ?? p.code ?? p.value ?? p.id ?? p.valueStr ?? p.fullCode ?? p;
                         const label = p.NAME || p.name || p.label || p.description || p.valueStr || val || `Item ${idx}`;
@@ -223,7 +223,7 @@ export const IdentificationFormPage = ({ params }: IdentificationFormPageProps &
                 </label>
                 <Input
                   {...register("prefix")}
-                  placeholder="Optional prefix"
+                  placeholder={t(IDENTIFICATION_CONSTANTS.FORM.EX_PREFIX) || 'Optional prefix'}
                 />
               </div>
 
@@ -233,7 +233,7 @@ export const IdentificationFormPage = ({ params }: IdentificationFormPageProps &
                 </label>
                 <Input
                   {...register("sufix")}
-                  placeholder="Optional suffix"
+                  placeholder={t(IDENTIFICATION_CONSTANTS.FORM.EX_SUFIX) || 'Optional suffix'}
                 />
               </div>
 
@@ -274,10 +274,10 @@ export const IdentificationFormPage = ({ params }: IdentificationFormPageProps &
       <ConfirmDialog
         open={showConfirmCancel}
         onOpenChange={setShowConfirmCancel}
-        title={t('common.confirmCancel', 'Discard Changes?')}
+        title={t(IDENTIFICATION_CONSTANTS.FORM.CONFIRM_CANCEL, 'Discard Changes?')}
         description={t(IDENTIFICATION_CONSTANTS.FORM.DIRTY_WARNING) || "You have unsaved changes. Are you sure you want to cancel?"}
-        confirmText={t('common.yesDiscard', 'Yes, Discard')}
-        cancelText={t('common.noStay', 'No, Stay')}
+        confirmText={t(IDENTIFICATION_CONSTANTS.FORM.YES_DISCARD, 'Yes, Discard')}
+        cancelText={t(IDENTIFICATION_CONSTANTS.FORM.NO_STAY, 'No, Stay')}
         onConfirm={confirmCancel}
         type="warning"
       />

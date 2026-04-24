@@ -22,6 +22,7 @@ import { WorkExperienceRepositoryImpl } from '../../infrastructure/repositories/
 import { WORK_EXPERIENCE_DOMAIN_PARAMETERS, P_POSITION } from '../../constants/parameter';
 import { useDomainParameters } from '@/hooks/use-domain-parameters';
 import { cn } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 const workExperienceSchema = z.object({
   personId: z.string().min(1, "Person ID is required"),
@@ -47,6 +48,7 @@ export const WorkExperienceFormPage = ({ params }: WorkExperienceFormPageProps) 
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
 
   const id = resolvedParams?.id || null;
   const personId = searchParams.get('personId') || null;
@@ -129,10 +131,14 @@ export const WorkExperienceFormPage = ({ params }: WorkExperienceFormPageProps) 
 
   const handleCancel = () => {
     if (isDirty) {
-      if (!confirm(t(WORK_EXPERIENCE_CONSTANTS.FORM.DIRTY_WARNING) || "Unsaved changes. Cancel?")) {
-        return;
-      }
+      setShowConfirmCancel(true);
+      return;
     }
+    router.back();
+  };
+
+  const confirmCancel = () => {
+    setShowConfirmCancel(false);
     router.back();
   };
 
@@ -169,7 +175,7 @@ export const WorkExperienceFormPage = ({ params }: WorkExperienceFormPageProps) 
                 </label>
                 <Input
                   {...register("name")}
-                  placeholder="e.g. Acme Corp"
+                  placeholder={t(WORK_EXPERIENCE_CONSTANTS.FORM.EX_NAME) || 'e.g. Acme Corp'}
                   className={errors.name ? "border-destructive focus-visible:ring-destructive/20" : ""}
                 />
                 {errors.name && <p className="text-[10px] text-destructive font-bold uppercase">{errors.name.message}</p>}
@@ -190,7 +196,7 @@ export const WorkExperienceFormPage = ({ params }: WorkExperienceFormPageProps) 
                         errors.positionCode ? "border-destructive" : "focus:border-primary/40"
                       )}
                     >
-                      <option value="">{t('common.selectOption') || 'Select Position'}</option>
+                      <option value="">{t(WORK_EXPERIENCE_CONSTANTS.FORM.SELECT_OPTION) || 'Select Position'}</option>
                       {positionOptions.map((p: any, idx: number) => {
                         const val = p.KEY ?? p.CODE ?? p.VALUE ?? p.ID ?? p.code ?? p.value ?? p.id ?? p.valueStr ?? p.fullCode ?? p;
                         const label = p.NAME || p.name || p.label || p.description || p.valueStr || val || `Item ${idx}`;
@@ -212,7 +218,7 @@ export const WorkExperienceFormPage = ({ params }: WorkExperienceFormPageProps) 
                 </label>
                 <Textarea
                   {...register("description")}
-                  placeholder="Describe your responsibilities..."
+                  placeholder={t(WORK_EXPERIENCE_CONSTANTS.FORM.EX_DESCRIPTION) || 'Describe your responsibilities...'}
                   className={cn(
                     "min-h-[120px] resize-none",
                     errors.description ? "border-destructive focus-visible:ring-destructive/20" : ""
@@ -265,6 +271,16 @@ export const WorkExperienceFormPage = ({ params }: WorkExperienceFormPageProps) 
           </CardFooter>
         </form>
       </Card>
+      <ConfirmDialog
+        open={showConfirmCancel}
+        onOpenChange={setShowConfirmCancel}
+        title={t(WORK_EXPERIENCE_CONSTANTS.FORM.CONFIRM_CANCEL, 'Discard Changes?')}
+        description={t(WORK_EXPERIENCE_CONSTANTS.FORM.DIRTY_WARNING) || "You have unsaved changes. Are you sure you want to cancel?"}
+        confirmText={t(WORK_EXPERIENCE_CONSTANTS.FORM.YES_DISCARD, 'Yes, Discard')}
+        cancelText={t(WORK_EXPERIENCE_CONSTANTS.FORM.NO_STAY, 'No, Stay')}
+        onConfirm={confirmCancel}
+        type="warning"
+      />
     </div>
   );
 };

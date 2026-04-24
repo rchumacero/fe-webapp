@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { useTranslation } from '@kplian/i18n';
 import { PERSON_DIGITAL_CONTENT_CONSTANTS } from '../../constants/person-digital-content-constants';
 import { PERSON_DIGITAL_CONTENT_ROUTES } from '../../routes/person-digital-content-routes';
@@ -37,6 +38,8 @@ export const PersonDigitalContentListPage = ({ personId }: PersonDigitalContentL
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [images, setImages] = useState<Record<string, string>>({});
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const { data: parametersData } = useDomainParameters({
     parameters: PERSON_DIGITAL_CONTENT_DOMAIN_PARAMETERS
@@ -103,13 +106,21 @@ export const PersonDigitalContentListPage = ({ personId }: PersonDigitalContentL
     fetchContents();
   }, [fetchContents]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('common.confirmDelete') || "Are you sure?")) return;
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id);
+    setShowConfirmDelete(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setShowConfirmDelete(false);
     try {
-      await personDigitalContentRepository.delete(id);
+      await personDigitalContentRepository.delete(deleteTargetId);
       fetchContents();
     } catch (error) {
       console.error("Error deleting digital content:", error);
+    } finally {
+      setDeleteTargetId(null);
     }
   };
 
@@ -206,10 +217,20 @@ export const PersonDigitalContentListPage = ({ personId }: PersonDigitalContentL
         {!isLoading && filteredContents.length === 0 && (
           <div className="col-span-full py-12 text-center border-2 border-dashed border-border/40 rounded-xl bg-accent/5">
             <ImageIcon size={40} className="mx-auto text-muted-foreground/20 mb-4" />
-            <p className="text-muted-foreground font-medium">{t('common.noDataAvailable')}</p>
+            <p className="text-muted-foreground font-medium">{t(PERSON_DIGITAL_CONTENT_CONSTANTS.RECORD_NOT_FOUND)}</p>
           </div>
         )}
       </div>
+      <ConfirmDialog
+        open={showConfirmDelete}
+        onOpenChange={setShowConfirmDelete}
+        title={t(PERSON_DIGITAL_CONTENT_CONSTANTS.CONFIRM_DELETE)}
+        description={t(PERSON_DIGITAL_CONTENT_CONSTANTS.FORM.DIRTY_WARNING) || "This action cannot be undone."}
+        confirmText={t(PERSON_DIGITAL_CONTENT_CONSTANTS.FORM.SUBMIT)}
+        cancelText={t(PERSON_DIGITAL_CONTENT_CONSTANTS.FORM.CANCEL)}
+        onConfirm={confirmDelete}
+        type="danger"
+      />
     </div>
   );
 };

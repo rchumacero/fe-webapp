@@ -6,6 +6,8 @@ export const WORK_EXPERIENCE_CONSTANTS = {
   EDIT_TITLE: "crm.workExperience",
   DESCRIPTION_EDIT: "common.editDescription",
   SEARCH_PLACEHOLDER: "common.filter",
+  CONFIRM_DELETE: "common.confirmDelete",
+  RECORD_NOT_FOUND: "common.recordNotFound",
   FORM: {
     NAME: "crm.companyName",
     POSITION: "crm.position",
@@ -15,6 +17,12 @@ export const WORK_EXPERIENCE_CONSTANTS = {
     SUBMIT: "common.save",
     CANCEL: "common.cancel",
     DIRTY_WARNING: "common.dirty_warning",
+    SELECT_OPTION: "common.selectOption",
+    CONFIRM_CANCEL: "common.confirmCancel",
+    YES_DISCARD: "common.yesDiscard",
+    NO_STAY: "common.noStay",
+    EX_NAME: "crm.workExperienceCompanyPlaceholder",
+    EX_DESCRIPTION: "crm.workExperienceDescriptionPlaceholder",
   },
   ROUTES: {
     BACK: -1,

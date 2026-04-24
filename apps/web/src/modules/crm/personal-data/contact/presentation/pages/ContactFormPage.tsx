@@ -20,6 +20,7 @@ import { ContactRepositoryImpl } from '../../infrastructure/repositories/Contact
 import { CONTACT_DOMAIN_PARAMETERS, P_MEMBER_TYPE } from '../../constants/parameter';
 import { useDomainParameters } from '@/hooks/use-domain-parameters';
 import { cn } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 const contactSchema = z.object({
   personId: z.string().min(1, "Person ID is required"),
@@ -43,6 +44,7 @@ export const ContactFormPage = ({ params }: ContactFormPageProps) => {
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
 
   const id = resolvedParams?.id || null;
   const personId = searchParams.get('personId') || null;
@@ -121,10 +123,14 @@ export const ContactFormPage = ({ params }: ContactFormPageProps) => {
 
   const handleCancel = () => {
     if (isDirty) {
-      if (!confirm(t(CONTACT_CONSTANTS.FORM.DIRTY_WARNING) || "Unsaved changes. Cancel?")) {
-        return;
-      }
+      setShowConfirmCancel(true);
+      return;
     }
+    router.back();
+  };
+
+  const confirmCancel = () => {
+    setShowConfirmCancel(false);
     router.back();
   };
 
@@ -160,7 +166,7 @@ export const ContactFormPage = ({ params }: ContactFormPageProps) => {
               </label>
               <Input
                 {...register("personCompId")}
-                placeholder="Linked Person ID"
+                placeholder={t(CONTACT_CONSTANTS.FORM.EX_PERSON_COMP) || 'Linked Person ID'}
                 className={errors.personCompId ? "border-destructive focus-visible:ring-destructive/20" : ""}
               />
               {errors.personCompId && <p className="text-[10px] text-destructive font-bold uppercase">{errors.personCompId.message}</p>}
@@ -181,7 +187,7 @@ export const ContactFormPage = ({ params }: ContactFormPageProps) => {
                       errors.type ? "border-destructive" : "focus:border-primary/40"
                     )}
                   >
-                    <option value="">{t('common.selectOption') || 'Select Relation Type'}</option>
+                    <option value="">{t(CONTACT_CONSTANTS.FORM.SELECT_OPTION) || 'Select Relation Type'}</option>
                     {typeOptions.map((p: any, idx: number) => {
                       const val = p.KEY ?? p.CODE ?? p.VALUE ?? p.ID ?? p.code ?? p.value ?? p.id ?? p.valueStr ?? p.fullCode ?? p;
                       const label = p.NAME || p.name || p.label || p.description || p.valueStr || val || `Item ${idx}`;
@@ -203,7 +209,7 @@ export const ContactFormPage = ({ params }: ContactFormPageProps) => {
               </label>
               <Input
                 {...register("relationDescription")}
-                placeholder="Relationship description..."
+                placeholder={t(CONTACT_CONSTANTS.FORM.EX_DESCRIPTION) || 'Relationship description...'}
                 className={errors.relationDescription ? "border-destructive focus-visible:ring-destructive/20" : ""}
               />
               {errors.relationDescription && <p className="text-[10px] text-destructive font-bold uppercase">{errors.relationDescription.message}</p>}
@@ -229,6 +235,16 @@ export const ContactFormPage = ({ params }: ContactFormPageProps) => {
           </CardFooter>
         </form>
       </Card>
+      <ConfirmDialog
+        open={showConfirmCancel}
+        onOpenChange={setShowConfirmCancel}
+        title={t(CONTACT_CONSTANTS.FORM.CONFIRM_CANCEL, 'Discard Changes?')}
+        description={t(CONTACT_CONSTANTS.FORM.DIRTY_WARNING) || "You have unsaved changes. Are you sure you want to cancel?"}
+        confirmText={t(CONTACT_CONSTANTS.FORM.YES_DISCARD, 'Yes, Discard')}
+        cancelText={t(CONTACT_CONSTANTS.FORM.NO_STAY, 'No, Stay')}
+        onConfirm={confirmCancel}
+        type="warning"
+      />
     </div>
   );
 };
