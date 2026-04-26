@@ -12,15 +12,15 @@ import { formatDate, formatDateTime, DEFAULT_PAGE_SIZE, bucketService } from '@k
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { 
-  RefreshCw, 
-  Plus, 
-  Search, 
-  Edit2, 
-  Trash2, 
-  User, 
-  Calendar, 
-  MapPin, 
+import {
+  RefreshCw,
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  User,
+  Calendar,
+  MapPin,
   MoreHorizontal,
   Loader2,
   UserCircle,
@@ -29,6 +29,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useVendor } from '@/hooks/use-vendor';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -42,8 +43,9 @@ const personRepository = new PersonRepositoryImpl();
 export default function PersonListPage() {
   const { t } = useTranslation();
   const { data: session } = useSession();
-  const { data: parameters } = useDomainParameters({ 
-    parameters: PERSON_DOMAIN_PARAMETERS 
+  const { vendor } = useVendor();
+  const { data: parameters } = useDomainParameters({
+    parameters: PERSON_DOMAIN_PARAMETERS
   });
   const [persons, setPersons] = useState<Person[]>([]);
   const [page, setPage] = useState(1);
@@ -51,7 +53,7 @@ export default function PersonListPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [profileImages, setProfileImages] = useState<Record<string, string>>({});
-  
+
   const observer = useRef<IntersectionObserver | null>(null);
   const lastElementRef = useCallback((node: HTMLDivElement | null) => {
     if (isLoading) return;
@@ -78,24 +80,22 @@ export default function PersonListPage() {
     if (isFetching.current) return;
     isFetching.current = true;
     setIsLoading(true);
-    
-    const currentUser = (session?.user as any)?.username;
 
-    if (!currentUser) {
+    if (!vendor) {
       setIsLoading(false);
       isFetching.current = false;
       return;
     }
 
     try {
-      const newData = await personRepository.getByCreator(currentUser, { 
-        page: pageNum, 
-        pageSize: DEFAULT_PAGE_SIZE, 
+      const newData = await personRepository.getByVendorId(vendor, {
+        page: pageNum,
+        pageSize: DEFAULT_PAGE_SIZE,
         filter: search,
       });
-      
+
       const dataArray = Array.isArray(newData) ? newData : [];
-      
+
       setPersons(prev => isNewSearch ? dataArray : [...prev, ...dataArray]);
       setHasMore(dataArray.length === DEFAULT_PAGE_SIZE);
 
@@ -122,14 +122,14 @@ export default function PersonListPage() {
       setIsLoading(false);
       isFetching.current = false;
     }
-  }, [search, session]); // Add session to deps
+  }, [search, vendor]); // Add vendor to deps
 
   useEffect(() => {
-    // Only fetch when session is available or if we want to support public view (here it seems mandatory)
-    if (session) {
+    // Only fetch when vendor is available
+    if (vendor) {
       fetchPersons(page, page === 1);
     }
-  }, [page, fetchPersons, session]);
+  }, [page, fetchPersons, vendor]);
 
   const handleSearch = () => {
     if (page === 1) {
@@ -164,7 +164,7 @@ export default function PersonListPage() {
     const cityLabel = getParameterLabel(P_LOCATION, p.cityOrigin).toLowerCase();
     const name = (p.completeName || `${p.name1} ${p.surname1}`).toLowerCase();
     const code = (p.code || '').toLowerCase();
-    
+
     return name.includes(term) || code.includes(term) || cityLabel.includes(term);
   });
 
@@ -176,17 +176,17 @@ export default function PersonListPage() {
           <h1 className="text-2xl font-bold tracking-tight">{t(PERSON_CONSTANTS.LIST_TITLE)}</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleRefresh}
             className="rounded-full hover:bg-accent hover:rotate-180 transition-all duration-500"
           >
             <RefreshCw className={isLoading ? "animate-spin size-5" : "size-5"} />
           </Button>
           <Link href={PERSON_ROUTES.CREATE}>
-            <Button 
-              size="icon" 
+            <Button
+              size="icon"
               className="rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-md group"
             >
               <Plus className="size-5 group-hover:scale-110 transition-transform" />
@@ -198,7 +198,7 @@ export default function PersonListPage() {
       {/* Filter */}
       <div className="relative max-w-md mx-auto">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input 
+        <Input
           placeholder={t(PERSON_CONSTANTS.SEARCH_PLACEHOLDER)}
           className="pl-9 h-11 bg-card/50 border-border/40 focus:ring-primary/20 transition-all shadow-sm"
           value={search}
@@ -209,7 +209,7 @@ export default function PersonListPage() {
       {/* Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredPersons.map((person, index) => (
-          <Card 
+          <Card
             key={`${person.id}-${index}`}
             ref={index === persons.length - 1 ? lastElementRef : null}
             className="group border-border/40 bg-card hover:bg-accent/5 hover:border-primary/30 transition-all duration-300 shadow-lg hover:shadow-primary/5"
@@ -228,12 +228,12 @@ export default function PersonListPage() {
                 <DropdownMenuContent align="end" className="w-40">
                   <DropdownMenuItem className="cursor-pointer">
                     <Link href={PERSON_ROUTES.DETAIL(person.id)} className="flex items-center w-full">
-                      <Eye className="mr-2 h-4 w-4" /> {t('common.detail') || 'Detail'}
+                      <Eye className="mr-2 h-4 w-4" /> {t(PERSON_CONSTANTS.VIEW_DETAIL) || 'Detail'}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer">
                     <Link href={PERSON_ROUTES.EDIT(person.id)} className="flex items-center w-full">
-                      <Edit2 className="mr-2 h-4 w-4" /> {t('common.edit') || 'Edit'}
+                      <Edit2 className="mr-2 h-4 w-4" /> {t(PERSON_CONSTANTS.EDIT_RECORD) || 'Edit'}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-destructive cursor-pointer focus:bg-destructive/10">
@@ -265,8 +265,8 @@ export default function PersonListPage() {
               </div>
               <div className="h-14 w-14 rounded-xl bg-accent/20 flex items-center justify-center shrink-0 border border-border/10 shadow-inner group-hover:bg-accent/40 transition-colors overflow-hidden">
                 {person.digitalContentCode && profileImages[person.digitalContentCode] ? (
-                  <img 
-                    src={profileImages[person.digitalContentCode]} 
+                  <img
+                    src={profileImages[person.digitalContentCode]}
                     alt={person.completeName}
                     className="h-full w-full object-cover animate-in fade-in zoom-in duration-300"
                   />

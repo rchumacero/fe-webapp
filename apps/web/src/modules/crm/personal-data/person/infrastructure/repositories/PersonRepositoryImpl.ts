@@ -37,6 +37,30 @@ export class PersonRepositoryImpl implements PersonRepository {
     }
   }
 
+  async getByVendorId(vendorId: string, params?: { 
+    page: number; 
+    pageSize: number; 
+    filter?: string; 
+  }): Promise<Person[]> {
+    const { page = 1, pageSize = DEFAULT_PAGE_SIZE, filter = "" } = params || {};
+    try {
+      const response = await apiClient.get<any>(`${BACKEND_ROUTES.PERSON}/by-vendor-id/${vendorId}`, {
+        params: {
+          page,
+          size: pageSize,
+          filter,
+        }
+      });
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      return data.data || data.content || data.results || [];
+    } catch (error) {
+      console.error(`Error in PersonRepository.getByVendorId(${vendorId}):`, error);
+      throw error;
+    }
+  }
+
+
   async getById(id: string): Promise<Person> {
     try {
       const response = await apiClient.get<Person>(`${BACKEND_ROUTES.PERSON}/${id}`);

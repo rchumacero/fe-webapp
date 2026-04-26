@@ -53,7 +53,9 @@
     "uploadRemoveFile": "Remove file",
     "formStatus": "Form Status",
     "formModified": "Form Modified",
-    "formWarning": "Verify all information before saving."
+    "formWarning": "Verify all information before saving.",
+    "endOfRecords": "End of records",
+    "uploadDocument": "Upload Document"
   },
   "crm": {
     "code": "Person Code",
@@ -96,7 +98,7 @@
     "contact": "Contact",
     "contactType": "Contact Type",
     "contactPersonComp": "Linked Person ID",
-    "relationDescription": "Relationship type",
+    "relationDescription": "Describe the relationship",
     "workExperience": "Work Experience",
     "workExperiencesList": "Employment History",
     "companyName": "Company Name",

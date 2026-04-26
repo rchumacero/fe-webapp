@@ -24,9 +24,11 @@ const getGatewayUrl = () => {
 const GATEWAY_BASE_URL = getGatewayUrl();
 
 type TokenProvider = () => Promise<string | null> | string | null;
+type VendorProvider = () => Promise<string | null> | string | null;
 type ErrorHandler = (message: string, code?: string, details?: any) => void;
 
 let globalTokenProvider: TokenProvider | null = null;
+let globalVendorProvider: VendorProvider | null = null;
 let globalErrorHandler: ErrorHandler | null = null;
 
 /** 
@@ -35,6 +37,13 @@ let globalErrorHandler: ErrorHandler | null = null;
  */
 export const setTokenProvider = (provider: TokenProvider) => {
   globalTokenProvider = provider;
+};
+
+/** 
+ * Allows the consuming platform to define how the active vendor (personId) is retrieved
+ */
+export const setVendorProvider = (provider: VendorProvider) => {
+  globalVendorProvider = provider;
 };
 
 /**
@@ -65,6 +74,24 @@ export const createApiClient = (moduleName: string) => {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
+    
+    if (globalVendorProvider) {
+      try {
+        // Use a Promise.race to ensure it doesn't block forever if session fetching hangs
+        const vendorId = await Promise.race([
+          globalVendorProvider(),
+          new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Vendor provider timeout')), 2000))
+        ]);
+        
+        if (vendorId) {
+          config.headers['X-Vendor-Id'] = vendorId;
+        }
+      } catch (error) {
+        console.warn("Infrastructure: Failed to fetch vendorId for request", error);
+        // We don't block the request if the vendorId fails, just continue without it
+      }
+    }
+    
     return config;
   });
 

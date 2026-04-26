@@ -6,9 +6,11 @@ import {
   Settings,
   ChevronDown,
   Moon,
-  Sun
+  Sun,
+  Home
 } from 'lucide-react';
 import { useTheme } from "next-themes";
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Switch } from "@/components/ui/switch";
 import {
@@ -25,6 +27,8 @@ import { getFriendlyTimeZones } from '@kplian/core';
 import { Clock, Search } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { useVendor } from '@/hooks/use-vendor';
+import { Building2 } from 'lucide-react';
 
 export const Header = () => {
   const { theme, setTheme } = useTheme();
@@ -72,6 +76,7 @@ export const Header = () => {
     }
 
     // 1. Clear local Next-Auth session without auto-redirecting
+    sessionStorage.removeItem('vendor_selected');
     await signOut({ redirect: false });
 
     // 2. Perform manual redirect to Zitadel to clear their global session cookie
@@ -90,9 +95,37 @@ export const Header = () => {
     .toUpperCase() || "U";
 
   const { t } = useTranslation();
+  const { vendorName } = useVendor();
 
   return (
-    <header className="h-20 bg-transparent flex items-center justify-end px-8 gap-4">
+    <header className="h-20 bg-transparent flex items-center justify-between px-8 gap-4">
+      {/* Left side: Active Vendor Indicator */}
+      <div className="flex items-center">
+        {vendorName && (
+          <button 
+            onClick={() => window.dispatchEvent(new Event('open-vendor-selector'))}
+            className="group flex items-center gap-3 bg-primary/5 border border-primary/20 px-4 py-2 rounded-2xl backdrop-blur-sm shadow-sm hover:bg-primary/10 active:scale-95 transition-all duration-200 outline-none animate-in fade-in slide-in-from-left-4"
+          >
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 group-hover:bg-primary/20 group-hover:scale-110 transition-all">
+              <Building2 size={16} />
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 leading-none mb-1 group-hover:text-primary transition-colors">Acting as</span>
+              <span className="text-xs font-bold text-foreground leading-none">{vendorName}</span>
+            </div>
+          </button>
+        )}
+      </div>
+
+      {/* Center/Global side: Home Button */}
+      <div className="flex items-center gap-2">
+        <Link href="/">
+          <button className="p-2.5 text-muted-foreground hover:bg-accent/50 hover:text-foreground rounded-xl transition-all group shadow-sm border border-transparent hover:border-border/40 active:scale-95">
+            <Home size={20} className="group-hover:text-primary transition-colors" />
+          </button>
+        </Link>
+      </div>
+
       {/* Right side global actions */}
       <div className="flex items-center gap-4">
         {/* Language */}

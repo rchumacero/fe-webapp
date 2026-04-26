@@ -6,7 +6,7 @@ export const PERSON_CONSTANTS = {
   EDIT_TITLE: "crm.person",
   DESCRIPTION_EDIT: "common.editDescription",
   SEARCH_PLACEHOLDER: "common.filter",
-  CONFIRM_DELETE: "common.confirmDelete",
+  CONFIRM_DELETE: "common.delete",
   RECORD_NOT_FOUND: "common.recordNotFound",
   END_OF_RECORDS: "common.endOfRecords",
   ACTIONS: "admin.crm.person.actions",
@@ -41,7 +41,7 @@ export const PERSON_CONSTANTS = {
     ADDITIONAL_DETAILS: "crm.personAdditionalDetails",
     SECTION_IDENTIFICATION: "crm.identificationDocument",
     SECTION_COMMUNICATION: "common.communicationChannel",
-    SECTION_UPLOAD: "crm.personUploadDocument",
+    SECTION_UPLOAD: "common.uploadDocument",
     IDENT_TYPE: "crm.type",
     IDENT_NUMBER: "crm.identificationNumber",
     IDENT_NUMBER_PLACEHOLDER: "crm.identificationNumberPlaceholder",
@@ -59,5 +59,8 @@ export const PERSON_CONSTANTS = {
     BACK: -1,
     PERSON: "/crm/person",
     PERSON_NEW: "/crm/person/new",
-  }
+  },
+  TYPE_COLLABORATOR: "COL",
+  VIEW_DETAIL: "common.viewDetail",
+  EDIT_RECORD: "common.editRecord"
 };

@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import ZitadelProvider from "next-auth/providers/zitadel";
+import { PERSON_CONSTANTS } from "./modules/crm/personal-data/person/constants/person-constants";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -54,7 +55,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           });
 
           const checkText = await checkRes.text();
+
           if (checkRes.status === 404 || (checkRes.ok && checkText.length === 0)) {
+            // Person not found — create it
             const zitadelProfile = profile as any;
             const nameParts = (user.name || '').split(' ');
 
@@ -74,7 +77,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               completeName: user.name || userCode
             };
 
-            await fetch(`${crmApiUrl}/crm/api/v1/persons`, {
+            (user as any).vendorPersonName = user.name || userCode;
+
+            const createRes = await fetch(`${crmApiUrl}/crm/api/v1/persons`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -82,6 +87,64 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               },
               body: JSON.stringify(createBody)
             });
+
+            if (createRes.ok) {
+              const created = await createRes.json();
+              (user as any).vendorPersonId = created?.id || null;
+              (user as any).vendorPersonName = created?.completeName || 
+                (created?.name1 ? `${created.name1} ${created.surname1 || ""}`.trim() : null) || 
+                user.name || 
+                userCode;
+            }
+          } else if (checkRes.ok && checkText.length > 0) {
+            // Person exists — extract their id
+            try {
+              const existing = JSON.parse(checkText);
+              (user as any).vendorPersonId = existing?.id || null;
+              (user as any).vendorPersonName = existing?.completeName || 
+                (existing?.name1 ? `${existing.name1} ${existing.surname1 || ""}`.trim() : null) || 
+                user.name || 
+                userCode;
+            } catch {
+              // non-JSON response, ignore
+            }
+          }
+
+          // Check for related "COL" vendors
+          const personId = (user as any).vendorPersonId;
+          if (personId) {
+            const contactsUrl = `${crmApiUrl}/crm/api/v1/persons/${personId}/contacts-as-comp?type=${PERSON_CONSTANTS.TYPE_COLLABORATOR}`;
+            const contactsRes = await fetch(contactsUrl, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            if (contactsRes.ok) {
+              const relatedContacts = await contactsRes.json();
+              if (Array.isArray(relatedContacts) && relatedContacts.length > 0) {
+                const mapped = relatedContacts.map((c: any) => {
+                  const p = c.personComp || c.person;
+                  const resolvedName = p?.completeName || 
+                    (p?.name1 ? `${p.name1} ${p.surname1 || ""}`.trim() : null) ||
+                    c.personCompName || 
+                    c.personCompCode || 
+                    c.personCompId;
+                    
+                  return {
+                    id: c.personCompId,
+                    name: resolvedName
+                  };
+                });
+
+                // Include the user themselves as the first option
+                (user as any).relatedVendors = [
+                  { 
+                    id: (user as any).vendorPersonId, 
+                    name: (user as any).vendorPersonName,
+                    isSelf: true 
+                  },
+                  ...mapped
+                ];
+              }
+            }
           }
         } catch (error) {
           console.error("NextAuth: Error during JIT provisioning:", error);
@@ -89,7 +152,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return true;
     },
-    async jwt({ token, profile, account, user }) {
+    async jwt({ token, profile, account, user, trigger, session }) {
       if (account) {
         token.accessToken = account.access_token;
         token.idToken = account.id_token;
@@ -97,7 +160,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.username = (user as any).username;
         token.roles = (user as any).roles || [];
+        // Persist the vendor person ID across the session
+        if ((user as any).vendorPersonId) {
+          token.vendorPersonId = (user as any).vendorPersonId;
+          token.vendorPersonName = (user as any).vendorPersonName;
+        }
+        if ((user as any).relatedVendors) {
+          token.relatedVendors = (user as any).relatedVendors;
+        }
       }
+
+      // Handle session updates to overwrite vendor
+      if (trigger === "update" && session?.vendor) {
+        token.vendorPersonId = session.vendor;
+        if (session.vendorName) {
+          token.vendorPersonName = session.vendorName;
+        }
+      }
+
       if (profile) {
         const zitadelRoles = (profile as any)["urn:zitadel:iam:org:project:roles"] || {};
         token.roles = Object.keys(zitadelRoles);
@@ -114,6 +194,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       } as any;
       (session as any).accessToken = token.accessToken;
       (session as any).idToken = token.idToken;
+      // Expose vendor personId — null when session expires
+      (session as any).vendor = (token.vendorPersonId as string) || null;
+      (session as any).vendorName = (token.vendorPersonName as string) || null;
+      (session as any).relatedVendors = (token.relatedVendors as any[]) || [];
       return session;
     },
   },
