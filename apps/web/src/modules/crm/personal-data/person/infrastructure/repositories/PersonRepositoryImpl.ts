@@ -23,6 +23,7 @@ export class PersonRepositoryImpl implements PersonRepository {
           page,
           size: pageSize,
           filter,
+          _t: Date.now(),
         }
       });
       
@@ -49,6 +50,7 @@ export class PersonRepositoryImpl implements PersonRepository {
           page,
           size: pageSize,
           filter,
+          _t: Date.now(),
         }
       });
       const data = response.data;

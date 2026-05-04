@@ -33,6 +33,7 @@
     "dirty_warning": "You have unsaved changes. Are you sure you want to cancel?",
     "createDescription": "Register data for new record",
     "settings": "Settings",
+    "invitations": "Invitations",
     "login": "Login",
     "logout": "Logout",
     "darkMode": "Dark Mode",
@@ -55,7 +56,8 @@
     "formModified": "Form Modified",
     "formWarning": "Verify all information before saving.",
     "endOfRecords": "End of records",
-    "uploadDocument": "Upload Document"
+    "uploadDocument": "Upload Document",
+    "copyUrl": "Copy URL"
   },
   "crm": {
     "code": "Person Code",
@@ -128,7 +130,44 @@
     "contactPersonCompPlaceholder": "Select person to associate",
     "contactDescriptionPlaceholder": "Type of relationship",
     "workExperienceCompanyPlaceholder": "Register company name",
-    "workExperienceDescriptionPlaceholder": "Type the most relevant things"
+    "workExperienceDescriptionPlaceholder": "Type the most relevant things",
+    "personAdditionalDetails": "Additional details",
+    "vendorProfile": {
+      "title": "Vendor Profile",
+      "description": "Customize your brand identity and regional preferences.",
+      "logo": "Brand Logo (URL)",
+      "descriptionField": "About your vendor",
+      "timezone": "Preferred Timezone",
+      "language": "Preferred Language",
+      "theme": "Visual Theme",
+      "primaryColor": "Primary Color",
+      "secondaryColor": "Secondary Color",
+      "tertiaryColor": "Tertiary Color",
+      "url": "Public URL",
+      "saveSuccess": "Profile updated successfully"
+    },
+    "invitation": {
+      "title": "Invitation",
+      "listTitle": "Invitations Management",
+      "createTitle": "Create Invitation",
+      "editTitle": "Edit Invitation",
+      "descriptionTitle": "Set up a new invitation for your CRM users",
+      "descriptionEdit": "Modify the invitation details and validity",
+      "searchPlaceholder": "Search by email or subject...",
+      "viewDetail": "View Details",
+      "editRecord": "Edit Invitation",
+      "confirmDelete": "Delete Invitation",
+      "endOfRecords": "End of invitations list",
+      "new": "New Invitation",
+      "to": "Recipient Email",
+      "subject": "Email Subject",
+      "body": "Message Body",
+      "url": "Redirect URL (Generated)",
+      "fromDate": "Valid From",
+      "toDate": "Valid To",
+      "profiles": "Profiles",
+      "formWarning": "Ensure the recipient email and dates are correct. The invitation link will be active within the specified range."
+    }
   },
   "dashboard": {
     "congratulations": "Congratulations 🎉",

@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import ZitadelProvider from "next-auth/providers/zitadel";
+import { headers } from "next/headers";
 import { PERSON_CONSTANTS } from "./modules/crm/personal-data/person/constants/person-constants";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -55,9 +56,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           });
 
           const checkText = await checkRes.text();
-
+          console.log('verdes');
           if (checkRes.status === 404 || (checkRes.ok && checkText.length === 0)) {
-            // Person not found — create it
+            // Person not found — check for invitation
+            // Safe cookie reading using headers() to avoid "immutable" error
+            const headersList = await headers();
+            const cookieHeader = headersList.get('cookie') || '';
+            const invitationIdMatch = cookieHeader.match(/invitation_id=([^;]+)/);
+            console.log('ojos', invitationIdMatch);
+            const invitationId = invitationIdMatch ? invitationIdMatch[1] : undefined;
+
+            console.log('ESTE ES auth.ts - raw cookie header:', cookieHeader);
+            console.log('ESTE ES auth.ts - invitationId parsed:', invitationId);
+
             const zitadelProfile = profile as any;
             const nameParts = (user.name || '').split(' ');
 
@@ -79,7 +90,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
             (user as any).vendorPersonName = user.name || userCode;
 
-            const createRes = await fetch(`${crmApiUrl}/crm/api/v1/persons`, {
+            // Use invitation endpoint if ID is present, otherwise standard create
+            const registrationUrl = invitationId
+              ? `${crmApiUrl}/crm/api/v1/persons/invitation/${invitationId}`
+              : `${crmApiUrl}/crm/api/v1/persons`;
+
+            const createRes = await fetch(registrationUrl, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -91,19 +107,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (createRes.ok) {
               const created = await createRes.json();
               (user as any).vendorPersonId = created?.id || null;
-              (user as any).vendorPersonName = created?.completeName || 
-                (created?.name1 ? `${created.name1} ${created.surname1 || ""}`.trim() : null) || 
-                user.name || 
+              (user as any).vendorPersonName = created?.completeName ||
+                (created?.name1 ? `${created.name1} ${created.surname1 || ""}`.trim() : null) ||
+                user.name ||
                 userCode;
+
+              // Clean up invitation cookie if successful
+              // Note: deletion is handled by expiration or a client-side action
+              // to avoid immutable header errors in NextAuth callbacks.
             }
           } else if (checkRes.ok && checkText.length > 0) {
             // Person exists — extract their id
             try {
               const existing = JSON.parse(checkText);
               (user as any).vendorPersonId = existing?.id || null;
-              (user as any).vendorPersonName = existing?.completeName || 
-                (existing?.name1 ? `${existing.name1} ${existing.surname1 || ""}`.trim() : null) || 
-                user.name || 
+              (user as any).vendorPersonName = existing?.completeName ||
+                (existing?.name1 ? `${existing.name1} ${existing.surname1 || ""}`.trim() : null) ||
+                user.name ||
                 userCode;
             } catch {
               // non-JSON response, ignore
@@ -122,12 +142,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               if (Array.isArray(relatedContacts) && relatedContacts.length > 0) {
                 const mapped = relatedContacts.map((c: any) => {
                   const p = c.personComp || c.person;
-                  const resolvedName = p?.completeName || 
+                  const resolvedName = p?.completeName ||
                     (p?.name1 ? `${p.name1} ${p.surname1 || ""}`.trim() : null) ||
-                    c.personCompName || 
-                    c.personCompCode || 
+                    c.personCompName ||
+                    c.personCompCode ||
                     c.personCompId;
-                    
+
                   return {
                     id: c.personCompId,
                     name: resolvedName
@@ -136,10 +156,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                 // Include the user themselves as the first option
                 (user as any).relatedVendors = [
-                  { 
-                    id: (user as any).vendorPersonId, 
+                  {
+                    id: (user as any).vendorPersonId,
                     name: (user as any).vendorPersonName,
-                    isSelf: true 
+                    isSelf: true
                   },
                   ...mapped
                 ];

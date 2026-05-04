@@ -140,6 +140,7 @@ export default function PersonListPage() {
   };
 
   const handleRefresh = () => {
+    setPersons([]);
     if (page === 1) {
       fetchPersons(1, true);
     } else {

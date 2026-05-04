@@ -68,28 +68,28 @@ export const createApiClient = (moduleName: string) => {
 
   // Global Request Interceptor (Auth, Logging, etc.)
   instance.interceptors.request.use(async (config) => {
-    if (globalTokenProvider) {
-      const token = await globalTokenProvider();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    try {
+      if (globalTokenProvider) {
+        const token = await globalTokenProvider();
+        if (token) {
+          config.headers['Authorization'] = `Bearer ${token}`;
+        }
       }
-    }
-    
-    if (globalVendorProvider) {
-      try {
+      
+      if (globalVendorProvider) {
         // Use a Promise.race to ensure it doesn't block forever if session fetching hangs
+        // 5 seconds timeout is reasonable for session fetching
         const vendorId = await Promise.race([
           globalVendorProvider(),
-          new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Vendor provider timeout')), 2000))
+          new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Vendor provider timeout')), 5000))
         ]);
         
         if (vendorId) {
-          config.headers['X-Vendor-Id'] = vendorId;
+          config.headers['X-Vendor-Id'] = String(vendorId);
         }
-      } catch (error) {
-        console.warn("Infrastructure: Failed to fetch vendorId for request", error);
-        // We don't block the request if the vendorId fails, just continue without it
       }
+    } catch (error) {
+      console.warn("Infrastructure: Request interceptor error", error);
     }
     
     return config;

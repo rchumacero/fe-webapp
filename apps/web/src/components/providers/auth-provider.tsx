@@ -22,25 +22,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const getOrFetchSession = async () => {
       const now = Date.now();
-      // Cache session for 5 seconds to avoid spamming /api/auth/session
-      if (now - lastFetch < 5000 && (cachedToken || cachedVendor)) {
+      // Cache session for 2 seconds to avoid spamming /api/auth/session during bursts
+      if (now - lastFetch < 2000 && (cachedToken || cachedVendor)) {
         return { token: cachedToken, vendor: cachedVendor };
       }
 
-      const session = await getSession();
-      cachedToken = (session as any)?.accessToken || null;
-      cachedVendor = (session as any)?.vendor || null;
-      lastFetch = now;
+      try {
+        const session = await getSession();
+        cachedToken = (session as any)?.accessToken || null;
+        cachedVendor = (session as any)?.vendor || null;
+        lastFetch = now;
+      } catch (error) {
+        console.error("AuthProvider: Failed to fetch session", error);
+      }
+      
       return { token: cachedToken, vendor: cachedVendor };
     };
 
-    // Inject the generic token provider into the shared API client
+    // Inject providers
     setTokenProvider(async () => {
       const { token } = await getOrFetchSession();
       return token;
     });
 
-    // Inject the vendor provider into the shared API client
     setVendorProvider(async () => {
       const { vendor } = await getOrFetchSession();
       return vendor;

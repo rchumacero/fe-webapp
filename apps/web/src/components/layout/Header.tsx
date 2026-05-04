@@ -234,12 +234,22 @@ export const Header = () => {
               />
             </div>
             <div className="h-px bg-border my-1" />
-            <DropdownMenuItem className="focus:bg-accent cursor-pointer py-3 rounded-lg">
-              {t('common.settings')}
-            </DropdownMenuItem>
+            
+            <Link href="/crm/person/profile" className="outline-none">
+              <DropdownMenuItem className="focus:bg-accent cursor-pointer py-3 rounded-lg">
+                {t('common.settings')}
+              </DropdownMenuItem>
+            </Link>
+
+            <Link href="/crm/person/invitation" className="outline-none">
+              <DropdownMenuItem className="focus:bg-accent cursor-pointer py-3 rounded-lg">
+                {t('common.invitations')}
+              </DropdownMenuItem>
+            </Link>
+
             <DropdownMenuItem
               onClick={handleLogout}
-              className="focus:bg-destructive/10 cursor-pointer py-3 rounded-lg text-destructive"
+              className="focus:bg-destructive/10 cursor-pointer py-3 rounded-lg text-destructive mt-1"
             >
               {t('common.logout')}
             </DropdownMenuItem>
