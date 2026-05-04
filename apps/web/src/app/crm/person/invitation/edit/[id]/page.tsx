@@ -1,5 +1,7 @@
 import InvitationFormPage from "@/modules/crm/personal-data/invitation/presentation/pages/InvitationFormPage";
 
+export const runtime = 'edge';
+
 export default async function Page({ 
   params, 
   searchParams 
