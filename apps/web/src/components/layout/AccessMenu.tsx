@@ -201,15 +201,21 @@ export const AccessMenu = ({ isCollapsed }: AccessMenuProps) => {
   const userCode = (session?.user as any)?.username || (session?.user as any)?.id;
 
   useEffect(() => {
-    const fetchMenu = async () => {
+    const fetchMenu = async (force = false) => {
       if (!userCode) return;
-      const data = await getMenuByUser(userCode);
+      if (force) setMenuData([]);
+      const data = await getMenuByUser(userCode, force);
       setMenuData(data);
     };
 
     if (userCode) {
       fetchMenu();
     }
+
+    const handleRefresh = () => fetchMenu(true);
+    window.addEventListener('refresh-menu', handleRefresh);
+    
+    return () => window.removeEventListener('refresh-menu', handleRefresh);
   }, [userCode]);
 
   const handleToggle = (id: string, e: React.MouseEvent) => {

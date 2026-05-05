@@ -2,7 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as AuthSession from 'expo-auth-session';
-import { setTokenProvider } from '@kplian/infrastructure';
+import { setTokenProvider, setLanguageProvider, setTimezoneProvider } from '@kplian/infrastructure';
+import i18n from '@kplian/i18n';
 import { User } from '@kplian/core';
 
 // Helper for cross-platform storage (SecureStore doesn't work in Web)
@@ -114,6 +115,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           return null;
         }
       });
+      setLanguageProvider(() => i18n.language || 'es');
+      setTimezoneProvider(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
 
       // 3. Attempt to restore existing session from storage
       await loadSession();

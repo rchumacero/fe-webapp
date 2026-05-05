@@ -159,33 +159,35 @@ export default function PersonDetailLayout({
           </Button>
         </div>
 
-        <nav className="space-y-1">
-          {SECTIONS.map((section) => (
-            <button
-              key={section.id}
-              onClick={() => scrollToSection(section.id)}
-              title={!isSidebarOpen ? t(section.label) : undefined}
-              className={cn(
-                "w-full flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-all group duration-200",
-                isSidebarOpen ? "px-3" : "px-0 justify-center",
-                activeSection === section.id
-                  ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              )}
-            >
-              <span className={cn(
-                "transition-colors shrink-0",
-                activeSection === section.id ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-              )}>
-                {section.icon}
-              </span>
-              {isSidebarOpen && <span className="truncate">{t(section.label)}</span>}
-              {isSidebarOpen && section.id === 'images' && (
-                <div className="ml-auto w-2 h-2 shrink-0 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-              )}
-            </button>
-          ))}
-        </nav>
+        <div className="flex-1 overflow-y-auto min-h-0 -mx-2 px-2 pb-6">
+          <nav className="space-y-1">
+            {SECTIONS.map((section) => (
+              <button
+                key={section.id}
+                onClick={() => scrollToSection(section.id)}
+                title={!isSidebarOpen ? t(section.label) : undefined}
+                className={cn(
+                  "w-full flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-all group duration-200",
+                  isSidebarOpen ? "px-3" : "px-0 justify-center",
+                  activeSection === section.id
+                    ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
+              >
+                <span className={cn(
+                  "transition-colors shrink-0",
+                  activeSection === section.id ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                )}>
+                  {section.icon}
+                </span>
+                {isSidebarOpen && <span className="truncate">{t(section.label)}</span>}
+                {isSidebarOpen && section.id === 'images' && (
+                  <div className="ml-auto w-2 h-2 shrink-0 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                )}
+              </button>
+            ))}
+          </nav>
+        </div>
       </aside>
 
       {/* Main Content */}

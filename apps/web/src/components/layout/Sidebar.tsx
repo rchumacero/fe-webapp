@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Search, ChevronLeft } from 'lucide-react';
+import { Search, ChevronLeft, RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AccessMenu } from './AccessMenu';
@@ -28,23 +28,33 @@ export const Sidebar = () => {
         </div>
 
         {/* Search bar — hidden when collapsed */}
+        {/* Search bar & Refresh — hidden when collapsed */}
         {!isCollapsed && (
-          <div className="relative flex-1 group">
-            <Search
-              size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-            />
-            <input
-              type="text"
-              placeholder="Search menu..."
-              className={cn(
-                'w-full h-9 pl-8 pr-3 rounded-lg text-[13px]',
-                'bg-sidebar-accent text-sidebar-foreground placeholder:text-muted-foreground',
-                'border border-sidebar-border',
-                'focus:outline-none focus:ring-1 focus:ring-sidebar-primary/40',
-                'transition-all',
-              )}
-            />
+          <div className="flex flex-1 items-center gap-2 group">
+            <div className="relative flex-1">
+              <Search
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+              />
+              <input
+                type="text"
+                placeholder="Search menu..."
+                className={cn(
+                  'w-full h-9 pl-8 pr-3 rounded-lg text-[13px]',
+                  'bg-sidebar-accent text-sidebar-foreground placeholder:text-muted-foreground',
+                  'border border-sidebar-border',
+                  'focus:outline-none focus:ring-1 focus:ring-sidebar-primary/40',
+                  'transition-all',
+                )}
+              />
+            </div>
+            <button 
+              onClick={() => window.dispatchEvent(new Event('refresh-menu'))}
+              className="p-2 shrink-0 rounded-lg bg-sidebar-accent border border-sidebar-border text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all active:scale-95"
+              title="Refresh Menu"
+            >
+              <RefreshCcw size={14} />
+            </button>
           </div>
         )}
       </div>

@@ -18,7 +18,7 @@ interface LanguagePickerProps {
 }
 
 export const LanguagePicker = ({ visible, onClose }: LanguagePickerProps) => {
-  const languages = useLanguages();
+  const { languages } = useLanguages();
   const { i18n } = useTranslation();
 
   const handleSelect = (code: string) => {

@@ -7,11 +7,11 @@ const ACCESS_ROUTES = {
 
 const apiClient = createApiClient('access');
 
-export const getMenuByUser = async (userCode: string): Promise<MenuItem[]> => {
+export const getMenuByUser = async (userCode: string, forceRefresh = false): Promise<MenuItem[]> => {
   try {
-    const response = await apiClient.get<MenuItemDto[]>(
-      getRoute(ACCESS_ROUTES.MENU_BY_USER, { userCode }),
-    );
+    const url = getRoute(ACCESS_ROUTES.MENU_BY_USER, { userCode });
+    const finalUrl = forceRefresh ? `${url}?_t=${Date.now()}` : url;
+    const response = await apiClient.get<MenuItemDto[]>(finalUrl);
     return response.data.map(mapMenuItemDto);
   } catch (error) {
     console.error(`Failed to fetch menu for user: ${userCode}`, error);

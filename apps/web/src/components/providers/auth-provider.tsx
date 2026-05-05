@@ -3,7 +3,8 @@
 import { SessionProvider } from "next-auth/react"
 import { useEffect } from "react"
 import { getSession } from "next-auth/react"
-import { setTokenProvider, setGlobalErrorHandler, setVendorProvider } from "@kplian/infrastructure"
+import { setTokenProvider, setGlobalErrorHandler, setVendorProvider, setLanguageProvider, setTimezoneProvider } from "@kplian/infrastructure"
+import i18n from "@kplian/i18n"
 import { toast } from "@/hooks/use-toast"
 
 // Register a global error handler to show toasts for API errors
@@ -49,6 +50,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { vendor } = await getOrFetchSession();
       return vendor;
     });
+
+    setLanguageProvider(() => i18n.language || (typeof window !== 'undefined' ? localStorage.getItem('i18nextLng') : null) || 'es');
+    setTimezoneProvider(() => (typeof window !== 'undefined' ? localStorage.getItem('app-timezone') : null) || Intl.DateTimeFormat().resolvedOptions().timeZone);
   }, []);
 
   return <SessionProvider>{children}</SessionProvider>

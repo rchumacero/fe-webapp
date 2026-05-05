@@ -1,5 +1,5 @@
 // API Client Factory
-export { createApiClient, setTokenProvider, setGlobalErrorHandler, setVendorProvider } from './api/client';
+export { createApiClient, setTokenProvider, setGlobalErrorHandler, setVendorProvider, setLanguageProvider, setTimezoneProvider } from './api/client';
 export { default as apiClient } from './api/client';
 
 // Security Utilities

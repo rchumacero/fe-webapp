@@ -34,7 +34,7 @@ export const Header = () => {
   const { theme, setTheme } = useTheme();
   const { data: session } = useSession();
   const { i18n } = useTranslation();
-  const languages = useLanguages();
+  const { languages } = useLanguages();
 
   const [timezone, setTimezone] = React.useState('UTC');
   const [timezoneSearch, setTimezoneSearch] = React.useState('');
@@ -138,7 +138,10 @@ export const Header = () => {
             {languages.map((lang) => (
               <DropdownMenuItem
                 key={lang.code}
-                onClick={() => i18n.changeLanguage(lang.code)}
+                onClick={async () => {
+                  await i18n.changeLanguage(lang.code);
+                  window.dispatchEvent(new Event('refresh-menu'));
+                }}
                 className={cn(
                   "flex items-center gap-3 cursor-pointer py-2 rounded-md transition-colors",
                   i18n.language === lang.code ? "bg-accent text-accent-foreground" : "hover:bg-accent"

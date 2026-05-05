@@ -27,7 +27,9 @@ export const Header = ({ onMenuToggle, title = 'KPLIAN' }: HeaderProps) => {
   
   const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || (user?.username ? user.username[0].toUpperCase() : 'U');
 
-  const currentFlag = getLanguageFlag(i18n.language);
+  const { languages } = useLanguages();
+  const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0];
+  const currentFlag = currentLanguage?.flag || '🌐';
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>

@@ -25,10 +25,14 @@ const GATEWAY_BASE_URL = getGatewayUrl();
 
 type TokenProvider = () => Promise<string | null> | string | null;
 type VendorProvider = () => Promise<string | null> | string | null;
+type LanguageProvider = () => string | null;
+type TimezoneProvider = () => string | null;
 type ErrorHandler = (message: string, code?: string, details?: any) => void;
 
 let globalTokenProvider: TokenProvider | null = null;
 let globalVendorProvider: VendorProvider | null = null;
+let globalLanguageProvider: LanguageProvider | null = null;
+let globalTimezoneProvider: TimezoneProvider | null = null;
 let globalErrorHandler: ErrorHandler | null = null;
 
 /** 
@@ -46,6 +50,14 @@ export const setVendorProvider = (provider: VendorProvider) => {
   globalVendorProvider = provider;
 };
 
+export const setLanguageProvider = (provider: LanguageProvider) => {
+  globalLanguageProvider = provider;
+};
+
+export const setTimezoneProvider = (provider: TimezoneProvider) => {
+  globalTimezoneProvider = provider;
+};
+
 /**
  * Allows the consuming platform to register a global error handler (e.g., toast)
  */
@@ -61,7 +73,6 @@ export const createApiClient = (moduleName: string) => {
   const instance = axios.create({
     baseURL: `${GATEWAY_BASE_URL}/${moduleName}/api`,
     headers: {
-      'Accept-Language': 'es-ES',
       'Content-Type': 'application/json',
     }
   });
@@ -69,6 +80,20 @@ export const createApiClient = (moduleName: string) => {
   // Global Request Interceptor (Auth, Logging, etc.)
   instance.interceptors.request.use(async (config) => {
     try {
+      if (globalLanguageProvider) {
+        const lang = globalLanguageProvider();
+        if (lang) {
+          config.headers['Accept-Language'] = lang;
+        }
+      }
+
+      if (globalTimezoneProvider) {
+        const tz = globalTimezoneProvider();
+        if (tz) {
+          config.headers['Time-Zone'] = tz;
+        }
+      }
+
       if (globalTokenProvider) {
         const token = await globalTokenProvider();
         if (token) {
