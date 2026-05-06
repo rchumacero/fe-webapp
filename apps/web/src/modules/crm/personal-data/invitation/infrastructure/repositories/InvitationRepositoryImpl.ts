@@ -4,9 +4,17 @@ import { InvitationRepository } from "../../domain/repositories/InvitationReposi
 import { Invitation, CreateInvitationDTO, UpdateInvitationDTO } from "../../domain/entities/Invitation";
 import { INVITATION_API_ROUTES } from "../../routes/invitation-routes";
 
-const apiClient = createApiClient('crm');
+
 
 export class InvitationRepositoryImpl implements InvitationRepository {
+  private _apiClient: any;
+
+  private get apiClient() {
+    if (!this._apiClient) {
+      this._apiClient = createApiClient('crm');
+    }
+    return this._apiClient;
+  }
 
   async getAllByPersonId(personId: string, params?: { 
     page: number; 
@@ -15,7 +23,7 @@ export class InvitationRepositoryImpl implements InvitationRepository {
   }): Promise<Invitation[]> {
     const { page = 1, pageSize = DEFAULT_PAGE_SIZE, filter = "" } = params || {};
     try {
-      const response = await apiClient.get<any>(
+      const response = await this.apiClient.get<any>(
         INVITATION_API_ROUTES.INVITATION_BY_PERSON_ID(personId),
         {
           params: {
@@ -36,7 +44,7 @@ export class InvitationRepositoryImpl implements InvitationRepository {
 
   async getById(id: string): Promise<Invitation> {
     try {
-      const response = await apiClient.get<Invitation>(
+      const response = await this.apiClient.get<Invitation>(
         INVITATION_API_ROUTES.INVITATION_BY_ID(id)
       );
       return response.data;
@@ -48,7 +56,7 @@ export class InvitationRepositoryImpl implements InvitationRepository {
 
   async create(data: CreateInvitationDTO): Promise<Invitation> {
     try {
-      const response = await apiClient.post<Invitation>(
+      const response = await this.apiClient.post<Invitation>(
         INVITATION_API_ROUTES.INVITATION,
         data
       );
@@ -62,7 +70,7 @@ export class InvitationRepositoryImpl implements InvitationRepository {
   async update(data: UpdateInvitationDTO): Promise<Invitation> {
     const { id, ...body } = data;
     try {
-      const response = await apiClient.patch<Invitation>(
+      const response = await this.apiClient.patch<Invitation>(
         INVITATION_API_ROUTES.INVITATION_UPDATE(id),
         body
       );
@@ -75,7 +83,7 @@ export class InvitationRepositoryImpl implements InvitationRepository {
 
   async delete(id: string): Promise<void> {
     try {
-      await apiClient.delete(
+      await this.apiClient.delete(
         INVITATION_API_ROUTES.INVITATION_DELETE(id)
       );
     } catch (error) {

@@ -58,16 +58,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const checkText = await checkRes.text();
           console.log('verdes');
           if (checkRes.status === 404 || (checkRes.ok && checkText.length === 0)) {
-            // Person not found — check for invitation
             // Safe cookie reading using headers() to avoid "immutable" error
             const headersList = await headers();
             const cookieHeader = headersList.get('cookie') || '';
+            
+            // Try 1: Get from dedicated invitation_id cookie
             const invitationIdMatch = cookieHeader.match(/invitation_id=([^;]+)/);
-            console.log('ojos', invitationIdMatch);
-            const invitationId = invitationIdMatch ? invitationIdMatch[1] : undefined;
+            let invitationId = invitationIdMatch ? invitationIdMatch[1] : undefined;
 
-            console.log('ESTE ES auth.ts - raw cookie header:', cookieHeader);
-            console.log('ESTE ES auth.ts - invitationId parsed:', invitationId);
+            // Try 2: If not found, try to extract it from any callback-url cookie (NextAuth v4 or v5/authjs)
+            if (!invitationId) {
+              const callbackUrlMatch = cookieHeader.match(/(?:next-auth\.callback-url|__Secure-next-auth\.callback-url|authjs\.callback-url)=([^;]+)/);
+              if (callbackUrlMatch) {
+                const decodedCallbackUrl = decodeURIComponent(callbackUrlMatch[1]);
+                
+                // Flexible regex to find UUID anywhere in the callback URL
+                const uuidMatch = decodedCallbackUrl.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{12}-[0-9a-f]{4}-[0-9a-f]{12}/i) || 
+                                 decodedCallbackUrl.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+                invitationId = uuidMatch ? uuidMatch[0] : undefined;
+              }
+            }
 
             const zitadelProfile = profile as any;
             const nameParts = (user.name || '').split(' ');

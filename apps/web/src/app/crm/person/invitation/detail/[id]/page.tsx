@@ -15,7 +15,7 @@ import { ArrowLeft, Edit2, Mail, Calendar, Link as LinkIcon, Loader2 } from 'luc
 import Link from 'next/link';
 import { formatDate } from '@kplian/core';
 
-const repository = new InvitationRepositoryImpl();
+
 
 export default function Page() {
   const params = useParams();
@@ -24,17 +24,18 @@ export default function Page() {
   const id = params.id as string;
   const personId = searchParams.get('personId') || '';
   
+  const repository = React.useMemo(() => new InvitationRepositoryImpl(), []);
   const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
+    if (id && repository) {
       repository.getById(id)
         .then(setInvitation)
         .catch(console.error)
         .finally(() => setIsLoading(false));
     }
-  }, [id]);
+  }, [id, repository]);
 
   if (isLoading) {
     return (

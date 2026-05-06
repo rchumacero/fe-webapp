@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, X, ArrowLeft, Loader2, Mail, Calendar, Link as LinkIcon, Info, Send, UserPlus } from 'lucide-react';
+import { Save, X, ArrowLeft, Loader2, Mail, Calendar, Link as LinkIcon, Info, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,7 +18,7 @@ import { useDomainParameters } from '@/hooks/use-domain-parameters';
 import { INVITATION_DOMAIN_PARAMETERS } from '../../constants/parameter';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
-const invitationRepository = new InvitationRepositoryImpl();
+
 
 const invitationSchema = z.object({
   to: z.string().email("Invalid email").min(1, "Recipient email is required"),
@@ -37,12 +37,11 @@ interface InvitationFormProps {
   personId?: string;
 }
 
+const invitationRepository = new InvitationRepositoryImpl();
+
 export default function InvitationFormPage({ id, personId }: InvitationFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { data: parameters, isLoading: isLoadingParams } = useDomainParameters({
-    parameters: INVITATION_DOMAIN_PARAMETERS
-  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
@@ -65,6 +64,7 @@ export default function InvitationFormPage({ id, personId }: InvitationFormProps
       profiles: '',
     }
   });
+
 
   useEffect(() => {
     if (id) {

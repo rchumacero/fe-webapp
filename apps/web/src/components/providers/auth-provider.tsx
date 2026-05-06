@@ -7,8 +7,27 @@ import { setTokenProvider, setGlobalErrorHandler, setVendorProvider, setLanguage
 import i18n from "@kplian/i18n"
 import { toast } from "@/hooks/use-toast"
 
+import { signOut } from "next-auth/react"
+
+let isLoggingOut = false;
+
 // Register a global error handler to show toasts for API errors
 setGlobalErrorHandler((message, code) => {
+  if (code === '401') {
+    if (!isLoggingOut) {
+      isLoggingOut = true;
+      toast.error('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.', { 
+        title: 'Sesión Expirada',
+        duration: 5000 
+      });
+      setTimeout(() => {
+        sessionStorage.removeItem('vendor_selected');
+        signOut({ redirect: true, callbackUrl: '/' });
+      }, 1000);
+    }
+    return;
+  }
+
   toast.error(message, { 
     title: code ? `Error ${code}` : 'API Error',
     duration: 8000 // Keep errors visible a bit longer

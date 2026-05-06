@@ -40,6 +40,8 @@ export default auth((req) => {
     response.cookies.set("invitation_id", invitationId, {
       maxAge: 60 * 60, // 1 hour
       path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
     });
   }
 

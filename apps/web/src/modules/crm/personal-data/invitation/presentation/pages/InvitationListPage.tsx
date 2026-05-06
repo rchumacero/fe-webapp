@@ -116,9 +116,13 @@ export default function InvitationListPage() {
     }
   };
 
-  const handleCopyUrl = (url?: string) => {
-    if (!url) return;
-    navigator.clipboard.writeText(url);
+  const handleCopyUrl = (invitation: Invitation) => {
+    if (!invitation.id) {
+      toast.error('Invitation ID missing');
+      return;
+    }
+    const finalUrl = `${window.location.origin}/?invitationId=${invitation.id}`;
+    navigator.clipboard.writeText(finalUrl);
     toast.success('URL copied to clipboard');
   };
 
@@ -189,7 +193,7 @@ export default function InvitationListPage() {
                   <MoreHorizontal className="h-4 w-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => handleCopyUrl(inv.url)}>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => handleCopyUrl(inv)}>
                     <Paperclip className="mr-2 h-4 w-4" /> {t('common.copyUrl') || 'Copy URL'}
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer">
@@ -238,7 +242,7 @@ export default function InvitationListPage() {
                     variant="ghost" 
                     size="icon" 
                     className="h-6 w-6 rounded-full hover:bg-primary/20 hover:text-primary transition-colors"
-                    onClick={() => handleCopyUrl(inv.url)}
+                    onClick={() => handleCopyUrl(inv)}
                     title="Copy Invitation URL"
                   >
                     <Paperclip size={12} />

@@ -17,7 +17,30 @@ function LoginContent() {
     }
 
     if (status === "unauthenticated") {
-      const callbackUrl = searchParams.get("callbackUrl") || "/";
+      let callbackUrl = searchParams.get("callbackUrl") || "/";
+      
+      // Try to find invitationId in multiple places
+      const currentInvitationId = searchParams.get("invitationId") || 
+                                 (callbackUrl.includes("invitationId=") ? new URLSearchParams(callbackUrl.split("?")[1]).get("invitationId") : null) ||
+                                 (callbackUrl.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0]) ||
+                                 (typeof window !== 'undefined' ? localStorage.getItem("invitation_id") : null);
+      
+      if (currentInvitationId) {
+        console.log("Persisting invitationId:", currentInvitationId);
+        
+        // 1. Store in localStorage (The "State" the user suggested)
+        localStorage.setItem("invitation_id", currentInvitationId);
+        
+        // 2. Store in document.cookie (More reliable for the server to pick up)
+        document.cookie = `invitation_id=${currentInvitationId}; path=/; max-age=3600; SameSite=Lax`;
+        
+        // 3. Ensure it's in the callbackUrl so NextAuth puts it in authjs.callback-url cookie
+        if (!callbackUrl.includes(currentInvitationId)) {
+          const separator = callbackUrl.includes("?") ? "&" : "?";
+          callbackUrl = `${callbackUrl}${separator}invitationId=${currentInvitationId}`;
+        }
+      }
+
       signIn("zitadel", { callbackUrl });
     }
   }, [status, router, searchParams]);
