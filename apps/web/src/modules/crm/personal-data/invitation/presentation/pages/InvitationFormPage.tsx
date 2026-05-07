@@ -5,11 +5,24 @@ import { useTranslation } from '@kplian/i18n';
 import { INVITATION_CONSTANTS } from '../../constants/invitation-constants';
 import { INVITATION_ROUTES } from '../../routes/invitation-routes';
 import { InvitationRepositoryImpl } from '../../infrastructure/repositories/InvitationRepositoryImpl';
-import { Button } from '@/components/ui/button';
+import { ProfileRepositoryImpl } from '@/modules/access/profile/infrastructure/ProfileRepositoryImpl';
+import { Profile } from '@/modules/access/profile/domain/entities/Profile';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, X, ArrowLeft, Loader2, Mail, Calendar, Link as LinkIcon, Info, Send } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { 
+  DropdownMenu, 
+  DropdownMenuCheckboxItem, 
+  DropdownMenuContent, 
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuGroup
+} from '@/components/ui/dropdown-menu';
+import { Save, X, ArrowLeft, Loader2, Mail, Calendar, Link as LinkIcon, Info, Send, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,10 +51,13 @@ interface InvitationFormProps {
 }
 
 const invitationRepository = new InvitationRepositoryImpl();
+const profileRepository = new ProfileRepositoryImpl();
 
 export default function InvitationFormPage({ id, personId }: InvitationFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
+  const [profilesList, setProfilesList] = useState<Profile[]>([]);
+  const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
@@ -65,6 +81,21 @@ export default function InvitationFormPage({ id, personId }: InvitationFormProps
     }
   });
 
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      setIsLoadingProfiles(true);
+      try {
+        const profiles = await profileRepository.getAll();
+        setProfilesList(profiles);
+      } catch (error) {
+        console.error("Error fetching profiles:", error);
+      } finally {
+        setIsLoadingProfiles(false);
+      }
+    };
+    fetchProfiles();
+  }, []);
 
   useEffect(() => {
     if (id) {
@@ -195,7 +226,72 @@ export default function InvitationFormPage({ id, personId }: InvitationFormProps
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
                     {t(INVITATION_CONSTANTS.FORM.PROFILES)}
                   </label>
-                  <Input {...register("profiles")} placeholder="ADMIN, USER" />
+                  <Controller
+                    name="profiles"
+                    control={control}
+                    render={({ field }) => {
+                      const value = field.value || '';
+                      const selectedCodes = typeof value === 'string' ? value.split(',').filter(Boolean) : [];
+                      
+                      const toggleProfile = (code: string) => {
+                        let newCodes;
+                        if (selectedCodes.includes(code)) {
+                          newCodes = selectedCodes.filter(c => c !== code);
+                        } else {
+                          newCodes = [...selectedCodes, code];
+                        }
+                        field.onChange(newCodes.join(','));
+                      };
+
+                      return (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger 
+                            className={cn(
+                              buttonVariants({ variant: "outline" }),
+                              "w-full justify-between h-auto min-h-11 px-3 py-2 bg-card/80 border-border/50 hover:bg-accent/20 cursor-pointer outline-none"
+                            )}
+                          >
+                            <div className="flex flex-wrap gap-1 items-center max-w-[90%]">
+                              {selectedCodes.length > 0 ? (
+                                selectedCodes.map(code => (
+                                  <Badge key={code} variant="secondary" className="text-[10px] bg-primary/10 text-primary border-primary/20 px-1.5 py-0">
+                                    {code}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <span className="text-muted-foreground font-normal text-sm">Select profiles...</span>
+                              )}
+                            </div>
+                            <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-[--anchor-width] max-h-60 overflow-y-auto" align="start">
+                            <DropdownMenuGroup>
+                              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Available Profiles</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              {isLoadingProfiles ? (
+                                <div className="p-4 flex justify-center">
+                                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                </div>
+                              ) : profilesList.length > 0 ? (
+                                profilesList.map((profile) => (
+                                  <DropdownMenuCheckboxItem
+                                    key={profile.id}
+                                    checked={selectedCodes.includes(profile.code)}
+                                    onCheckedChange={() => toggleProfile(profile.code)}
+                                    onSelect={(e) => e.preventDefault()}
+                                  >
+                                    {profile.name} ({profile.code})
+                                  </DropdownMenuCheckboxItem>
+                                ))
+                              ) : (
+                                <div className="p-4 text-xs text-center text-muted-foreground">No profiles found</div>
+                              )}
+                            </DropdownMenuGroup>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      );
+                    }}
+                  />
                 </div>
               </div>
 
@@ -305,7 +401,3 @@ export default function InvitationFormPage({ id, personId }: InvitationFormProps
   );
 }
 
-// Helper function for cn
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
-}
