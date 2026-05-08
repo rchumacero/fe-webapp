@@ -15,6 +15,10 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "pages:build": {
+      "dependsOn": ["^build"],
+      "outputs": [".open-next/**"]
     }
   }
 }
