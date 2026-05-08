@@ -7,7 +7,7 @@
     "build": "next build --no-lint",
     "start": "next start",
     "lint": "eslint",
-    "pages:build": "npx @opennextjs/cloudflare build && mkdir -p out_cloudflare && cp -r .open-next/assets/. out_cloudflare/ && cp .open-next/worker.js out_cloudflare/_worker.js"
+    "pages:build": "npx @opennextjs/cloudflare build && mkdir -p out_cloudflare && cp -r .open-next/. out_cloudflare/ && cp -r .open-next/assets/. out_cloudflare/ && mv out_cloudflare/worker.js out_cloudflare/_worker.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
