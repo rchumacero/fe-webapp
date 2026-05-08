@@ -32,6 +32,8 @@
     "lightningcss": "^1.29.1",
     "lightningcss-linux-x64-gnu": "1.29.1",
     "lightningcss-linux-x64-musl": "1.29.1",
+    "@tailwindcss/oxide-linux-x64-gnu": "4.0.9",
+    "@tailwindcss/oxide-linux-x64-musl": "4.0.9",
     "@next/swc-linux-x64-gnu": "15.1.7",
     "@next/swc-linux-x64-musl": "15.1.7"
   }
