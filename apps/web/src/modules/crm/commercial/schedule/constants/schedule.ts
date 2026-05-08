@@ -1,9 +1,9 @@
-export const COMMERCIAL_PRODUCT_CONSTANTS = {
-  TITLE: "crm.commercialProduct.title",
-  LIST_TITLE: "crm.commercialProductsList",
-  CREATE_TITLE: "crm.commercialProduct",
+export const SCHEDULE_CONSTANTS = {
+  TITLE: "crm.commercialSchedule.title",
+  LIST_TITLE: "crm.commercialSchedulesList",
+  CREATE_TITLE: "crm.commercialSchedule",
   DESCRIPTION_TITLE: "common.createDescription",
-  EDIT_TITLE: "crm.commercialProduct",
+  EDIT_TITLE: "crm.commercialSchedule",
   DESCRIPTION_EDIT: "common.editDescription",
   SEARCH_PLACEHOLDER: "common.filter",
   CONFIRM_DELETE: "common.delete",
@@ -39,8 +39,8 @@ export const COMMERCIAL_PRODUCT_CONSTANTS = {
   },
   ROUTES: {
     BACK: -1,
-    COMMERCIAL_PRODUCT: "/crm/commercial/commercial-product",
-    COMMERCIAL_PRODUCT_NEW: "/crm/commercial/commercial-product/new",
+    SCHEDULE: "/crm/commercial/schedule",
+    SCHEDULE_NEW: "/crm/commercial/schedule/new"
   },
   VIEW_DETAIL: "common.viewDetail",
   EDIT_RECORD: "common.editRecord"

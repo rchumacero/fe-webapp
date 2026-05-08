@@ -41,7 +41,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  secret: process.env.NEXTAUTH_SECRET || "fallback_secret_for_development_only",
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "fallback_secret_for_development_only",
+  trustHost: true,
   callbacks: {
     async signIn({ user, account, profile }) {
       const userCode = (user as any).username || (profile as any)?.preferred_username;
