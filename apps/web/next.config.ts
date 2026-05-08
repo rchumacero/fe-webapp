@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  serverExternalPackages: ["lightningcss"],
   webpack: (config, { nextRuntime }) => {
     if (nextRuntime === "edge") {
       config.resolve.fallback = {
