@@ -1,6 +1,5 @@
 import CampaignFormPage from "@/modules/crm/commercial/campaign/presentation/pages/CampaignFormPage";
 
-export const runtime = 'edge';
 
 interface Props {
   params: { id: string };

@@ -1,6 +1,5 @@
 "use client";
 
-export const runtime = 'edge';
 
 import React, { useEffect, useState } from 'react';
 import { CampaignRepositoryImpl } from '@/modules/crm/commercial/campaign/infrastructure/repositories/CampaignRepositoryImpl';

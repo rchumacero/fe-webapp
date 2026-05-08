@@ -1,4 +1,3 @@
-export const runtime = 'edge';
 import { PersonSkillFormPage } from "@/modules/crm/personal-data/person-skill/presentation/pages/PersonSkillFormPage";
 import { Suspense } from "react";
 
