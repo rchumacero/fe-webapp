@@ -7,7 +7,7 @@
     "build": "next build --no-lint",
     "start": "next start",
     "lint": "eslint",
-    "pages:build": "npx @opennextjs/cloudflare build && cp -r .open-next/assets/* .open-next/ && cp .open-next/worker.js .open-next/_worker.js"
+    "pages:build": "npx @opennextjs/cloudflare build && cp -r .open-next/assets/. .open-next/ && mv .open-next/worker.js .open-next/_worker.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
