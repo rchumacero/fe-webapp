@@ -6,6 +6,16 @@ export interface CampaignRepository {
     pageSize: number; 
     filter?: string;
   }): Promise<Campaign[]>;
+  getGeneral(params?: { 
+    page: number; 
+    pageSize: number; 
+    filter?: string;
+  }): Promise<Campaign[]>;
+  getCustom(params?: { 
+    page: number; 
+    pageSize: number; 
+    filter?: string;
+  }): Promise<Campaign[]>;
   getById(id: string): Promise<Campaign>;
   create(campaign: CreateCampaignDto): Promise<Campaign>;
   update(campaign: UpdateCampaignDto): Promise<Campaign>;

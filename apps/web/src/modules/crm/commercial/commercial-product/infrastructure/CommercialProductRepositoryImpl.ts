@@ -12,6 +12,13 @@ export class CommercialProductRepositoryImpl {
     return response.data || [];
   }
 
+  async getByCampaignId(campaignId: string): Promise<CommercialProduct[]> {
+    const response = await this.api.get<CommercialProduct[]>(
+      COMMERCIAL_PRODUCT_API_ROUTES.COMMERCIAL_PRODUCT_BY_CAMPAIGN(campaignId)
+    );
+    return response.data || [];
+  }
+
   async getById(id: string): Promise<CommercialProduct> {
     const response = await this.api.get<CommercialProduct>(
       COMMERCIAL_PRODUCT_API_ROUTES.COMMERCIAL_PRODUCT_BY_ID(id)

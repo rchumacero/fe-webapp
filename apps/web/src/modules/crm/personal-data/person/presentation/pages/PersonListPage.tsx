@@ -42,7 +42,7 @@ const personRepository = new PersonRepositoryImpl();
 
 export default function PersonListPage() {
   const { t } = useTranslation();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { vendor } = useVendor();
   const { data: parameters } = useDomainParameters({
     parameters: PERSON_DOMAIN_PARAMETERS
@@ -122,14 +122,13 @@ export default function PersonListPage() {
       setIsLoading(false);
       isFetching.current = false;
     }
-  }, [search, vendor]); // Add vendor to deps
+  }, [search, vendor]);
 
   useEffect(() => {
-    // Only fetch when vendor is available
-    if (vendor) {
+    if (status === "authenticated" && vendor) {
       fetchPersons(page, page === 1);
     }
-  }, [page, fetchPersons, vendor]);
+  }, [page, fetchPersons, status, vendor]);
 
   const handleSearch = () => {
     if (page === 1) {
@@ -208,90 +207,104 @@ export default function PersonListPage() {
       </div>
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPersons.map((person, index) => (
-          <Card
-            key={`${person.id}-${index}`}
-            ref={index === persons.length - 1 ? lastElementRef : null}
-            className="group border-border/40 bg-card hover:bg-accent/5 hover:border-primary/30 transition-all duration-300 shadow-lg hover:shadow-primary/5"
-          >
-            <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-              <div className="space-y-1 overflow-hidden flex-1 mr-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">{person.code}</p>
-                <CardTitle title={person.completeName} className="text-lg font-bold group-hover:text-primary transition-colors truncate max-w-full block">
-                  {person.completeName}
-                </CardTitle>
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-accent transition-all outline-none group-data-[state=open]:bg-accent">
-                  <MoreHorizontal className="h-4 w-4" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem className="cursor-pointer">
-                    <Link href={PERSON_ROUTES.DETAIL(person.id)} className="flex items-center w-full">
-                      <Eye className="mr-2 h-4 w-4" /> {t(PERSON_CONSTANTS.VIEW_DETAIL) || 'Detail'}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer">
-                    <Link href={PERSON_ROUTES.EDIT(person.id)} className="flex items-center w-full">
-                      <Edit2 className="mr-2 h-4 w-4" /> {t(PERSON_CONSTANTS.EDIT_RECORD) || 'Edit'}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive cursor-pointer focus:bg-destructive/10">
-                    <Trash2 className="mr-2 h-4 w-4" /> {t(PERSON_CONSTANTS.CONFIRM_DELETE) || 'Delete'}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-0 pb-4 flex justify-between items-start gap-3">
-              <div className="flex-1">
-                <div className="flex flex-col gap-y-2 text-sm">
-                  {person.type !== 'leg' && (
+      {status === "authenticated" && !vendor && !isLoading ? (
+        <div className="flex flex-col items-center justify-center p-20 text-center space-y-4 bg-accent/5 rounded-3xl border border-dashed border-border/40">
+          <div className="p-4 bg-amber-500/10 rounded-full">
+            <UserCircle size={40} className="text-amber-500" />
+          </div>
+          <div className="max-w-md">
+            <h3 className="text-lg font-bold">{t(PERSON_CONSTANTS.NO_VENDOR_SELECTED)}</h3>
+            <p className="text-muted-foreground text-sm">
+              {t(PERSON_CONSTANTS.NO_VENDOR_SELECTED_DESCRIPTION)}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPersons.map((person, index) => (
+            <Card
+              key={`${person.id}-${index}`}
+              ref={index === persons.length - 1 ? lastElementRef : null}
+              className="group border-border/40 bg-card hover:bg-accent/5 hover:border-primary/30 transition-all duration-300 shadow-lg hover:shadow-primary/5"
+            >
+              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                <div className="space-y-1 overflow-hidden flex-1 mr-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">{person.code}</p>
+                  <CardTitle title={person.completeName} className="text-lg font-bold group-hover:text-primary transition-colors truncate max-w-full block">
+                    {person.completeName}
+                  </CardTitle>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-accent transition-all outline-none group-data-[state=open]:bg-accent">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Link href={PERSON_ROUTES.DETAIL(person.id)} className="flex items-center w-full">
+                        <Eye className="mr-2 h-4 w-4" /> {t(PERSON_CONSTANTS.VIEW_DETAIL) || 'Detail'}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Link href={PERSON_ROUTES.EDIT(person.id)} className="flex items-center w-full">
+                        <Edit2 className="mr-2 h-4 w-4" /> {t(PERSON_CONSTANTS.EDIT_RECORD) || 'Edit'}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive cursor-pointer focus:bg-destructive/10">
+                      <Trash2 className="mr-2 h-4 w-4" /> {t(PERSON_CONSTANTS.CONFIRM_DELETE) || 'Delete'}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-0 pb-4 flex justify-between items-start gap-3">
+                <div className="flex-1">
+                  <div className="flex flex-col gap-y-2 text-sm">
+                    {person.type !== 'leg' && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <User size={14} className={person.gender === 'MAL' ? "text-blue-400" : "text-pink-400"} />
+                        <Badge variant="outline" className="text-[10px] py-0 h-4">
+                          {getParameterLabel(P_GENDER, person.gender)}
+                        </Badge>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 text-muted-foreground">
-                      <User size={14} className={person.gender === 'MAL' ? "text-blue-400" : "text-pink-400"} />
-                      <Badge variant="outline" className="text-[10px] py-0 h-4">
-                        {getParameterLabel(P_GENDER, person.gender)}
-                      </Badge>
+                      <Calendar size={14} className="text-primary/60" />
+                      <span>{formatDate(person.birthdate)}</span>
                     </div>
-                  )}
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar size={14} className="text-primary/60" />
-                    <span>{formatDate(person.birthdate)}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground mt-1">
-                    <MapPin size={14} className="text-primary/60" />
-                    <span className="truncate">City: {getParameterLabel(P_LOCATION, person.cityOrigin)}</span>
+                    <div className="flex items-center gap-2 text-muted-foreground mt-1">
+                      <MapPin size={14} className="text-primary/60" />
+                      <span className="truncate">City: {getParameterLabel(P_LOCATION, person.cityOrigin)}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="h-14 w-14 rounded-xl bg-accent/20 flex items-center justify-center shrink-0 border border-border/10 shadow-inner group-hover:bg-accent/40 transition-colors overflow-hidden">
-                {person.digitalContentCode && profileImages[person.digitalContentCode] ? (
-                  <img
-                    src={profileImages[person.digitalContentCode]}
-                    alt={person.completeName}
-                    className="h-full w-full object-cover animate-in fade-in zoom-in duration-300"
-                  />
-                ) : (
-                  <UserCircle size={32} className="text-muted-foreground/30" />
-                )}
-              </div>
-            </CardContent>
-            <CardFooter className="py-2 border-t border-border/5 flex flex-col items-start gap-2 h-auto mt-0">
-              <div className="w-full flex justify-between items-center">
-                <Badge variant="secondary" className="bg-accent/50 text-[10px] uppercase font-bold px-2 py-0">
-                  {getParameterLabel(P_TYPE, person.type)}
-                </Badge>
-              </div>
-              <div className="w-full flex justify-between items-center text-[9px] text-muted-foreground/40 uppercase tracking-widest font-medium">
-                <span className="flex items-center gap-1">
-                  Created: {formatDateTime(person.createdAt)}
-                </span>
-                <span className="truncate max-w-[100px]">By: {person.createdBy || 'System'}</span>
-              </div>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+                <div className="h-14 w-14 rounded-xl bg-accent/20 flex items-center justify-center shrink-0 border border-border/10 shadow-inner group-hover:bg-accent/40 transition-colors overflow-hidden">
+                  {person.digitalContentCode && profileImages[person.digitalContentCode] ? (
+                    <img
+                      src={profileImages[person.digitalContentCode]}
+                      alt={person.completeName}
+                      className="h-full w-full object-cover animate-in fade-in zoom-in duration-300"
+                    />
+                  ) : (
+                    <UserCircle size={32} className="text-muted-foreground/30" />
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter className="py-2 border-t border-border/5 flex flex-col items-start gap-2 h-auto mt-0">
+                <div className="w-full flex justify-between items-center">
+                  <Badge variant="secondary" className="bg-accent/50 text-[10px] uppercase font-bold px-2 py-0">
+                    {getParameterLabel(P_TYPE, person.type)}
+                  </Badge>
+                </div>
+                <div className="w-full flex justify-between items-center text-[9px] text-muted-foreground/40 uppercase tracking-widest font-medium">
+                  <span className="flex items-center gap-1">
+                    Created: {formatDateTime(person.createdAt)}
+                  </span>
+                  <span className="truncate max-w-[100px]">By: {person.createdBy || 'System'}</span>
+                </div>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Loading State */}
       {isLoading && (

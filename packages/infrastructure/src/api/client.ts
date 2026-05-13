@@ -34,6 +34,23 @@ let globalVendorProvider: VendorProvider | null = null;
 let globalLanguageProvider: LanguageProvider | null = null;
 let globalTimezoneProvider: TimezoneProvider | null = null;
 let globalErrorHandler: ErrorHandler | null = null;
+let isApiLocked = false;
+
+/**
+ * Manually lock the API to prevent any further outgoing requests.
+ * Useful when session expires to prevent request storms.
+ */
+export const lockApi = () => {
+  isApiLocked = true;
+};
+
+/**
+ * Unlock the API to allow requests again.
+ * Should be called after a successful login or when reaching the login page.
+ */
+export const unlockApi = () => {
+  isApiLocked = false;
+};
 
 /** 
  * Allows the consuming platform (Web/Mobile) to define how tokens are retrieved 
@@ -79,6 +96,15 @@ export const createApiClient = (moduleName: string) => {
 
   // Global Request Interceptor (Auth, Logging, etc.)
   instance.interceptors.request.use(async (config) => {
+    // If API is locked (e.g. session expired), abort immediately
+    if (isApiLocked) {
+      console.warn("Infrastructure: API is currently LOCKED. Aborting request to:", config.url);
+      const controller = new AbortController();
+      config.signal = controller.signal;
+      controller.abort('API is locked due to session expiration');
+      return Promise.reject(new Error('API_LOCKED'));
+    }
+
     try {
       if (globalLanguageProvider) {
         const lang = globalLanguageProvider();
@@ -131,6 +157,10 @@ export const createApiClient = (moduleName: string) => {
       const details = error.response?.data?.details;
 
       console.error(`[API Error] Module: ${moduleName} | Message: ${message}`);
+
+      if (code === '401') {
+        lockApi();
+      }
 
       if (globalErrorHandler) {
         globalErrorHandler(message, code, details);

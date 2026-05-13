@@ -8,8 +8,12 @@ export interface CommercialProduct {
   totalCost: number;
   attentionGroupCode: string;
   channelCode: string;
-  deletedAt?: null;
-  deletedBy?: null;
+  type: 'UNIQUE' | 'COMBO';
+  productCode?: string;
+  cost?: number;
+  quantity?: number;
+  unitMeasureCode?: string;
+  configurationCode?: string;
   status?: string;
   createdAt?: string;
   createdBy?: string;
@@ -18,12 +22,23 @@ export interface CommercialProduct {
 }
 
 export interface CreateCommercialProductDto {
-  personId: string;
-  personCompId: string;
-  type: string;
-  relationDescription: string;
+  campaignId: string;
+  code: string;
+  name: string;
+  description: string;
+  priceType: string;
+  totalCost: number;
+  attentionGroupCode: string;
+  channelCode: string;
+  type: 'UNIQUE' | 'COMBO';
+  productCode?: string;
+  cost?: number;
+  quantity?: number;
+  unitMeasureCode?: string;
+  configurationCode?: string;
+  status: string;
 }
 
-export interface UpdateCommercialProductDto extends CreateCommercialProductDto {
+export interface UpdateCommercialProductDto extends Partial<CreateCommercialProductDto> {
   id: string;
 }

@@ -1,0 +1,30 @@
+export const ORGANIZATION_CONSTANTS = {
+  TITLE: "crm.organization",
+  LIST_TITLE: "crm.organizationList",
+  CREATE_TITLE: "crm.organization",
+  DESCRIPTION_TITLE: "common.createDescription",
+  EDIT_TITLE: "crm.organization",
+  DESCRIPTION_EDIT: "common.editDescription",
+  SEARCH_PLACEHOLDER: "common.filter",
+  CONFIRM_DELETE: "common.confirmDelete",
+  RECORD_NOT_FOUND: "common.recordNotFound",
+  FORM: {
+    TYPE: "crm.organizationType",
+    PERSON_COMP: "crm.organizationPersonComp",
+    DESCRIPTION: "crm.relationDescription",
+    SUBMIT: "common.save",
+    CANCEL: "common.cancel",
+    DIRTY_WARNING: "common.dirty_warning",
+    SELECT_OPTION: "common.selectOption",
+    CONFIRM_CANCEL: "common.confirmCancel",
+    YES_DISCARD: "common.yesDiscard",
+    NO_STAY: "common.noStay",
+    EX_PERSON_COMP: "crm.organizationPersonCompPlaceholder",
+    EX_DESCRIPTION: "crm.organizationDescriptionPlaceholder",
+  },
+  ROUTES: {
+    BACK: -1,
+    ORGANIZATION: "/crm/organization",
+    ORGANIZATION_NEW: "/crm/contact/new",
+  }
+};

@@ -8,7 +8,8 @@ export interface Campaign {
     defaultSpreadPercent: number;
     status: string;
     priority: number;
-    personId: string;
+    personId?: string | null;
+    personName?: string | null;
     vendorId?: string | null;
     createdBy?: string | null;
     createdAt?: string | null;
@@ -27,7 +28,7 @@ export interface CreateCampaignDto {
     defaultSpreadPercent: number;
     status: string;
     priority: number;
-    personId: string;
+    personId?: string | null;
     vendorId?: string | null;
 }
 

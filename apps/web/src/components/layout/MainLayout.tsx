@@ -58,6 +58,16 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
     );
   }
 
+  const isPublicPage = pathname === '/login';
+
+  if (isPublicPage) {
+    return (
+      <main className="min-h-screen bg-background">
+        {children}
+      </main>
+    );
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground transition-colors duration-300">
       <VendorSelectorModal />

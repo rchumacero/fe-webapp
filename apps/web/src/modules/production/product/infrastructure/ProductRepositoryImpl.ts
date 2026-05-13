@@ -5,11 +5,18 @@ import { PRODUCT_API_ROUTES } from "../routes/product-routes";
 export class ProductRepositoryImpl {
   private api = createApiClient('production');
 
-  async getAll(personId: string): Promise<Product[]> {
-    const response = await this.api.get<Product[]>(
-      PRODUCT_API_ROUTES.PRODUCT_BY_PERSON_ID(personId)
-    );
-    return response.data || [];
+  async getAll(): Promise<Product[]> {
+    console.log(`ProductRepository: getAll called ${PRODUCT_API_ROUTES.PRODUCT}`);
+    try {
+      const response = await this.api.get<Product[]>(
+        PRODUCT_API_ROUTES.PRODUCT
+      );
+      console.log(`ProductRepository: getAll successful, status: ${response.status}`);
+      return response.data || [];
+    } catch (error) {
+      console.error("ProductRepository: getAll failed:", error);
+      throw error;
+    }
   }
 
   async getById(id: string): Promise<Product> {

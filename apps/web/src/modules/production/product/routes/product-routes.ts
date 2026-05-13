@@ -8,8 +8,8 @@ export const PRODUCT_ROUTES = {
 
 // Backend Endpoints
 export const PRODUCT_API_ROUTES = {
-  PRODUCT: '/v1/products',
-  PRODUCT_UPDATE: (id: string | number) => `/v1/products/${id}`,
-  PRODUCT_DELETE: (id: string | number) => `/v1/products/${id}`,
-  PRODUCT_BY_ID: (id: string | number) => `/v1/products/${id}`,
+  PRODUCT: '/v1/product',
+  PRODUCT_UPDATE: (id: string | number) => `/v1/product/${id}`,
+  PRODUCT_DELETE: (id: string | number) => `/v1/product/${id}`,
+  PRODUCT_BY_ID: (id: string | number) => `/v1/product/${id}`,
 };

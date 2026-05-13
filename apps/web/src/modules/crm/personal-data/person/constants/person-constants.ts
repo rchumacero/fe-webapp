@@ -62,5 +62,7 @@ export const PERSON_CONSTANTS = {
   },
   TYPE_COLLABORATOR: "COL",
   VIEW_DETAIL: "common.viewDetail",
-  EDIT_RECORD: "common.editRecord"
+  EDIT_RECORD: "common.editRecord",
+  NO_VENDOR_SELECTED: "common.noVendorSelected",
+  NO_VENDOR_SELECTED_DESCRIPTION: "common.noVendorSelectedDescription"
 };

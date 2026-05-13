@@ -1,10 +1,10 @@
 import CampaignFormPage from "@/modules/crm/commercial/campaign/presentation/pages/CampaignFormPage";
 
-
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export default function Page({ params }: Props) {
-  return <CampaignFormPage id={params.id} />;
+export default async function Page({ params }: Props) {
+  const { id } = await params;
+  return <CampaignFormPage id={id} mode="custom" />;
 }

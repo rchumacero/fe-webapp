@@ -33,6 +33,54 @@ export class CampaignRepositoryImpl implements CampaignRepository {
     }
   }
 
+  async getGeneral(params?: { 
+    page: number; 
+    pageSize: number; 
+    filter?: string; 
+  }): Promise<Campaign[]> {
+    const { page = 1, pageSize = DEFAULT_PAGE_SIZE, filter = "" } = params || {};
+    try {
+      const response = await apiClient.get<any>(`${BACKEND_ROUTES.CAMPAIGN}/general`, {
+        params: {
+          page,
+          size: pageSize,
+          filter,
+          _t: Date.now(),
+        }
+      });
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      return data.data || data.content || data.results || [];
+    } catch (error) {
+      console.error(`Error in CampaignRepository.getGeneral():`, error);
+      throw error;
+    }
+  }
+
+  async getCustom(params?: { 
+    page: number; 
+    pageSize: number; 
+    filter?: string; 
+  }): Promise<Campaign[]> {
+    const { page = 1, pageSize = DEFAULT_PAGE_SIZE, filter = "" } = params || {};
+    try {
+      const response = await apiClient.get<any>(`${BACKEND_ROUTES.CAMPAIGN}/custom`, {
+        params: {
+          page,
+          size: pageSize,
+          filter,
+          _t: Date.now(),
+        }
+      });
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      return data.data || data.content || data.results || [];
+    } catch (error) {
+      console.error(`Error in CampaignRepository.getCustom():`, error);
+      throw error;
+    }
+  }
+
   async getById(id: string): Promise<Campaign> {
     try {
       const response = await apiClient.get<Campaign>(`${BACKEND_ROUTES.CAMPAIGN}/${id}`);

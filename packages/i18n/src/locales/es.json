@@ -57,7 +57,16 @@
     "formWarning": "Verifique toda la información antes de guardar.",
     "endOfRecords": "Fin de los registros",
     "uploadDocument": "Subir documento",
-    "copyUrl": "Copiar URL"
+    "copyUrl": "Copiar URL",
+    "days": {
+      "mon": "Lunes",
+      "tue": "Martes",
+      "wed": "Miércoles",
+      "thu": "Jueves",
+      "fri": "Viernes",
+      "sat": "Sábado",
+      "sun": "Domingo"
+    }
   },
   "crm": {
     "code": "Código de persona",
@@ -167,6 +176,59 @@
       "toDate": "Válida hasta",
       "profiles": "Perfiles",
       "formWarning": "Asegúrese de que el correo del destinatario y las fechas sean correctos. El enlace de invitación estará activo dentro del rango especificado."
+    },
+    "commercialProduct": {
+      "title": "Producto comercial",
+      "create": "Registrar producto comercial",
+      "createDescription": "Configure los detalles del nuevo producto comercial",
+      "edit": "Editar producto comercial",
+      "editDescription": "Modifique los parámetros del producto comercial",
+      "priceType": "Tipo de precio",
+      "totalCost": "Costo total",
+      "attentionGroup": "Grupo de atención",
+      "channel": "Canal",
+      "uniqueProduct": "Producto único",
+      "combo": "Combo",
+      "baseProduct": "Producto base",
+      "cost": "Costo",
+      "quantity": "Cantidad",
+      "unitMeasure": "Unidad de medida",
+      "configurationCode": "Código de configuración",
+      "validation": {
+        "campaignRequired": "La campaña es requerida",
+        "codeRequired": "El código es requerido",
+        "nameRequired": "El nombre es requerido",
+        "priceTypeRequired": "El tipo de precio es requerido",
+        "attentionGroupRequired": "El grupo de atención es requerido",
+        "channelRequired": "El canal es requerido",
+        "statusRequired": "El estado es requerido",
+        "baseProductRequired": "El producto base es requerido para productos únicos",
+        "costRequired": "El costo es requerido para productos únicos",
+        "quantityRequired": "La cantidad es requerida y debe ser al menos 1",
+        "unitMeasureRequired": "La unidad de medida es requerida para productos únicos",
+        "configCodeRequired": "El código de configuración es requerido para productos únicos"
+      }
+    },
+    "schedule": {
+      "title": "Agenda",
+      "view": "Ver Agenda",
+      "agendaSubtitle": "Administre su disponibilidad semanal",
+      "time": "Hora",
+      "noProductId": "No se proporcionó un ID de Producto Comercial"
+    },
+    "commercialSchedule": {
+      "title": "Agenda de disponibilidad",
+      "create": "Nueva disponibilidad",
+      "listTitle": "Agenda semanal",
+      "form": {
+        "day": "Día de la semana",
+        "fromTime": "Hora inicio",
+        "toTime": "Hora fin",
+        "quantity": "Cantidad/Cupos",
+        "unitMeasure": "Unidad",
+        "collaborator": "Colaborador",
+        "organization": "Organización"
+      }
     }
   },
   "dashboard": {

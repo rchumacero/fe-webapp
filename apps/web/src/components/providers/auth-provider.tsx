@@ -3,9 +3,10 @@
 import { SessionProvider } from "next-auth/react"
 import { useEffect } from "react"
 import { getSession } from "next-auth/react"
-import { setTokenProvider, setGlobalErrorHandler, setVendorProvider, setLanguageProvider, setTimezoneProvider } from "@kplian/infrastructure"
+import { setTokenProvider, setGlobalErrorHandler, setVendorProvider, setLanguageProvider, setTimezoneProvider, unlockApi } from "@kplian/infrastructure"
 import i18n from "@kplian/i18n"
 import { toast } from "@/hooks/use-toast"
+import { usePathname } from "next/navigation"
 
 import { signOut } from "next-auth/react"
 
@@ -22,11 +23,14 @@ setGlobalErrorHandler((message, code) => {
       });
       setTimeout(() => {
         sessionStorage.removeItem('vendor_selected');
-        signOut({ redirect: true, callbackUrl: '/' });
+        signOut({ redirect: true, callbackUrl: '/login' });
       }, 1000);
     }
     return;
   }
+
+  // Ignore locked API errors (they are already handled)
+  if (message === 'API_LOCKED') return;
 
   toast.error(message, { 
     title: code ? `Error ${code}` : 'API Error',
@@ -35,6 +39,16 @@ setGlobalErrorHandler((message, code) => {
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // If we are on the login page, always unlock the API
+    if (pathname === '/login') {
+      isLoggingOut = false;
+      unlockApi();
+    }
+  }, [pathname]);
+
   useEffect(() => {
     let cachedVendor: string | null = null;
     let cachedToken: string | null = null;
@@ -52,6 +66,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         cachedToken = (session as any)?.accessToken || null;
         cachedVendor = (session as any)?.vendor || null;
         lastFetch = now;
+
+        // If we got a token, make sure API is unlocked
+        if (cachedToken) {
+          isLoggingOut = false;
+          unlockApi();
+        }
       } catch (error) {
         console.error("AuthProvider: Failed to fetch session", error);
       }

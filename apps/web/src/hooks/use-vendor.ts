@@ -7,10 +7,17 @@ import { useSession } from "next-auth/react";
 export function useVendor(): { vendor: string | null; vendorName: string | null } {
   const { data: session, status } = useSession();
 
-  if (status !== "authenticated" || !session) return { vendor: null, vendorName: null };
+  if (status !== "authenticated" || !session) {
+    if (status !== "loading") console.warn("useVendor: Not authenticated or no session", { status });
+    return { vendor: null, vendorName: null };
+  }
 
-  return {
-    vendor: (session as any).vendor ?? null,
-    vendorName: (session as any).vendorName ?? null,
-  };
+  const vendor = (session as any).vendor ?? null;
+  const vendorName = (session as any).vendorName ?? null;
+
+  if (!vendor) {
+    console.error("useVendor: Session found but VENDOR field is missing!", session);
+  }
+
+  return { vendor, vendorName };
 }

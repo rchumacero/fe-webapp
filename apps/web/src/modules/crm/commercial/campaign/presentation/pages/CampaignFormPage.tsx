@@ -10,12 +10,18 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Input } from '@/components/ui/input';
 import { Save, X, ArrowLeft, Loader2, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { PersonRepositoryImpl } from '@/modules/crm/personal-data/person/infrastructure/repositories/PersonRepositoryImpl';
+import { useVendor } from '@/hooks/use-vendor';
+import { Person } from '@/modules/crm/personal-data/person/domain/entities/Person';
+import { useDomainParameters } from '@/hooks/use-domain-parameters';
+import { CAMPAIGN_DOMAIN_PARAMETERS, P_STATUS, P_CURRENCY } from '../../constants/parameter';
 
 const campaignRepository = new CampaignRepositoryImpl();
+const personRepository = new PersonRepositoryImpl();
 
 const campaignSchema = z.object({
   code: z.string().min(1, "Code is required"),
@@ -26,18 +32,29 @@ const campaignSchema = z.object({
   defaultSpreadPercent: z.coerce.number().min(0),
   status: z.string().min(1, "Status is required"),
   priority: z.coerce.number().min(1),
-  personId: z.string().min(1, "Person ID is required"),
+  personId: z.string().optional(),
 });
 
 type CampaignFormData = z.infer<typeof campaignSchema>;
 
 interface CampaignFormProps {
   id?: string;
+  mode?: 'general' | 'custom';
 }
 
-export default function CampaignFormPage({ id }: CampaignFormProps) {
+export default function CampaignFormPage({ id, mode = 'custom' }: CampaignFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
+  const { vendor } = useVendor();
+  const [persons, setPersons] = useState<Person[]>([]);
+
+  const { data: parametersData } = useDomainParameters({
+    parameters: CAMPAIGN_DOMAIN_PARAMETERS
+  });
+
+  const statusOptions = parametersData[P_STATUS] || [];
+  const currencyOptions = parametersData[P_CURRENCY] || [];
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
@@ -62,6 +79,20 @@ export default function CampaignFormPage({ id }: CampaignFormProps) {
       personId: '',
     }
   });
+
+  useEffect(() => {
+    if (vendor && mode !== 'general') {
+      const fetchPersons = async () => {
+        try {
+          const data = await personRepository.getByVendorId(vendor, { page: 1, pageSize: 1000 });
+          setPersons(Array.isArray(data) ? data : []);
+        } catch (error) {
+          console.error("Error fetching persons:", error);
+        }
+      };
+      fetchPersons();
+    }
+  }, [vendor, mode]);
 
   useEffect(() => {
     if (id) {
@@ -91,7 +122,7 @@ export default function CampaignFormPage({ id }: CampaignFormProps) {
     }
   }, [id, reset]);
 
-  const onSubmit = async (formData: CampaignFormData) => {
+  const onSubmit: SubmitHandler<CampaignFormData> = async (formData) => {
     setIsSubmitting(true);
     try {
       const dataToSave = {
@@ -105,7 +136,7 @@ export default function CampaignFormPage({ id }: CampaignFormProps) {
       } else {
         await campaignRepository.create(dataToSave);
       }
-      router.push(CAMPAIGN_ROUTES.LIST);
+      router.push(mode === 'general' ? '/crm/commercial/campaign/general' : '/crm/commercial/campaign/custom');
     } catch (error) {
       console.error("Error saving campaign:", error);
     } finally {
@@ -119,12 +150,12 @@ export default function CampaignFormPage({ id }: CampaignFormProps) {
       setShowConfirmCancel(true);
       return;
     }
-    router.push(CAMPAIGN_ROUTES.LIST);
+    router.push(mode === 'general' ? '/crm/commercial/campaign/general' : '/crm/commercial/campaign/custom');
   };
 
   const confirmCancel = () => {
     setShowConfirmCancel(false);
-    router.push(CAMPAIGN_ROUTES.LIST);
+    router.push(mode === 'general' ? '/crm/commercial/campaign/general' : '/crm/commercial/campaign/custom');
   };
 
   if (isLoading) {
@@ -149,7 +180,7 @@ export default function CampaignFormPage({ id }: CampaignFormProps) {
           </Button>
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-              {id ? t(CAMPAIGN_CONSTANTS.EDIT_TITLE) : t(CAMPAIGN_CONSTANTS.CREATE_TITLE)}
+              {id ? t(CAMPAIGN_CONSTANTS.CREATE_TITLE) : t(CAMPAIGN_CONSTANTS.CREATE_TITLE)}
             </h1>
             <p className="text-muted-foreground mt-1 text-sm">{id ? t(CAMPAIGN_CONSTANTS.DESCRIPTION_EDIT) : t(CAMPAIGN_CONSTANTS.DESCRIPTION_TITLE)}</p>
           </div>
@@ -176,8 +207,16 @@ export default function CampaignFormPage({ id }: CampaignFormProps) {
                         {...field}
                         className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
                       >
-                        <option value="ACTIVE" className="bg-card text-foreground">Active</option>
-                        <option value="INACTIVE" className="bg-card text-foreground">Inactive</option>
+                        <option value="">{t(CAMPAIGN_CONSTANTS.FORM.SELECT_OPTION) || 'Select status'}</option>
+                        {statusOptions.map((p: any, idx: number) => {
+                          const val = p.CODE || p.value || p.id || p.fullCode || p;
+                          const label = p.NAME || p.name || p.label || p.description || val || `Item ${idx}`;
+                          return (
+                            <option key={`${val}-${idx}`} value={val}>
+                              {label}
+                            </option>
+                          );
+                        })}
                       </select>
                     )}
                   />
@@ -221,7 +260,27 @@ export default function CampaignFormPage({ id }: CampaignFormProps) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_CONSTANTS.FORM.CURRENCY_CODE)}</label>
-                  <Input {...register("currencyCode")} className={errors.currencyCode ? "border-destructive focus-visible:ring-destructive/20" : ""} />
+                  <Controller
+                    name="currencyCode"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                      >
+                        <option value="">{t(CAMPAIGN_CONSTANTS.FORM.SELECT_OPTION) || 'Select currency'}</option>
+                        {currencyOptions.map((p: any, idx: number) => {
+                          const val = p.CODE || p.value || p.id || p.fullCode || p;
+                          const label = p.NAME || p.name || p.label || p.description || val || `Item ${idx}`;
+                          return (
+                            <option key={`${val}-${idx}`} value={val}>
+                              {label}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    )}
+                  />
                   {errors.currencyCode && <p className="text-[10px] text-destructive font-medium ml-1">{errors.currencyCode.message}</p>}
                 </div>
                 <div className="space-y-2">
@@ -236,11 +295,29 @@ export default function CampaignFormPage({ id }: CampaignFormProps) {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_CONSTANTS.FORM.PERSON_ID)}</label>
-                <Input {...register("personId")} placeholder="Person ID/UUID" className={errors.personId ? "border-destructive focus-visible:ring-destructive/20" : ""} />
-                {errors.personId && <p className="text-[10px] text-destructive font-medium ml-1">{errors.personId.message}</p>}
-              </div>
+              {mode !== 'general' && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_CONSTANTS.FORM.CUSTOMER)}</label>
+                  <Controller
+                    name="personId"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                      >
+                        <option value="">{t('common.selectOption') || 'Select a customer'}</option>
+                        {persons.map(person => (
+                          <option key={person.id} value={person.id}>
+                            {person.completeName} ({person.code})
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                  {errors.personId && <p className="text-[10px] text-destructive font-medium ml-1">{errors.personId.message}</p>}
+                </div>
+              )}
 
             </CardContent>
           </Card>

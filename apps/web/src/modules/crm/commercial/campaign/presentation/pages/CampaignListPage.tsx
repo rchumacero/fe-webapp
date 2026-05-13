@@ -10,7 +10,7 @@ import { formatDate, formatDateTime, DEFAULT_PAGE_SIZE } from '@kplian/core';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { RefreshCw, Plus, Search, Edit2, Trash2, Calendar, MoreHorizontal, Loader2, Eye, Flag } from 'lucide-react';
+import { RefreshCw, Plus, Search, Edit2, Trash2, Calendar, MoreHorizontal, Loader2, Flag, User } from 'lucide-react';
 import Link from 'next/link';
 import { useVendor } from '@/hooks/use-vendor';
 import { Badge } from '@/components/ui/badge';
@@ -20,12 +20,33 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useDomainParameters } from '@/hooks/use-domain-parameters';
+import { CAMPAIGN_DOMAIN_PARAMETERS, P_STATUS, P_CURRENCY } from '../../constants/parameter';
+import { COMMERCIAL_PRODUCT_ROUTES } from '../../../commercial-product/routes/commercial-product-routes';
 
 const campaignRepository = new CampaignRepositoryImpl();
 
-export default function CampaignListPage() {
+interface CampaignListPageProps {
+  mode?: 'general' | 'custom';
+}
+
+export default function CampaignListPage({ mode = 'custom' }: CampaignListPageProps) {
   const { t } = useTranslation();
   const { vendor } = useVendor();
+
+  const { data: parametersData } = useDomainParameters({
+    parameters: CAMPAIGN_DOMAIN_PARAMETERS
+  });
+
+  const getParameterLabel = useCallback((domainCode: string, value: string) => {
+    const list = parametersData[domainCode] || [];
+    const item = list.find((i: any) => {
+      const itemVal = i.CODE ?? i.KEY ?? i.VALUE ?? i.ID ?? i.code ?? i.value ?? i.id ?? i.valueStr ?? i.fullCode ?? i;
+      return itemVal === value;
+    });
+    return item?.NAME || item?.name || item?.label || value;
+  }, [parametersData]);
+
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -58,11 +79,20 @@ export default function CampaignListPage() {
     }
 
     try {
-      const newData = await campaignRepository.getByVendorId(vendor, {
+      let newData;
+      const params = {
         page: pageNum,
         pageSize: DEFAULT_PAGE_SIZE,
         filter: search,
-      });
+      };
+
+      if (mode === 'general') {
+        newData = await campaignRepository.getGeneral(params);
+      } else if (mode === 'custom') {
+        newData = await campaignRepository.getCustom(params);
+      } else {
+        newData = await campaignRepository.getByVendorId(vendor, params);
+      }
 
       const dataArray = Array.isArray(newData) ? newData : [];
 
@@ -74,7 +104,7 @@ export default function CampaignListPage() {
       setIsLoading(false);
       isFetching.current = false;
     }
-  }, [search, vendor]);
+  }, [search, vendor, mode]);
 
   useEffect(() => {
     if (vendor) {
@@ -112,13 +142,15 @@ export default function CampaignListPage() {
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       <div className="flex justify-between items-center bg-background/80 backdrop-blur-md sticky top-0 z-10 py-4 border-b border-border/10 mb-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t(CAMPAIGN_CONSTANTS.LIST_TITLE) || 'Campaigns'}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {mode === 'general' ? t(CAMPAIGN_CONSTANTS.GENERAL_CAMPAIGNS) : mode === 'custom' ? t(CAMPAIGN_CONSTANTS.CUSTOM_CAMPAIGNS) : t(CAMPAIGN_CONSTANTS.LIST_TITLE)}
+          </h1>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={handleRefresh} className="rounded-full hover:bg-accent hover:rotate-180 transition-all duration-500">
             <RefreshCw className={isLoading ? "animate-spin size-5" : "size-5"} />
           </Button>
-          <Link href={CAMPAIGN_ROUTES.CREATE}>
+          <Link href={mode === 'general' ? '/crm/commercial/campaign/general/new' : '/crm/commercial/campaign/custom/new'}>
             <Button size="icon" className="rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-md group">
               <Plus className="size-5 group-hover:scale-110 transition-transform" />
             </Button>
@@ -149,6 +181,12 @@ export default function CampaignListPage() {
                 <CardTitle title={campaign.name} className="text-lg font-bold group-hover:text-primary transition-colors truncate max-w-full block">
                   {campaign.name}
                 </CardTitle>
+                {campaign.personName && (
+                  <div className="flex items-center gap-1.5 text-xs text-primary/70 font-medium truncate mt-0.5">
+                    <User size={12} className="shrink-0" />
+                    <span className="truncate">{campaign.personName}</span>
+                  </div>
+                )}
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-accent transition-all outline-none group-data-[state=open]:bg-accent">
@@ -156,13 +194,13 @@ export default function CampaignListPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
                   <DropdownMenuItem className="cursor-pointer">
-                    <Link href={CAMPAIGN_ROUTES.DETAIL(campaign.id)} className="flex items-center w-full">
-                      <Eye className="mr-2 h-4 w-4" /> {t(CAMPAIGN_CONSTANTS.VIEW_DETAIL) || 'Detail'}
+                    <Link href={mode === 'general' ? `/crm/commercial/campaign/general/edit/${campaign.id}` : `/crm/commercial/campaign/custom/edit/${campaign.id}`} className="flex items-center w-full">
+                      <Edit2 className="mr-2 h-4 w-4" /> {t(CAMPAIGN_CONSTANTS.EDIT_RECORD) || 'Edit'}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer">
-                    <Link href={CAMPAIGN_ROUTES.EDIT(campaign.id)} className="flex items-center w-full">
-                      <Edit2 className="mr-2 h-4 w-4" /> {t(CAMPAIGN_CONSTANTS.EDIT_RECORD) || 'Edit'}
+                    <Link href={COMMERCIAL_PRODUCT_ROUTES.LIST(campaign.id)} className="flex items-center w-full">
+                      <Search className="mr-2 h-4 w-4" /> {t(CAMPAIGN_CONSTANTS.VIEW_PRODUCTS) || 'View Products'}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-destructive cursor-pointer focus:bg-destructive/10">
@@ -184,10 +222,10 @@ export default function CampaignListPage() {
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground mt-1">
                     <Badge variant={campaign.status === 'ACTIVE' ? 'default' : 'secondary'} className="text-[10px] py-0 h-4 mr-1">
-                      {campaign.status}
+                      {getParameterLabel(P_STATUS, campaign.status)}
                     </Badge>
                     <Badge variant="outline" className="text-[10px] py-0 h-4">
-                      {campaign.currencyCode}
+                      {getParameterLabel(P_CURRENCY, campaign.currencyCode)}
                     </Badge>
                   </div>
                 </div>

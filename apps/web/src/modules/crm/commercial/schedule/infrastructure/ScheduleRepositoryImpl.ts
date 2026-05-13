@@ -12,6 +12,13 @@ export class ScheduleRepositoryImpl {
     return response.data || [];
   }
 
+  async getByCommercialProductId(commercialProductId: string): Promise<Schedule[]> {
+    const response = await this.api.get<Schedule[]>(
+      SCHEDULE_API_ROUTES.SCHEDULE_BY_COMMERCIAL_PRODUCT_ID(commercialProductId)
+    );
+    return response.data || [];
+  }
+
   async getById(id: string): Promise<Schedule> {
     const response = await this.api.get<Schedule>(
       SCHEDULE_API_ROUTES.SCHEDULE_BY_ID(id)
