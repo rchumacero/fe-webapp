@@ -75,12 +75,15 @@
     "saturday": "Saturday",
     "sunday": "Sunday",
     "day": "Day",
+    "week": "Week",
+    "month": "Month",
     "fromTime": "From",
     "toTime": "To",
     "quantity": "Quantity",
     "unitMeasure": "Unit Measure",
     "collaborator": "Collaborator",
-    "attentionPoint": "Attention Point"
+    "attentionPoint": "Attention Point",
+    "welcome": "Welcome"
   },
   "crm": {
     "code": "Person Code",

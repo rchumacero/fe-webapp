@@ -1,0 +1,8 @@
+import { CUSTOMER_SERVICE_CONSTANTS } from "../constants/customer-service-constants";
+
+export const CUSTOMER_SERVICE_ROUTES = {
+  LIST: CUSTOMER_SERVICE_CONSTANTS.ROUTES.CUSTOMER_SERVICE,
+  CREATE: CUSTOMER_SERVICE_CONSTANTS.ROUTES.CUSTOMER_SERVICE_NEW,
+  EDIT: (id: string | number) => `${CUSTOMER_SERVICE_CONSTANTS.ROUTES.CUSTOMER_SERVICE}/edit/${id}` as const,
+  DETAIL: (id: string | number) => `${CUSTOMER_SERVICE_CONSTANTS.ROUTES.CUSTOMER_SERVICE}/detail/${id}` as const,
+};

@@ -3,7 +3,7 @@ export const SCHEDULE_CONSTANTS = {
   LIST_TITLE: "crm.schedule.title",
   CREATE_TITLE: "crm.schedule.appointment",
   DESCRIPTION_TITLE: "common.createDescription",
-  EDIT_TITLE: "crm.commercialSchedule",
+  EDIT_TITLE: "crm.schedule.appointment",
   DESCRIPTION_EDIT: "common.editDescription",
   SEARCH_PLACEHOLDER: "common.filter",
   CONFIRM_DELETE: "common.delete",

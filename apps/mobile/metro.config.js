@@ -18,6 +18,6 @@ config.resolver.nodeModulesPaths = [
 ];
 
 // 3. Force Metro to resolve (and transpile) local package dependencies
-config.resolver.disableHierarchicalLookup = true;
+config.resolver.disableHierarchicalLookup = false;
 
 module.exports = config;

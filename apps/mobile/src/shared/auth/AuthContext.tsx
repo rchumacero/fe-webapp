@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as AuthSession from 'expo-auth-session';
-import { setTokenProvider, setLanguageProvider, setTimezoneProvider, setGlobalErrorHandler } from '@kplian/infrastructure';
+import { setTokenProvider, setLanguageProvider, setTimezoneProvider, setGlobalErrorHandler, setVendorProvider } from '@kplian/infrastructure';
 import i18n from '@kplian/i18n';
 import { User } from '@kplian/core';
 
@@ -110,20 +110,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // 2. Storage Setup: inject token getter for API client
       setTokenProvider(async () => {
         try {
-          return await storage.getItem('accessToken');
+          return (await storage.getItem('idToken')) || (await storage.getItem('accessToken'));
         } catch (e) {
           return null;
         }
       });
       setLanguageProvider(() => i18n.language || 'es');
       setTimezoneProvider(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
+      setVendorProvider(async () => {
+        try {
+          return await storage.getItem('vendorPersonId');
+        } catch (e) {
+          return null;
+        }
+      });
 
-      // Handle 401 globally
+      // Handle 401 globally (Disabled for debugging 401 issues)
+      /*
       setGlobalErrorHandler((message, code) => {
         if (code === '401') {
           logout();
         }
       });
+      */
 
       // 3. Attempt to restore existing session from storage
       await loadSession();
@@ -141,10 +150,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loadSession = async () => {
     try {
-      const token = await storage.getItem('accessToken');
+      const idToken = await storage.getItem('idToken');
+      const accessToken = await storage.getItem('accessToken');
+      const token = idToken || accessToken;
       if (token) {
-        setAccessToken(token);
+        const dots = (token.match(/\./g) || []).length;
+        console.log('[Auth Debug] Restored Token Stats:', { length: token.length, dots });
+        setAccessToken(accessToken);
+        setIdToken(idToken);
         await getUserInfo(token);
+        await loadVendor(token);
       }
     } catch (e) {
       console.error('Failed to load session:', e);
@@ -162,18 +177,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           clientId: ZITADEL_CLIENT_ID,
           code,
           redirectUri,
+          scopes: ['openid', 'profile', 'email', 'offline_access', 'urn:zitadel:iam:org:project:id:zitadel:aud'],
           extraParams: { code_verifier: verifier },
         },
         discovery
       );
       
       await storage.setItem('accessToken', tokenResult.accessToken);
+      if (tokenResult.idToken) {
+        await storage.setItem('idToken', tokenResult.idToken);
+      }
       if (tokenResult.refreshToken) {
         await storage.setItem('refreshToken', tokenResult.refreshToken);
       }
       setAccessToken(tokenResult.accessToken);
       setIdToken(tokenResult.idToken || null);
+      
+      const token = tokenResult.accessToken;
+      const dots = (token.match(/\./g) || []).length;
+      console.log('[Auth Debug] Token Stats:', {
+        length: token.length,
+        dots: dots,
+        firstChars: token.substring(0, 20),
+        lastChars: token.substring(token.length - 20)
+      });
+
       await getUserInfo(tokenResult.accessToken);
+      await loadVendor(tokenResult.accessToken);
     } catch (err) {
       console.error("Error exchanging code", err);
     } finally {
@@ -197,6 +227,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
     } catch (err) {
       console.error("Error fetching user profile", err);
+    }
+  };
+
+  const loadVendor = async (token: string) => {
+    try {
+      // 1. Get userinfo to get the preferred_username (code)
+      const uiRes = await fetch(`${ZITADEL_ISSUER}/oidc/v1/userinfo`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const uiData = await uiRes.json();
+      const userCode = uiData.preferred_username;
+
+      if (userCode) {
+        // 2. Fetch person by code from CRM
+        const apiBase = process.env.API_GATEWAY_URL || 'https://api-dev-local.kplian.com';
+        const res = await fetch(`${apiBase}/crm/api/v1/persons/by-code/${userCode}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+          const person = await res.json();
+          if (person && person.id) {
+            await storage.setItem('vendorPersonId', String(person.id));
+            console.log('[Auth Debug] Vendor ID set:', person.id);
+          }
+        } else {
+          console.warn('[Auth Debug] Failed to fetch vendor info', res.status);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading vendor session", err);
     }
   };
 
@@ -228,7 +289,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     await storage.deleteItem('accessToken');
+    await storage.deleteItem('idToken');
     await storage.deleteItem('refreshToken');
+    await storage.deleteItem('vendorPersonId');
     
     if (Platform.OS === 'web') {
       const postLogoutUrl = window.location.origin;

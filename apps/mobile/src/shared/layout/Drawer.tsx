@@ -23,7 +23,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.82;
 
 export const Drawer = ({ isOpen, onClose }: DrawerProps) => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [menuData, setMenuData] = useState<MenuItem[]>([]);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const [translateX] = useState(new Animated.Value(-DRAWER_WIDTH));
@@ -31,11 +31,13 @@ export const Drawer = ({ isOpen, onClose }: DrawerProps) => {
 
   useEffect(() => {
     const fetchMenu = async () => {
-      const data = await getMenuByUser('admin');
-      setMenuData(data);
+      if (user?.username) {
+        const data = await getMenuByUser(user.username);
+        setMenuData(data);
+      }
     };
     fetchMenu();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     Animated.parallel([

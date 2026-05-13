@@ -124,6 +124,7 @@ export const createApiClient = (moduleName: string) => {
         const token = await globalTokenProvider();
         if (token) {
           config.headers['Authorization'] = `Bearer ${token}`;
+          console.log(`[API Request] Token Length: ${token.length}, Dots: ${(token.match(/\./g) || []).length}`);
         }
       }
       
@@ -139,6 +140,11 @@ export const createApiClient = (moduleName: string) => {
           config.headers['X-Vendor-Id'] = String(vendorId);
         }
       }
+
+      console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, {
+        Authorization: config.headers['Authorization'] ? 'Present' : 'Missing',
+        VendorId: config.headers['X-Vendor-Id'] || 'Missing'
+      });
     } catch (error) {
       console.warn("Infrastructure: Request interceptor error", error);
     }
@@ -159,7 +165,8 @@ export const createApiClient = (moduleName: string) => {
       console.error(`[API Error] Module: ${moduleName} | Message: ${message}`);
 
       if (code === '401') {
-        lockApi();
+        console.warn(`[API Error Detail] 401 Unauthorized for ${moduleName}:`, error.response?.data);
+        // lockApi(); // Commented for debugging
       }
 
       if (globalErrorHandler) {
