@@ -56,5 +56,12 @@ export const SCHEDULE_CONSTANTS = {
     SCHEDULE_NEW: "/crm/commercial/schedule/new"
   },
   VIEW_DETAIL: "common.viewDetail",
-  EDIT_RECORD: "common.editRecord"
+  EDIT_RECORD: "common.editRecord",
+  MORE: "common.more",
+  SCHEDULES: "common.schedules",
+  QTY: "common.qty",
+  CAMPAIGNS: "common.campaigns",
+  COLLABORATORS: "common.collaborators",
+  RECORDS_FOUND: "common.recordsFound",
+  CLOSE: "common.close"
 };

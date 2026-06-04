@@ -19,6 +19,13 @@ export class ScheduleRepositoryImpl {
     return response.data || [];
   }
 
+  async getByCollaboratorId(collaboratorId: string): Promise<Schedule[]> {
+    const response = await this.api.get<Schedule[]>(
+      SCHEDULE_API_ROUTES.SCHEDULE_BY_COLLABORATOR_ID(collaboratorId)
+    );
+    return response.data || [];
+  }
+
   async getById(id: string): Promise<Schedule> {
     const response = await this.api.get<Schedule>(
       SCHEDULE_API_ROUTES.SCHEDULE_BY_ID(id)

@@ -83,7 +83,23 @@
     "unitMeasure": "Unit Measure",
     "collaborator": "Collaborator",
     "attentionPoint": "Attention Point",
-    "welcome": "Welcome"
+    "welcome": "Welcome",
+    "addRoot": "Add Root",
+    "newNode": "New Node",
+    "editNode": "Edit Node",
+    "name": "Name",
+    "address": "Address",
+    "organization": "Organization",
+    "loading": "Loading...",
+    "module": "Module",
+    "recordCreated": "Record created successfully",
+    "more": "More",
+    "schedules": "schedules",
+    "qty": "Qty",
+    "campaigns": "Campaigns",
+    "collaborators": "Collaborators",
+    "close": "Close",
+    "recordsFound": "Record(s) found"
   },
   "crm": {
     "code": "Person Code",
@@ -136,6 +152,31 @@
     "workDescription": "Responsibilities",
     "fromDate": "Start Date",
     "toDate": "End Date",
+    "customer_service": {
+      "title": "Customer Service",
+      "create_appointment": "Schedule Appointment",
+      "select_product": "Select Service",
+      "select_vendor": "Select Professional",
+      "select_schedule": "Select Schedule",
+      "confirm_appointment": "Confirm Appointment",
+      "success_message": "Appointment scheduled successfully!",
+      "error_message": "Error scheduling appointment"
+    },
+    "organization": {
+      "maxAttention": "Max Attention",
+      "ticketMethod": "Ticket Method",
+      "ticketCounter": "Ticket Counter",
+      "parentOrg": "Parent Organization",
+      "create_title": "Create Organization",
+      "edit_title": "Edit Organization",
+      "descriptionTitle": "Register a new organization in the system",
+      "descriptionEdit": "Modify the data of an existing organization",
+      "searchPlaceholder": "Search by name or code...",
+      "record_not_found": "No organizations found",
+      "confirmDelete": "Are you sure you want to delete this organization?",
+      "listTitle": "Organization Structure",
+      "view": "View Organization"
+    },
     "name1": "First Name",
     "name2": "Middle Name",
     "name3": "Third Name",
@@ -160,6 +201,7 @@
     "workExperienceCompanyPlaceholder": "Register company name",
     "workExperienceDescriptionPlaceholder": "Type the most relevant things",
     "personAdditionalDetails": "Additional details",
+    "viewSubProducts": "View Sub Products",
     "vendorProfile": {
       "title": "Vendor Profile",
       "description": "Customize your brand identity and regional preferences.",
@@ -227,6 +269,7 @@
       "quantity": "Quantity",
       "unitMeasure": "Unit of Measure",
       "configurationCode": "Configuration Code",
+      "scheduleType": "Schedule Type",
       "name": "Commercial Product Name"
     },
     "schedule": {
@@ -236,6 +279,14 @@
       "time": "Time",
       "noProductId": "No Commercial Product ID provided",
       "appointment": "Appointment"
+    },
+    "campaignProduct": {
+      "listTitle": "Products List"
+    },
+    "collaborator": {
+      "view": "View Collaborator",
+      "title": "Collaborators",
+      "listTitle": "Collaborators"
     }
   },
   "dashboard": {
@@ -252,5 +303,17 @@
     "sale_by_gender": "Sale by gender",
     "yearly_sales": "Yearly sales",
     "more_than_last_year": "(+{{percentage}}%) than last year"
+  },
+  "workflow": {
+    "formsList": "Forms",
+    "fieldsList": "Fields",
+    "casesList": "Cases",
+    "tasksList": "Tasks",
+    "formsSubTitle": "Create, update, and manage dynamic data collection schemas",
+    "viewFields": "View Fields",
+    "descriptionEdit": "Modify the data of an existing field",
+    "descriptionCreate": "Add a new field to this form",
+    "viewForms": "View Forms",
+    "processList": "Process"
   }
 }

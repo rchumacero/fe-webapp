@@ -3,7 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '@kplian/i18n';
 import { COMMERCIAL_PRODUCT_CONSTANTS } from '../../constants/commercial-product-constants';
-import { CommercialProductRepositoryImpl } from '../../infrastructure/CommercialProductRepositoryImpl';
+import { COMMERCIAL_PRODUCT_ROUTES } from '../../routes/commercial-product-routes';
+import { CommercialProductRepositoryImpl } from '@kplian/infrastructure';
+import { CampaignRepositoryImpl } from '../../../campaign/infrastructure/repositories/CampaignRepositoryImpl';
+import { Campaign } from '../../../campaign/domain/entities/Campaign';
+import { CAMPAIGN_ROUTES } from '../../../campaign/routes/campaign-routes';
+import { Breadcrumb } from '@/components/shared/Breadcrumb';
+import { CommercialProduct, CreateCommercialProductDto, UpdateCommercialProductDto } from '@kplian/core';
 import { ProductRepositoryImpl } from '@/modules/production/product/infrastructure/ProductRepositoryImpl';
 import { Product } from '@/modules/production/product/domain/Product';
 import { Button } from '@/components/ui/button';
@@ -17,13 +23,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { useDomainParameters } from '@/hooks/use-domain-parameters';
-import { COMMERCIAL_PRODUCT_DOMAIN_PARAMETERS, P_STATUS, P_PRICE_TYPE, P_CHANNEL, P_ATTENTION_GROUP, P_UNIT_MEASURE, PRODUCT_TYPE_UNIQUE, PRODUCT_TYPE_COMBO } from '../../constants/parameter';
+import { COMMERCIAL_PRODUCT_DOMAIN_PARAMETERS, P_STATUS, P_PRICE_TYPE, P_CHANNEL, P_ATTENTION_GROUP, P_UNIT_MEASURE, PRODUCT_TYPE_UNIQUE, PRODUCT_TYPE_COMBO, P_SCHEDULE_TYPE, P_PLAN_SCHEDULE } from '../../constants/parameter';
 import { useVendor } from '@/hooks/use-vendor';
 
 const commercialProductRepository = new CommercialProductRepositoryImpl();
 const productRepository = new ProductRepositoryImpl();
+const campaignRepository = new CampaignRepositoryImpl();
 
 const commercialProductSchema = z.object({
   campaignId: z.string().min(1, COMMERCIAL_PRODUCT_CONSTANTS.VALIDATION.CAMPAIGN_REQUIRED),
@@ -41,8 +49,12 @@ const commercialProductSchema = z.object({
   quantity: z.coerce.number().optional(),
   unitMeasureCode: z.string().optional(),
   configurationCode: z.string().optional(),
+  planScheduleCode: z.string().optional(),
+  scheduleType: z.string().optional().nullable(),
+  id: z.string().optional(),
 }).superRefine((data, ctx) => {
-  if (data.type === PRODUCT_TYPE_UNIQUE) {
+  // Only enforce unique product fields if we are NOT in edit mode
+  if (!data.id && data.type === PRODUCT_TYPE_UNIQUE) {
     if (!data.productCode) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: COMMERCIAL_PRODUCT_CONSTANTS.VALIDATION.BASE_PRODUCT_REQUIRED, path: ["productCode"] });
     }
@@ -82,8 +94,11 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
   const channelOptions = parametersData[P_CHANNEL] || [];
   const attentionGroupOptions = parametersData[P_ATTENTION_GROUP] || [];
   const unitMeasureOptions = parametersData[P_UNIT_MEASURE] || [];
+  const scheduleTypeOptions = parametersData[P_SCHEDULE_TYPE] || [];
+  const planScheduleOptions = parametersData[P_PLAN_SCHEDULE] || [];
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
@@ -108,11 +123,40 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
       channelCode: '',
       status: 'ACTIVE',
       type: PRODUCT_TYPE_UNIQUE,
+      planScheduleCode: '',
+      scheduleType: null,
+      id: id,
     }
   });
 
+  const [numberProducts, setNumberProducts] = useState<number | null | undefined>(undefined);
+
   const type = useWatch({ control, name: 'type' });
   const productCode = useWatch({ control, name: 'productCode' });
+
+  useEffect(() => {
+    const fetchCampaign = async () => {
+      try {
+        const data = await campaignRepository.getById(campaignId);
+        setCampaign(data);
+      } catch (error) {
+        console.error("Error fetching campaign:", error);
+      }
+    };
+    if (campaignId) fetchCampaign();
+  }, [campaignId]);
+
+  useEffect(() => {
+    console.log("CommercialProductForm: Auto-fill triggered", { type, productCode, productsCount: products.length });
+    if (type === PRODUCT_TYPE_UNIQUE && productCode && products.length > 0) {
+      const selectedProduct = products.find(p => p.code === productCode);
+      console.log("CommercialProductForm: Selected Product found:", selectedProduct);
+      if (selectedProduct) {
+        setValue('code', selectedProduct.code || '', { shouldValidate: true, shouldDirty: true });
+        setValue('name', selectedProduct.name || '', { shouldValidate: true, shouldDirty: true });
+      }
+    }
+  }, [type, productCode, products, setValue]);
 
   useEffect(() => {
     console.log("CommercialProductForm: useEffect[vendor] triggered, vendor:", vendor);
@@ -149,13 +193,17 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
             attentionGroupCode: product.attentionGroupCode,
             channelCode: product.channelCode,
             status: product.status || 'ACTIVE',
-            type: product.type || PRODUCT_TYPE_UNIQUE,
+            type: (product.numberProducts ?? 0) > 1 ? PRODUCT_TYPE_COMBO : PRODUCT_TYPE_UNIQUE,
             productCode: product.productCode,
             cost: product.cost,
             quantity: product.quantity,
             unitMeasureCode: product.unitMeasureCode,
             configurationCode: product.configurationCode,
+            planScheduleCode: product.planScheduleCode || '',
+            scheduleType: product.scheduleType || null,
+            id: product.id,
           });
+          setNumberProducts(product.numberProducts);
         } catch (error) {
           console.error("Error fetching commercial product:", error);
         } finally {
@@ -178,23 +226,33 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
   const onSubmit: SubmitHandler<CommercialProductFormData> = async (formData) => {
     setIsSubmitting(true);
     try {
-      const payload = { ...formData };
-      if (formData.type === PRODUCT_TYPE_COMBO) {
-        delete payload.productCode;
-        delete payload.cost;
-        delete payload.quantity;
-        delete payload.unitMeasureCode;
-        delete payload.configurationCode;
+      const payload: any = {
+        ...formData,
+        campaignId,
+      };
+
+      if (formData.type === PRODUCT_TYPE_UNIQUE) {
+        payload.campaignProduct = {
+          productCode: formData.productCode,
+          cost: formData.cost,
+          quantity: Number(formData.quantity),
+          unitMeasureCode: formData.unitMeasureCode,
+          configurationCode: formData.configurationCode,
+          planScheduleCode: formData.planScheduleCode,
+        };
       }
 
       if (id) {
         await commercialProductRepository.update({ ...payload, id });
+        toast.success(t('common.recordUpdated') || 'Record updated successfully');
       } else {
-        await commercialProductRepository.create(payload as any);
+        await commercialProductRepository.create(payload);
+        toast.success(t('common.recordCreated') || 'Record created successfully');
       }
       router.back();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving commercial product:", error);
+      toast.error(error.message || t('common.errorSaving') || 'Error saving record');
     } finally {
       setIsSubmitting(false);
     }
@@ -224,6 +282,14 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
 
   return (
     <div className="max-w-5xl mx-auto space-y-4 animate-in slide-in-from-bottom-4 duration-500 pb-20">
+      <Breadcrumb
+        items={[
+          { label: t('campaigns') || 'Campaigns', href: campaign ? CAMPAIGN_ROUTES.DETAIL(campaign) : CAMPAIGN_ROUTES.LIST },
+          { label: campaign?.name || '...', href: campaign ? CAMPAIGN_ROUTES.DETAIL(campaign) : undefined },
+          { label: t(COMMERCIAL_PRODUCT_CONSTANTS.LIST_TITLE), href: COMMERCIAL_PRODUCT_ROUTES.LIST(campaignId) },
+          { label: id ? t(COMMERCIAL_PRODUCT_CONSTANTS.EDIT_TITLE) : t(COMMERCIAL_PRODUCT_CONSTANTS.CREATE_TITLE) }
+        ]}
+      />
       <div className="flex items-center justify-between border-b border-border/10 pb-2">
         <div className="flex items-center gap-4">
           <Button
@@ -264,6 +330,7 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
                       <Switch
                         checked={field.value === PRODUCT_TYPE_COMBO}
                         onCheckedChange={(checked) => field.onChange(checked ? PRODUCT_TYPE_COMBO : PRODUCT_TYPE_UNIQUE)}
+                        disabled={!!id}
                         className="scale-125 data-[state=checked]:bg-primary data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-700"
                       />
 
@@ -278,10 +345,85 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
                 />
               </div>
 
+              {/* Hide Unique Product Section in Edit mode */}
+              {!id && type === PRODUCT_TYPE_UNIQUE && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border/10 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.BASE_PRODUCT)}</label>
+                    <Controller
+                      name="productCode"
+                      control={control}
+                      render={({ field }) => (
+                        <select
+                          {...field}
+                          className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                        >
+                          <option value="">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.SELECT_OPTION)}</option>
+                          {products.map((p, idx) => (
+                            <option key={`${p.id}-${idx}`} value={p.code}>
+                              {p.name} ({p.code})
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    />
+                    {errors.productCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.productCode.message as string)}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.UNIT_MEASURE)}</label>
+                    <Controller
+                      name="unitMeasureCode"
+                      control={control}
+                      render={({ field }) => (
+                        <select
+                          {...field}
+                          className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                        >
+                          <option value="">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.SELECT_OPTION)}</option>
+                          {unitMeasureOptions.map((p: any, idx: number) => {
+                            const val = p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '');
+                            const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
+                            return (
+                              <option key={`${val}-${idx}`} value={val}>
+                                {label}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      )}
+                    />
+                    {errors.unitMeasureCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.unitMeasureCode.message as string)}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.COST)}</label>
+                    <Input type="number" step="0.01" {...register("cost")} className={errors.cost ? "border-destructive focus-visible:ring-destructive/20" : ""} />
+                    {errors.cost && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.cost.message as string)}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.QUANTITY)}</label>
+                    <Input type="number" {...register("quantity")} className={errors.quantity ? "border-destructive focus-visible:ring-destructive/20" : ""} />
+                    {errors.quantity && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.quantity.message as string)}</p>}
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.CONFIGURATION_CODE)}</label>
+                    <Input {...register("configurationCode")} className={errors.configurationCode ? "border-destructive focus-visible:ring-destructive/20" : ""} />
+                    {errors.configurationCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.configurationCode.message as string)}</p>}
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
+                <div className={cn("space-y-2", type === PRODUCT_TYPE_UNIQUE && "hidden")}>
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.CODE)}</label>
-                  <Input {...register("code")} className={errors.code ? "border-destructive focus-visible:ring-destructive/20" : ""} />
+                  <Input
+                    {...register("code")}
+                    readOnly={type === PRODUCT_TYPE_UNIQUE}
+                    className={cn(
+                      errors.code ? "border-destructive focus-visible:ring-destructive/20" : "",
+                      type === PRODUCT_TYPE_UNIQUE && "bg-muted/50 cursor-not-allowed opacity-80"
+                    )}
+                  />
                   {errors.code && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.code.message as string)}</p>}
                 </div>
                 <div className="space-y-2">
@@ -311,9 +453,16 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className={cn("space-y-2", type === PRODUCT_TYPE_UNIQUE && "hidden")}>
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.NAME)}</label>
-                <Input {...register("name")} className={errors.name ? "border-destructive focus-visible:ring-destructive/20" : ""} />
+                <Input
+                  {...register("name")}
+                  readOnly={type === PRODUCT_TYPE_UNIQUE}
+                  className={cn(
+                    errors.name ? "border-destructive focus-visible:ring-destructive/20" : "",
+                    type === PRODUCT_TYPE_UNIQUE && "bg-muted/50 cursor-not-allowed opacity-80"
+                  )}
+                />
                 {errors.name && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.name.message as string)}</p>}
               </div>
 
@@ -406,85 +555,61 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
                   />
                   {errors.channelCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.channelCode.message as string)}</p>}
                 </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.SCHEDULE_TYPE) || 'Schedule Type'}</label>
+                  <Controller
+                    name="scheduleType"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                        className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                      >
+                        <option value="">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.SELECT_OPTION) || 'Select schedule type'}</option>
+                        {scheduleTypeOptions.map((p: any, idx: number) => {
+                          const val = p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '');
+                          const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
+                          return (
+                            <option key={`${val}-${idx}`} value={val}>
+                              {label}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    )}
+                  />
+                  {errors.scheduleType && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.scheduleType.message as string)}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Plan Schedule</label>
+                  <Controller
+                    name="planScheduleCode"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                        className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                      >
+                        <option value="">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.SELECT_OPTION) || 'Select plan schedule'}</option>
+                        {planScheduleOptions.map((p: any, idx: number) => {
+                          const val = p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '');
+                          const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
+                          return (
+                            <option key={`${val}-${idx}`} value={val}>
+                              {label}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    )}
+                  />
+                  {errors.planScheduleCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.planScheduleCode.message as string)}</p>}
+                </div>
               </div>
             </CardContent>
           </Card>
-
-          {type === PRODUCT_TYPE_UNIQUE && (
-            <Card className="border-border/40 shadow-xl overflow-hidden bg-card/50 backdrop-blur-sm animate-in slide-in-from-top-4 duration-300">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold text-primary">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.UNIQUE_PRODUCT)}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-8 pt-0 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.BASE_PRODUCT)}</label>
-                    <Controller
-                      name="productCode"
-                      control={control}
-                      render={({ field }) => (
-                        <select
-                          {...field}
-                          className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
-                        >
-                          <option value="">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.SELECT_OPTION)}</option>
-                          {products.map((p, idx) => (
-                            <option key={`${p.id}-${idx}`} value={p.code}>
-                              {p.name} ({p.code})
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    />
-                    {errors.productCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.productCode.message as string)}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.UNIT_MEASURE)}</label>
-                    <Controller
-                      name="unitMeasureCode"
-                      control={control}
-                      render={({ field }) => (
-                        <select
-                          {...field}
-                          className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
-                        >
-                          <option value="">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.SELECT_OPTION)}</option>
-                          {unitMeasureOptions.map((p: any, idx: number) => {
-                            const val = p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '');
-                            const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
-                            return (
-                              <option key={`${val}-${idx}`} value={val}>
-                                {label}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      )}
-                    />
-                    {errors.unitMeasureCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.unitMeasureCode.message as string)}</p>}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.COST)}</label>
-                    <Input type="number" step="0.01" {...register("cost")} className={errors.cost ? "border-destructive focus-visible:ring-destructive/20" : ""} />
-                    {errors.cost && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.cost.message as string)}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.QUANTITY)}</label>
-                    <Input type="number" {...register("quantity")} className={errors.quantity ? "border-destructive focus-visible:ring-destructive/20" : ""} />
-                    {errors.quantity && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.quantity.message as string)}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.CONFIGURATION_CODE)}</label>
-                    <Input {...register("configurationCode")} className={errors.configurationCode ? "border-destructive focus-visible:ring-destructive/20" : ""} />
-                    {errors.configurationCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.configurationCode.message as string)}</p>}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         <div className="space-y-8">

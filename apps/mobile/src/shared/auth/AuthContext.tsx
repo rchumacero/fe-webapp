@@ -61,6 +61,7 @@ const generateCodeChallenge = async (verifier: string): Promise<string> => {
 interface AuthContextType {
   user: User | null;
   accessToken: string | null;
+  vendorId: string | null;
   isLoading: boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
@@ -79,6 +80,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [idToken, setIdToken] = useState<string | null>(null);
+  const [vendorId, setVendorId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
@@ -93,21 +95,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const initialize = async () => {
-      // 1. Handle OAuth callback on Web (direct redirect, not popup)
-      if (Platform.OS === 'web' && window.location.search.includes('code=')) {
-        const code = new URLSearchParams(window.location.search).get('code');
-        if (code) {
-          // Clean up URL immediately
-          window.history.replaceState({}, document.title, window.location.pathname);
-          // Retrieve PKCE verifier stored before redirect
-          const codeVerifier = await storage.getItem('pkce_verifier') || '';
-          await exchangeCode(code, codeVerifier);
-          await storage.deleteItem('pkce_verifier');
-          return; // Tokens already set, skip loadSession
-        }
-      }
-
-      // 2. Storage Setup: inject token getter for API client
+      // 1. Storage Setup: inject token getter for API client
       setTokenProvider(async () => {
         try {
           return (await storage.getItem('idToken')) || (await storage.getItem('accessToken'));
@@ -134,19 +122,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       */
 
+      // 2. Handle OAuth callback on Web (direct redirect, not popup)
+      if (Platform.OS === 'web' && window.location.search.includes('code=')) {
+        const code = new URLSearchParams(window.location.search).get('code');
+        if (code) {
+          // Clean up URL immediately
+          window.history.replaceState({}, document.title, window.location.pathname);
+          // Retrieve PKCE verifier stored before redirect
+          const codeVerifier = await storage.getItem('pkce_verifier') || '';
+          await exchangeCode(code, codeVerifier);
+          await storage.deleteItem('pkce_verifier');
+          return; // Tokens already set, skip loadSession
+        }
+      }
+
       // 3. Attempt to restore existing session from storage
       await loadSession();
     };
 
     initialize();
-  }, [request]);
+  }, []);
 
   useEffect(() => {
     if (response?.type === 'success') {
       const { code } = response.params;
-      exchangeCode(code);
+      // On Web, the redirect callback is handled in initialize() to ensure PKCE verifier is restored from storage.
+      if (Platform.OS !== 'web') {
+        exchangeCode(code, response.authenticationRequest?.codeVerifier || request?.codeVerifier);
+      }
     }
-  }, [response]);
+  }, [response, request]);
 
   const loadSession = async () => {
     try {
@@ -159,7 +164,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setAccessToken(accessToken);
         setIdToken(idToken);
         await getUserInfo(token);
-        await loadVendor(token);
+        const vid = await loadVendor(token);
+        setVendorId(vid);
       }
     } catch (e) {
       console.error('Failed to load session:', e);
@@ -203,7 +209,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
 
       await getUserInfo(tokenResult.accessToken);
-      await loadVendor(tokenResult.accessToken);
+      const vid = await loadVendor(tokenResult.accessToken);
+      setVendorId(vid);
     } catch (err) {
       console.error("Error exchanging code", err);
     } finally {
@@ -230,7 +237,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const loadVendor = async (token: string) => {
+  const loadVendor = async (token: string): Promise<string | null> => {
     try {
       // 1. Get userinfo to get the preferred_username (code)
       const uiRes = await fetch(`${ZITADEL_ISSUER}/oidc/v1/userinfo`, {
@@ -251,6 +258,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (person && person.id) {
             await storage.setItem('vendorPersonId', String(person.id));
             console.log('[Auth Debug] Vendor ID set:', person.id);
+            return String(person.id);
           }
         } else {
           console.warn('[Auth Debug] Failed to fetch vendor info', res.status);
@@ -259,6 +267,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (err) {
       console.error("Error loading vendor session", err);
     }
+    return null;
   };
 
   const login = async () => {
@@ -308,10 +317,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, accessToken, vendorId, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => useContext(AuthContext);
+
+export const useVendor = () => {
+  const { vendorId } = useAuth();
+  return { vendor: vendorId };
+};

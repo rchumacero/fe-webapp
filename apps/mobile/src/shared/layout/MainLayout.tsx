@@ -9,9 +9,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 interface MainLayoutProps {
   children: React.ReactNode;
   headerTitle?: string;
+  onNavigate?: (route: string) => void;
 }
 
-export const MainLayout = ({ children, headerTitle }: MainLayoutProps) => {
+export const MainLayout = ({ children, headerTitle, onNavigate }: MainLayoutProps) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
 
@@ -50,7 +51,7 @@ export const MainLayout = ({ children, headerTitle }: MainLayoutProps) => {
       </View>
 
       {/* Side Navigation (Drawer) */}
-      <Drawer isOpen={isDrawerOpen} onClose={closeDrawer} />
+      <Drawer isOpen={isDrawerOpen} onClose={closeDrawer} onNavigate={onNavigate} />
     </SafeAreaProvider>
   );
 };

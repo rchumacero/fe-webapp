@@ -4,16 +4,24 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from '@kplian/i18n';
 import { COMMERCIAL_PRODUCT_CONSTANTS } from '../../constants/commercial-product-constants';
 import { COMMERCIAL_PRODUCT_ROUTES } from '../../routes/commercial-product-routes';
-import { CommercialProduct } from '../../domain/CommercialProduct';
-import { CommercialProductRepositoryImpl } from '../../infrastructure/CommercialProductRepositoryImpl';
+import { CAMPAIGN_PRODUCT_ROUTES } from '../../../campaign-product/routes/campaign-product-routes';
+import { CAMPAIGN_PRODUCT_CONSTANTS } from '../../../campaign-product/constants/campaign-product-constants';
+import { CommercialProduct } from '@kplian/core';
+import { CommercialProductRepositoryImpl } from '@kplian/infrastructure';
 import { formatDateTime, DEFAULT_PAGE_SIZE } from '@kplian/core';
+import { CampaignRepositoryImpl } from '../../../campaign/infrastructure/repositories/CampaignRepositoryImpl';
+import { Campaign } from '../../../campaign/domain/entities/Campaign';
+import { CAMPAIGN_ROUTES } from '../../../campaign/routes/campaign-routes';
+import { Breadcrumb } from '@/components/shared/Breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { RefreshCw, Plus, Search, Edit2, Trash2, MoreHorizontal, Loader2, Package, DollarSign, Tag, Calendar } from 'lucide-react';
+import { RefreshCw, Plus, Search, Edit2, Trash2, MoreHorizontal, Loader2, Package, DollarSign, Tag, Calendar, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { SCHEDULE_ROUTES } from '../../../schedule/routes/schedule-routes';
 import { SCHEDULE_CONSTANTS } from '../../../schedule/constants/schedule-constants';
+import { COLLABORATOR_ROUTES } from '../../../collaborator/routes/collaborator-routes';
+import { COLLABORATOR_CONSTANTS } from '../../../collaborator/constants/collaborator-constants';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -24,6 +32,7 @@ import {
 import { useRouter } from 'next/navigation';
 
 const commercialProductRepository = new CommercialProductRepositoryImpl();
+const campaignRepository = new CampaignRepositoryImpl();
 
 interface CommercialProductListPageProps {
   campaignId: string;
@@ -33,6 +42,7 @@ export default function CommercialProductListPage({ campaignId }: CommercialProd
   const { t } = useTranslation();
   const router = useRouter();
   const [products, setProducts] = useState<CommercialProduct[]>([]);
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
 
@@ -48,11 +58,21 @@ export default function CommercialProductListPage({ campaignId }: CommercialProd
     }
   }, [campaignId]);
 
+  const fetchCampaign = useCallback(async () => {
+    try {
+      const data = await campaignRepository.getById(campaignId);
+      setCampaign(data);
+    } catch (error) {
+      console.error("Error fetching campaign:", error);
+    }
+  }, [campaignId]);
+
   useEffect(() => {
     if (campaignId) {
       fetchProducts();
+      fetchCampaign();
     }
-  }, [campaignId, fetchProducts]);
+  }, [campaignId, fetchProducts, fetchCampaign]);
 
   const handleRefresh = () => {
     fetchProducts();
@@ -69,8 +89,23 @@ export default function CommercialProductListPage({ campaignId }: CommercialProd
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
+      <Breadcrumb 
+        items={[
+          { label: t('campaigns') || 'Campaigns', href: campaign ? CAMPAIGN_ROUTES.DETAIL(campaign) : CAMPAIGN_ROUTES.LIST },
+          { label: campaign?.name || '...', href: campaign ? CAMPAIGN_ROUTES.DETAIL(campaign) : undefined },
+          { label: t(COMMERCIAL_PRODUCT_CONSTANTS.LIST_TITLE) }
+        ]} 
+      />
       <div className="flex justify-between items-center bg-background/80 backdrop-blur-md sticky top-0 z-10 py-4 border-b border-border/10 mb-2">
-        <div>
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => router.back()} 
+            className="rounded-full hover:bg-accent"
+          >
+            <ArrowLeft size={20} />
+          </Button>
           <h1 className="text-2xl font-bold tracking-tight">
             {t(COMMERCIAL_PRODUCT_CONSTANTS.LIST_TITLE)}
           </h1>
@@ -121,8 +156,20 @@ export default function CommercialProductListPage({ campaignId }: CommercialProd
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer">
-                    <Link href={SCHEDULE_ROUTES.LIST(product.id)} className="flex items-center w-full">
-                      <Calendar className="mr-2 h-4 w-4 text-primary" />{t(SCHEDULE_CONSTANTS.VIEW_SCHEDULE) || 'Schedule'}
+                    <Link href={CAMPAIGN_PRODUCT_ROUTES.LIST(product.id)} className="flex items-center w-full">
+                      <Package className="mr-2 h-4 w-4 text-orange-500" /> {t(COMMERCIAL_PRODUCT_CONSTANTS.VIEW_SUB_PRODUCTS) || 'View Sub Products'}
+                    </Link>
+                  </DropdownMenuItem>
+                  {(product.planScheduleCode === 'YES' || product.planScheduleCode === 'Y') && product.scheduleType?.toLowerCase() === 'open' && (
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Link href={SCHEDULE_ROUTES.LIST(product.id)} className="flex items-center w-full">
+                        <Calendar className="mr-2 h-4 w-4 text-primary" />{t(SCHEDULE_CONSTANTS.VIEW_SCHEDULE) || 'Schedule'}
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Link href={COLLABORATOR_ROUTES.LIST(product.id)} className="flex items-center w-full">
+                      <Tag className="mr-2 h-4 w-4 text-emerald-500" /> {t(COLLABORATOR_CONSTANTS.VIEW_COLLABORATORS) || 'Collaborators'}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-destructive cursor-pointer focus:bg-destructive/10">
@@ -149,6 +196,11 @@ export default function CommercialProductListPage({ campaignId }: CommercialProd
                     <Badge variant="outline" className="text-[10px] py-0 h-4">
                       {product.channelCode}
                     </Badge>
+                    {(product.planScheduleCode === 'YES' || product.planScheduleCode === 'Y') && product.scheduleType && (
+                      <Badge variant="secondary" className="text-[10px] py-0 h-4 bg-primary/5 text-primary border-primary/20">
+                        {product.scheduleType}
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>

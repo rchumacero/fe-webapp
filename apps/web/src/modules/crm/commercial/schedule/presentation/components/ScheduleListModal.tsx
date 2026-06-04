@@ -3,7 +3,7 @@
 import React from 'react';
 import { useTranslation } from '@kplian/i18n';
 import { SCHEDULE_CONSTANTS } from '../../constants/schedule-constants';
-import { Schedule } from '../../domain/Schedule';
+import { Schedule } from '@kplian/core';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Clock, Calendar as CalendarIcon, Hash, Users, Building, Edit2 } from 'lucide-react';
@@ -23,18 +23,18 @@ export function ScheduleListModal({ isOpen, onClose, schedules, onSelect }: Sche
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl bg-transparent">
-        <div className="bg-background/95 backdrop-blur-xl border border-border/40 rounded-xl overflow-hidden shadow-2xl">
-          <DialogHeader className="p-6 bg-primary/5 border-b border-border/10">
+        <div className="bg-background/95 backdrop-blur-xl border border-border/40 rounded-xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+          <DialogHeader className="p-6 bg-primary/5 border-b border-border/10 flex-shrink-0">
             <DialogTitle className="text-xl font-black tracking-tight text-foreground uppercase flex items-center gap-2">
               <CalendarIcon className="size-5 text-primary" />
               {t(SCHEDULE_CONSTANTS.LIST_TITLE)}
             </DialogTitle>
             <DialogDescription className="text-muted-foreground font-medium">
-              {schedules.length} {t('common.records_found') || 'records found for this slot'}
+              {schedules.length} {t(SCHEDULE_CONSTANTS.RECORDS_FOUND) || 'Record(s) found'}
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="max-h-[60vh]">
+          <div className="flex-1 overflow-y-auto max-h-[50vh] min-h-0">
             <div className="p-4 space-y-3">
               {schedules.map((schedule) => (
                 <div 
@@ -76,11 +76,11 @@ export function ScheduleListModal({ isOpen, onClose, schedules, onSelect }: Sche
                 </div>
               ))}
             </div>
-          </ScrollArea>
-
+          </div>
+ 
           <div className="p-4 bg-primary/5 border-t border-border/10 flex justify-end">
             <Button variant="ghost" onClick={onClose} className="font-bold uppercase text-xs tracking-widest">
-              {t('common.close') || 'Close'}
+              {t(SCHEDULE_CONSTANTS.CLOSE) || 'Close'}
             </Button>
           </div>
         </div>

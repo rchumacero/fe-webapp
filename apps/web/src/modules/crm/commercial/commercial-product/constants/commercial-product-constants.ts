@@ -10,6 +10,7 @@ export const COMMERCIAL_PRODUCT_CONSTANTS = {
   RECORD_NOT_FOUND: "common.recordNotFound",
   END_OF_RECORDS: "common.endOfRecords",
   ACTIONS: "common.actions",
+  VIEW_SUB_PRODUCTS: "crm.viewSubProducts",
   COLUMNS: {
     CODE: "common.code",
     NAME: "common.name",
@@ -42,7 +43,8 @@ export const COMMERCIAL_PRODUCT_CONSTANTS = {
     NO_STAY: "common.noStay",
     FORM_STATUS: "common.formStatus",
     FORM_MODIFIED: "common.formModified",
-    SELECT_OPTION: "common.selectOption"
+    SELECT_OPTION: "common.selectOption",
+    SCHEDULE_TYPE: "crm.commercialProduct.scheduleType"
   },
   VALIDATION: {
     CAMPAIGN_REQUIRED: "crm.commercialProduct.validation.campaignRequired",

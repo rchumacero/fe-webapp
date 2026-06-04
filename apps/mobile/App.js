@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import "@kplian/i18n";
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { MainLayout } from './src/shared/layout/MainLayout';
 import { Colors, Spacing, Typography } from './src/shared/theme/constants';
 import { AuthProvider, useAuth } from './src/shared/auth/AuthContext';
+import CreateAppointmentScreen from './src/modules/crm/commercial/customer-service/presentation/screens/CreateAppointmentScreen';
 import { useTranslation } from '@kplian/i18n';
 
 // Auto-redirects to Zitadel immediately — no button needed
@@ -13,7 +14,7 @@ const LoginScreen = () => {
   useEffect(() => {
     // Trigger login automatically as soon as this screen mounts
     login();
-  }, []);
+  }, [login]);
 
   // Show a minimal loading state while the Zitadel window opens
   return (
@@ -27,6 +28,7 @@ const LoginScreen = () => {
 function AppContent() {
   const { user, isLoading } = useAuth();
   const { t } = useTranslation();
+  const [currentScreen, setCurrentScreen] = useState('HOME');
 
   if (isLoading && !user) {
     return (
@@ -40,29 +42,43 @@ function AppContent() {
     return <LoginScreen />;
   }
 
+  if (currentScreen === 'APPOINTMENT') {
+    return <CreateAppointmentScreen onBack={() => setCurrentScreen('HOME')} />;
+  }
+
+  const handleNavigation = (route) => {
+    console.log('[Navigation] Menu route clicked:', route);
+    if (route === '/crm/commercial/customer-service/create' || route === 'crm/commercial/customer-service/create') {
+      setCurrentScreen('APPOINTMENT');
+    }
+  };
+
   return (
-    <MainLayout headerTitle="Dashboard">
+    <MainLayout headerTitle="Dashboard" onNavigate={handleNavigation}>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t('common.welcome')}, {user.name}!</Text>
         <Text style={styles.cardSubtitle}>
           You are currently logged in with {user.username}.
         </Text>
-        
-        <View style={styles.buttonPlaceholder}>
+
+        {/* <TouchableOpacity 
+          style={styles.buttonPlaceholder}
+          onPress={() => setCurrentScreen('APPOINTMENT')}
+        >
           <Text style={styles.buttonText}>{t('common.open_crm')}</Text>
-        </View>
+        </TouchableOpacity> */}
       </View>
 
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={[styles.statLabel, { color: Colors.success }]}>+2.6% {t('common.last_week')}</Text>
-          <Text style={styles.statValue}>765</Text>
-          <Text style={styles.statName}>{t('common.products_sold')}</Text>
+          <Text style={styles.statLabel}>Ventas</Text>
+          <Text style={styles.statValue}>12</Text>
+          <Text style={styles.statName}>Este mes</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={[styles.statLabel, { color: Colors.destructive }]}>-0.1% {t('common.last_week')}</Text>
-          <Text style={styles.statValue}>18,765</Text>
-          <Text style={styles.statName}>{t('common.total_balance')}</Text>
+          <Text style={styles.statLabel}>Clientes</Text>
+          <Text style={styles.statValue}>48</Text>
+          <Text style={styles.statName}>Activos</Text>
         </View>
       </View>
     </MainLayout>

@@ -135,6 +135,39 @@
     "workDescription": "Responsabilidades",
     "fromDate": "Fecha de Inicio",
     "toDate": "Fecha de Fin",
+    "customer_service": {
+      "title": "Atención al Cliente",
+      "create_appointment": "Agendar Cita",
+      "select_product": "Seleccionar Servicio",
+      "select_vendor": "Seleccionar Profesional",
+      "select_schedule": "Seleccionar Horario",
+      "confirm_appointment": "Confirmar Cita",
+      "success_message": "¡Cita agendada con éxito!",
+      "error_message": "Error al agendar la cita"
+    },
+    "organization": "Organización",
+    "organizationList": "Lista de Organizaciones",
+    "crm": {
+      "organizationTree": "Estructura Organizacional",
+      "organizationHierarchy": "Vista Jerárquica",
+      "organizationLoadingStructure": "Construyendo estructura...",
+      "organizationEditNode": "Editar Nodo",
+      "organizationNewNode": "Nueva Organización",
+      "organizationAddRoot": "Añadir Raíz"
+    },
+    "organization": {
+      "maxAttention": "Atención Máxima",
+      "ticketMethod": "Método de Ticket",
+      "ticketCounter": "Contador de Tickets",
+      "parentOrg": "Organización Superior",
+      "create_title": "Crear Organización",
+      "edit_title": "Editar Organización",
+      "description_title": "Registrar una nueva organización en el sistema",
+      "description_edit": "Modificar los datos de la organización existente",
+      "search_placeholder": "Buscar por nombre o código...",
+      "record_not_found": "No se encontraron organizaciones",
+      "confirm_delete": "¿Está seguro de eliminar esta organización?"
+    },
     "name1": "Primer Nombre",
     "name2": "Segundo Nombre",
     "name3": "Tercer Nombre",
@@ -226,6 +259,7 @@
       "quantity": "Cantidad",
       "unitMeasure": "Unidad de Medida",
       "configurationCode": "Código de Configuración",
+      "scheduleType": "Tipo de Horario",
       "name": "Nombre del Producto Comercial"
     },
     "schedule": {

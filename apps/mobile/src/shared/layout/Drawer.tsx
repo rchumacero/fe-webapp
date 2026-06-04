@@ -11,18 +11,19 @@ import {
 } from 'react-native';
 import { Colors, Spacing, Typography } from '../theme/constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getMenuByUser, MenuItem } from '@kplian/core';
+import { getMenuByUser, MenuItem, MENU_CODES } from '@kplian/core';
 import { useAuth } from '../auth/AuthContext';
 
 interface DrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  onNavigate?: (route: string) => void;
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.82;
 
-export const Drawer = ({ isOpen, onClose }: DrawerProps) => {
+export const Drawer = ({ isOpen, onClose, onNavigate }: DrawerProps) => {
   const { user, logout } = useAuth();
   const [menuData, setMenuData] = useState<MenuItem[]>([]);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
@@ -32,7 +33,7 @@ export const Drawer = ({ isOpen, onClose }: DrawerProps) => {
   useEffect(() => {
     const fetchMenu = async () => {
       if (user?.username) {
-        const data = await getMenuByUser(user.username);
+        const data = await getMenuByUser(user.username, MENU_CODES.MOBILE_APP);
         setMenuData(data);
       }
     };
@@ -72,7 +73,13 @@ export const Drawer = ({ isOpen, onClose }: DrawerProps) => {
             { paddingLeft: Spacing.md + (level * 20) },
             isActive && styles.menuItemActive
           ]}
-          onPress={hasChildren ? () => toggleExpand(item.id) : undefined}
+          onPress={hasChildren ? 
+            () => toggleExpand(item.id) : 
+            () => {
+              onNavigate?.(item.url || '');
+              onClose();
+            }
+          }
         >
           {/* Icon Placeholder (Circle like radio button style) */}
           <View style={[styles.iconWrapper, isUserMenu && styles.userMenuIcon]}>

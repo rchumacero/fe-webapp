@@ -12,8 +12,6 @@ export interface Organization {
   createdBy?: string;
   updatedAt?: string;
   updatedBy?: string;
-
-
 }
 
 export interface CreateOrganizationDto {

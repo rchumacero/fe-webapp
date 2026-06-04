@@ -27,7 +27,7 @@ const campaignSchema = z.object({
   code: z.string().min(1, "Code is required"),
   name: z.string().min(2, "Name is required"),
   fromDate: z.string().min(1, "From date is required"),
-  toDate: z.string().min(1, "To date is required"),
+  toDate: z.string().optional(),
   currencyCode: z.string().min(1, "Currency is required"),
   defaultSpreadPercent: z.coerce.number().min(0),
   status: z.string().min(1, "Status is required"),
@@ -128,7 +128,7 @@ export default function CampaignFormPage({ id, mode = 'custom' }: CampaignFormPr
       const dataToSave = {
         ...formData,
         fromDate: new Date(formData.fromDate).toISOString(),
-        toDate: new Date(formData.toDate).toISOString(),
+        toDate: formData.toDate ? new Date(formData.toDate).toISOString() : null,
       };
 
       if (id) {

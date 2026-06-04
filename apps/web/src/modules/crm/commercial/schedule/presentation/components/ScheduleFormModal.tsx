@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '@kplian/i18n';
+import { Schedule, CreateScheduleDto, UpdateScheduleDto } from '@kplian/core';
+import { ScheduleRepositoryImpl } from '@kplian/infrastructure';
 import { SCHEDULE_CONSTANTS } from '../../constants/schedule-constants';
-import { ScheduleRepositoryImpl } from '../../infrastructure/ScheduleRepositoryImpl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Save, X, Loader2, Clock, Calendar as CalendarIcon, Hash, Users, Building } from 'lucide-react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -26,15 +27,23 @@ const personRepository = new PersonRepositoryImpl();
 const organizationRepository = new OrganizationRepositoryImpl();
 
 const scheduleSchema = z.object({
-  commercialProductId: z.string().min(1, "Commercial Product is required"),
   organizationId: z.string().min(1, "Organization is required"),
-  collaboratorId: z.string().min(1, "Collaborator is required"),
-  dayCode: z.string().min(1, "Day is required"),
-  fromTime: z.string().min(1, "Start time is required"),
-  toTime: z.string().min(1, "End time is required"),
-  quantity: z.coerce.number().min(1, "Quantity must be at least 1"),
-  unitMeasureCode: z.string().min(1, "Unit of measure is required"),
+  collaboratorId: z.string().optional().nullable(),
+  commercialProductId: z.string().optional().nullable(),
+  fromDate: z.string().min(1, "From date is required"),
+  toDate: z.string().min(1, "To date is required"),
+  quantity: z.coerce.number().min(0, "Quantity must be positive").optional().nullable(),
   status: z.string().optional().default('ACTIVE'),
+  repeat: z.boolean().optional().default(false),
+  until: z.string().optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (data.repeat && !data.until) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Until date is required when Repeat is selected",
+      path: ["until"]
+    });
+  }
 });
 
 type ScheduleFormData = z.infer<typeof scheduleSchema>;
@@ -45,9 +54,11 @@ interface ScheduleFormModalProps {
   onSuccess: () => void;
   id?: string | null;
   commercialProductId: string;
+  collaboratorId?: string;
   initialDay?: string;
   initialFromTime?: string;
   initialToTime?: string;
+  selectedDateWeekRef?: Date;
 }
 
 export function ScheduleFormModal({ 
@@ -56,9 +67,11 @@ export function ScheduleFormModal({
   onSuccess, 
   id, 
   commercialProductId,
+  collaboratorId,
   initialDay,
   initialFromTime,
-  initialToTime
+  initialToTime,
+  selectedDateWeekRef
 }: ScheduleFormModalProps) {
   const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -109,8 +122,39 @@ export function ScheduleFormModal({
     parameters: SCHEDULE_DOMAIN_PARAMETERS
   });
 
-  const dayOptions = parametersData[P_DAY] || [];
-  const unitMeasureOptions = parametersData[P_UNIT_MEASURE] || [];
+  const toLocalISOString = useCallback((dateInput: Date | string) => {
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+    if (isNaN(date.getTime())) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }, []);
+
+  const getInitialDates = useCallback(() => {
+    const daysOfWeek = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+    const d = new Date(selectedDateWeekRef || new Date());
+    const targetIdx = daysOfWeek.indexOf(initialDay || 'MON');
+    const currentIdx = d.getDay() === 0 ? 6 : d.getDay() - 1;
+    const diff = targetIdx - currentIdx;
+    d.setDate(d.getDate() + diff);
+    
+    const fromTimeStr = initialFromTime || '08:00';
+    const toTimeStr = initialToTime || '09:00';
+    
+    const fromD = new Date(d);
+    fromD.setHours(parseInt(fromTimeStr.split(':')[0]), parseInt(fromTimeStr.split(':')[1]), 0, 0);
+    
+    const toD = new Date(d);
+    toD.setHours(parseInt(toTimeStr.split(':')[0]), parseInt(toTimeStr.split(':')[1]), 0, 0);
+    
+    return {
+      fromDate: toLocalISOString(fromD),
+      toDate: toLocalISOString(toD)
+    };
+  }, [selectedDateWeekRef, initialDay, initialFromTime, initialToTime, toLocalISOString]);
 
   const {
     register,
@@ -121,17 +165,19 @@ export function ScheduleFormModal({
   } = useForm<ScheduleFormData>({
     resolver: zodResolver(scheduleSchema),
     defaultValues: {
-      commercialProductId: commercialProductId || '',
       organizationId: '',
-      collaboratorId: '',
-      dayCode: initialDay || 'MON',
-      fromTime: initialFromTime || '08:00',
-      toTime: initialToTime || '09:00',
+      collaboratorId: collaboratorId || '',
+      commercialProductId: commercialProductId || '',
+      fromDate: toLocalISOString(new Date()),
+      toDate: toLocalISOString(new Date(Date.now() + 3600000)),
       quantity: 1,
-      unitMeasureCode: 'UNIT',
       status: 'ACTIVE',
+      repeat: false,
+      until: '',
     }
   });
+
+  const repeatChecked = useWatch({ control, name: 'repeat' });
 
   useEffect(() => {
     if (id && isOpen) {
@@ -140,15 +186,15 @@ export function ScheduleFormModal({
         try {
           const data = await scheduleRepository.getById(id);
           reset({
-            commercialProductId: data.commercialProductId,
             organizationId: data.organizationId,
-            collaboratorId: data.collaboratorId,
-            dayCode: data.dayCode,
-            fromTime: data.fromTime,
-            toTime: data.toTime,
-            quantity: data.quantity,
-            unitMeasureCode: data.unitMeasureCode,
+            collaboratorId: data.collaboratorId || collaboratorId || null,
+            commercialProductId: data.commercialProductId || commercialProductId || null,
+            fromDate: data.fromDate ? toLocalISOString(data.fromDate) : '',
+            toDate: data.toDate ? toLocalISOString(data.toDate) : '',
+            quantity: data.quantity || 1,
             status: data.status || 'ACTIVE',
+            repeat: data.until ? true : false,
+            until: data.until ? toLocalISOString(data.until).slice(0, 10) : '',
           });
         } catch (error) {
           console.error("Error fetching schedule:", error);
@@ -158,27 +204,38 @@ export function ScheduleFormModal({
       };
       fetchSchedule();
     } else if (isOpen) {
+      const dates = getInitialDates();
       reset({
-        commercialProductId: commercialProductId || '',
         organizationId: '',
-        collaboratorId: '',
-        dayCode: initialDay || 'MON',
-        fromTime: initialFromTime || '08:00',
-        toTime: initialToTime || '09:00',
+        collaboratorId: collaboratorId || '',
+        commercialProductId: commercialProductId || '',
+        fromDate: dates.fromDate,
+        toDate: dates.toDate,
         quantity: 1,
-        unitMeasureCode: 'UNIT',
         status: 'ACTIVE',
+        repeat: false,
+        until: '',
       });
     }
-  }, [id, isOpen, reset, commercialProductId, initialDay, initialFromTime, initialToTime]);
+  }, [id, isOpen, reset, getInitialDates, collaboratorId, commercialProductId, toLocalISOString]);
 
   const onSubmit = async (data: ScheduleFormData) => {
     setIsSubmitting(true);
     try {
+      const payload = {
+        organizationId: data.organizationId,
+        collaboratorId: data.collaboratorId,
+        commercialProductId: data.commercialProductId,
+        fromDate: new Date(data.fromDate),
+        toDate: new Date(data.toDate),
+        quantity: data.quantity,
+        status: data.status,
+        until: data.repeat && data.until ? new Date(data.until) : null,
+      };
       if (id) {
-        await scheduleRepository.update({ ...data, id });
+        await scheduleRepository.update({ ...payload, id });
       } else {
-        await scheduleRepository.create(data);
+        await scheduleRepository.create(payload as any);
       }
       onSuccess();
       onClose();
@@ -216,47 +273,76 @@ export function ScheduleFormModal({
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1 flex items-center gap-2">
-                    <Users size={12} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.COLLABORATOR)}
-                  </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end border border-border/20 bg-primary/5 p-4 rounded-xl">
+                <div className="flex items-center gap-2 h-11 px-3 border border-border/40 bg-card/50 rounded-lg">
                   <Controller
-                    name="collaboratorId"
+                    name="repeat"
                     control={control}
                     render={({ field }) => (
-                      <div className="relative">
-                        <select
-                          {...field}
-                          disabled={isLoadingPersons || !vendor}
-                          className={cn(
-                            "w-full h-11 px-3 py-2 text-sm bg-card/50 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none",
-                            errors.collaboratorId ? "border-destructive" : "focus:border-primary/40",
-                            (isLoadingPersons || !vendor) && "opacity-60 cursor-not-allowed"
-                          )}
-                        >
-                          <option value="">
-                            {isLoadingPersons
-                              ? t('common.loading') || 'Loading...'
-                              : t(SCHEDULE_CONSTANTS.FORM.SELECT_OPTION) || 'Select Collaborator'}
-                          </option>
-                          {persons.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.completeName || `${p.name1 ?? ''} ${p.surname1 ?? ''}`.trim() || p.code}
-                            </option>
-                          ))}
-                        </select>
-                        {isLoadingPersons && (
-                          <Loader2
-                            size={14}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground pointer-events-none"
-                          />
-                        )}
-                      </div>
+                      <input
+                        type="checkbox"
+                        id="repeat"
+                        checked={!!field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        className="size-4 rounded border-border/50 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                      />
                     )}
                   />
-                  {errors.collaboratorId && <p className="text-[10px] text-destructive font-bold uppercase ml-1">{errors.collaboratorId.message}</p>}
+                  <label htmlFor="repeat" className="text-xs font-bold uppercase tracking-wider text-muted-foreground cursor-pointer select-none">
+                    Repeat Weekly
+                  </label>
                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">
+                    Until Date
+                  </label>
+                  <Input
+                    type="date"
+                    {...register("until")}
+                    disabled={!repeatChecked}
+                    className={cn(
+                      "h-11 bg-card/50 border-border/40 rounded-lg",
+                      !repeatChecked && "opacity-50 cursor-not-allowed bg-muted"
+                    )}
+                  />
+                  {errors.until && <p className="text-[10px] text-destructive font-bold uppercase ml-1">{errors.until.message}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {collaboratorId && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1 flex items-center gap-2">
+                      <Users size={12} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.COLLABORATOR)}
+                    </label>
+                    <Controller
+                      name="collaboratorId"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="relative">
+                          <select
+                            value={field.value || ''}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            disabled={true}
+                            className="w-full h-11 px-3 py-2 text-sm bg-muted border border-border/40 rounded-lg opacity-80 cursor-not-allowed appearance-none"
+                          >
+                            <option value="">
+                              {t(SCHEDULE_CONSTANTS.FORM.SELECT_OPTION) || 'Select Collaborator'}
+                            </option>
+                            {persons.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.completeName || `${p.name1 ?? ''} ${p.surname1 ?? ''}`.trim() || p.code}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    />
+                    {errors.collaboratorId && <p className="text-[10px] text-destructive font-bold uppercase ml-1">{errors.collaboratorId.message}</p>}
+                  </div>
+                )}
+
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1 flex items-center gap-2">
@@ -303,30 +389,28 @@ export function ScheduleFormModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1 flex items-center gap-2">
-                    <CalendarIcon size={12} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.DAY)}
+                    <CalendarIcon size={12} className="text-primary" /> From Date
                   </label>
-                  <Controller
-                    name="dayCode"
-                    control={control}
-                    render={({ field }) => (
-                      <select
-                        {...field}
-                        className="w-full h-11 px-3 py-2 text-sm bg-card/50 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
-                      >
-                        <option value="">{t(SCHEDULE_CONSTANTS.FORM.SELECT_OPTION) || 'Select Day'}</option>
-                        {dayOptions.map((p: any, idx: number) => {
-                          const val = (p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '')).toUpperCase();
-                          const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
-                          return (
-                            <option key={`${val}-${idx}`} value={val}>
-                              {t(SCHEDULE_CONSTANTS.DAYS[val as keyof typeof SCHEDULE_CONSTANTS.DAYS]) || label}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    )}
-                  />
-                  {errors.dayCode && <p className="text-[10px] text-destructive font-bold uppercase ml-1">{errors.dayCode.message}</p>}
+                  <Input type="datetime-local" {...register("fromDate")} className="h-11 bg-card/50 border-border/40 rounded-lg" />
+                  {errors.fromDate && <p className="text-[10px] text-destructive font-bold uppercase ml-1">{errors.fromDate.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1 flex items-center gap-2">
+                    <CalendarIcon size={12} className="text-primary" /> To Date
+                  </label>
+                  <Input type="datetime-local" {...register("toDate")} className="h-11 bg-card/50 border-border/40 rounded-lg" />
+                  {errors.toDate && <p className="text-[10px] text-destructive font-bold uppercase ml-1">{errors.toDate.message}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1 flex items-center gap-2">
+                    <Hash size={12} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.QUANTITY)}
+                  </label>
+                  <Input type="number" {...register("quantity")} className="h-11 bg-card/50 border-border/40 rounded-lg" />
+                  {errors.quantity && <p className="text-[10px] text-destructive font-bold uppercase ml-1">{errors.quantity.message}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -346,62 +430,6 @@ export function ScheduleFormModal({
                       </select>
                     )}
                   />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1 flex items-center gap-2">
-                    <Clock size={12} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.FROM_TIME)}
-                  </label>
-                  <Input type="time" {...register("fromTime")} className="h-11 bg-card/50 border-border/40 rounded-lg" />
-                  {errors.fromTime && <p className="text-[10px] text-destructive font-bold uppercase ml-1">{errors.fromTime.message}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1 flex items-center gap-2">
-                    <Clock size={12} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.TO_TIME)}
-                  </label>
-                  <Input type="time" {...register("toTime")} className="h-11 bg-card/50 border-border/40 rounded-lg" />
-                  {errors.toTime && <p className="text-[10px] text-destructive font-bold uppercase ml-1">{errors.toTime.message}</p>}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1 flex items-center gap-2">
-                    <Hash size={12} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.QUANTITY)}
-                  </label>
-                  <Input type="number" {...register("quantity")} className="h-11 bg-card/50 border-border/40 rounded-lg" />
-                  {errors.quantity && <p className="text-[10px] text-destructive font-bold uppercase ml-1">{errors.quantity.message}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1 flex items-center gap-2">
-                    <Hash size={12} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.UNIT_MEASURE)}
-                  </label>
-                  <Controller
-                    name="unitMeasureCode"
-                    control={control}
-                    render={({ field }) => (
-                      <select
-                        {...field}
-                        className="w-full h-11 px-3 py-2 text-sm bg-card/50 border border-border/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
-                      >
-                        <option value="">{t(SCHEDULE_CONSTANTS.FORM.SELECT_OPTION) || 'Select unit measure'}</option>
-                        {unitMeasureOptions.map((p: any, idx: number) => {
-                          const val = p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '');
-                          const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
-                          return (
-                            <option key={`${val}-${idx}`} value={val}>
-                              {label}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    )}
-                  />
-                  {errors.unitMeasureCode && <p className="text-[10px] text-destructive font-bold uppercase ml-1">{errors.unitMeasureCode.message}</p>}
                 </div>
               </div>
 

@@ -4,18 +4,14 @@ import { NextResponse } from "next/server";
 export default auth((req) => {
   const isAuth = !!req.auth;
   const isLoginPage = req.nextUrl.pathname === "/login";
-  
+
   const search = req.nextUrl.search;
   const searchParams = req.nextUrl.searchParams;
-  
+
   // Try to get invitationId from named param or direct UUID pattern (?UUID)
   let invitationId = searchParams.get('invitationId');
   if (!invitationId && search.startsWith('?') && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(search.substring(1))) {
     invitationId = search.substring(1);
-  }
-
-  if (invitationId) {
-    console.log('ESTE ES middleware - invitation detected:', invitationId);
   }
 
   let response = NextResponse.next();

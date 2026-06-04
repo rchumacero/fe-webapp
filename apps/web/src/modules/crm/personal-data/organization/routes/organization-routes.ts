@@ -1,9 +1,10 @@
 import { ORGANIZATION_CONSTANTS } from "../constants/organization-constants";
 
 export const ORGANIZATION_ROUTES = {
-  LIST: ORGANIZATION_CONSTANTS.ROUTES.ORGANIZATION,
-  CREATE: (personId: string | number) => `${ORGANIZATION_CONSTANTS.ROUTES.ORGANIZATION_NEW}?personId=${personId}` as const,
+  LIST: (personId: string | number) => `${ORGANIZATION_CONSTANTS.ROUTES.ORGANIZATION}?personId=${personId}` as const,
+  CREATE: (personId: string | number) => `${ORGANIZATION_CONSTANTS.ROUTES.ORGANIZATION}/new?personId=${personId}` as const,
   EDIT: (id: string | number, personId: string | number) => `${ORGANIZATION_CONSTANTS.ROUTES.ORGANIZATION}/edit/${id}?personId=${personId}` as const,
+  TREE: (personId: string | number) => `${ORGANIZATION_CONSTANTS.ROUTES.ORGANIZATION}/tree?personId=${personId}` as const,
 };
 
 // Backend Endpoints

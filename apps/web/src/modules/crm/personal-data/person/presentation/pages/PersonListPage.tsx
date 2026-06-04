@@ -24,7 +24,8 @@ import {
   MoreHorizontal,
   Loader2,
   UserCircle,
-  Eye
+  Eye,
+  Building2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -37,6 +38,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ORGANIZATION_ROUTES } from '../../../organization/routes/organization-routes';
+import { ORGANIZATION_CONSTANTS } from '../../../organization/constants/organization-constants';
 
 const personRepository = new PersonRepositoryImpl();
 
@@ -246,11 +249,16 @@ export default function PersonListPage() {
                     </DropdownMenuItem>
                     <DropdownMenuItem className="cursor-pointer">
                       <Link href={PERSON_ROUTES.EDIT(person.id)} className="flex items-center w-full">
-                        <Edit2 className="mr-2 h-4 w-4" /> {t(PERSON_CONSTANTS.EDIT_RECORD) || 'Edit'}
+                        <Edit2 className="mr-2 h-4 w-4" /> {t(PERSON_CONSTANTS.EDIT_RECORD)}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Link href={ORGANIZATION_ROUTES.TREE(person.id)} className="flex items-center w-full">
+                        <Building2 className="mr-2 h-4 w-4" /> {t(ORGANIZATION_CONSTANTS.VIEW_ORGANZATIONS)}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem className="text-destructive cursor-pointer focus:bg-destructive/10">
-                      <Trash2 className="mr-2 h-4 w-4" /> {t(PERSON_CONSTANTS.CONFIRM_DELETE) || 'Delete'}
+                      <Trash2 className="mr-2 h-4 w-4" /> {t(PERSON_CONSTANTS.CONFIRM_DELETE)}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

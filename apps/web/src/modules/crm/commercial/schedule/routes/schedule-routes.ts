@@ -9,6 +9,7 @@ export const SCHEDULE_ROUTES = {
 export const SCHEDULE_API_ROUTES = {
   SCHEDULE: '/v1/schedules',
   SCHEDULE_BY_COMMERCIAL_PRODUCT_ID: (commercialProductId: string | number) => `/v1/commercial-products/${commercialProductId}/schedules/`,
+  SCHEDULE_BY_COLLABORATOR_ID: (collaboratorId: string | number) => `/v1/collaborators/${collaboratorId}/schedules/`,
   SCHEDULE_UPDATE: (id: string | number) => `/v1/schedules/${id}`,
   SCHEDULE_DELETE: (id: string | number) => `/v1/schedules/${id}`,
   SCHEDULE_BY_ID: (id: string | number) => `/v1/schedules/${id}`,

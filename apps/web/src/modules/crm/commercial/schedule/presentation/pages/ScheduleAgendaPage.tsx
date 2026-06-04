@@ -4,8 +4,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '@kplian/i18n';
 import { SCHEDULE_CONSTANTS } from '../../constants/schedule-constants';
 import { SCHEDULE_ROUTES } from '../../routes/schedule-routes';
-import { Schedule } from '../../domain/Schedule';
-import { ScheduleRepositoryImpl } from '../../infrastructure/ScheduleRepositoryImpl';
+import { Schedule, CreateScheduleDto, UpdateScheduleDto } from '@kplian/core';
+import { ScheduleRepositoryImpl } from '@kplian/infrastructure';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
@@ -14,16 +14,34 @@ import { cn } from '@/lib/utils';
 import { ScheduleFormModal } from '../components/ScheduleFormModal';
 import { ScheduleListModal } from '../components/ScheduleListModal';
 import { Badge } from '@/components/ui/badge';
+import { CommercialProductRepositoryImpl } from '../../../commercial-product/infrastructure/CommercialProductRepositoryImpl';
+import { CampaignRepositoryImpl } from '../../../campaign/infrastructure/repositories/CampaignRepositoryImpl';
+import { COMMERCIAL_PRODUCT_ROUTES } from '../../../commercial-product/routes/commercial-product-routes';
+import { CAMPAIGN_ROUTES } from '../../../campaign/routes/campaign-routes';
+import { Breadcrumb } from '@/components/shared/Breadcrumb';
+import { CommercialProduct } from '@kplian/core';
+import { Campaign } from '../../../campaign/domain/entities/Campaign';
+import { CollaboratorRepositoryImpl } from '../../../collaborator/infrastructure/CollaboratorRepositoryImpl';
+import { COLLABORATOR_ROUTES } from '../../../collaborator/routes/collaborator-routes';
+import { PersonRepositoryImpl } from '@/modules/crm/personal-data/person/infrastructure/repositories/PersonRepositoryImpl';
 
 const scheduleRepository = new ScheduleRepositoryImpl();
+const commercialProductRepository = new CommercialProductRepositoryImpl();
+const campaignRepository = new CampaignRepositoryImpl();
+const collaboratorRepository = new CollaboratorRepositoryImpl();
+const personRepository = new PersonRepositoryImpl();
 
 export default function ScheduleAgendaPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const commercialProductId = searchParams.get('commercialProductId');
+  const commercialProductIdFromUrl = searchParams.get('commercialProductId');
+  const collaboratorId = searchParams.get('collaboratorId');
 
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [commercialProduct, setCommercialProduct] = useState<CommercialProduct | null>(null);
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [collaboratorName, setCollaboratorName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
@@ -35,35 +53,133 @@ export default function ScheduleAgendaPage() {
   const [isListModalOpen, setIsListModalOpen] = useState(false);
   const [currentGroup, setCurrentGroup] = useState<Schedule[]>([]);
 
+  // Calculated or URL parameter:
+  const [resolvedProductId, setResolvedProductId] = useState<string | null>(null);
+
   const fetchSchedules = useCallback(async () => {
-    if (!commercialProductId) return;
+    if (!commercialProductIdFromUrl && !collaboratorId) return;
     setIsLoading(true);
     try {
-      const data = await scheduleRepository.getByCommercialProductId(commercialProductId);
-      setSchedules(data);
+      let data = [];
+      if (collaboratorId) {
+        data = await scheduleRepository.getByCollaboratorId(collaboratorId);
+      } else if (commercialProductIdFromUrl) {
+        data = await scheduleRepository.getByCommercialProductId(commercialProductIdFromUrl);
+      }
+      const mapped = (data || []).map((s: any) => {
+        const fromD = new Date(s.fromDate);
+        const toD = new Date(s.toDate);
+        
+        const agendaDays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+        const mappedDayCode = agendaDays[fromD.getDay() === 0 ? 6 : fromD.getDay() - 1];
+
+        const fromTime = `${fromD.getHours().toString().padStart(2, '0')}:${fromD.getMinutes().toString().padStart(2, '0')}`;
+        const toTime = `${toD.getHours().toString().padStart(2, '0')}:${toD.getMinutes().toString().padStart(2, '0')}`;
+
+        return {
+          ...s,
+          dayCode: mappedDayCode,
+          fromTime,
+          toTime
+        };
+      });
+      setSchedules(mapped);
     } catch (error) {
       console.error("Error fetching schedules:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [commercialProductId]);
+  }, [commercialProductIdFromUrl, collaboratorId]);
 
   useEffect(() => {
     fetchSchedules();
-  }, [fetchSchedules]);
+    
+    const fetchContext = async () => {
+      let prodId = commercialProductIdFromUrl;
+      try {
+        if (collaboratorId) {
+          const collab = await collaboratorRepository.getById(collaboratorId);
+          if (collab) {
+            if (collab.commercialProductId) {
+              prodId = collab.commercialProductId;
+              setResolvedProductId(prodId);
+            }
+            if (collab.employeeId) {
+              try {
+                const person = await personRepository.getById(collab.employeeId);
+                if (person) {
+                  const fullName = person.completeName || `${person.name1 ?? ''} ${person.surname1 ?? ''}`.trim() || person.code || collab.employeeId;
+                  setCollaboratorName(fullName);
+                } else {
+                  setCollaboratorName(collab.employeeId);
+                }
+              } catch (e) {
+                console.error("Error fetching person for collaborator:", e);
+                setCollaboratorName(collab.employeeId);
+              }
+            }
+          }
+        } else if (prodId) {
+          setResolvedProductId(prodId);
+        }
+
+        if (prodId) {
+          const product = await commercialProductRepository.getById(prodId);
+          setCommercialProduct(product);
+          if (product.campaignId) {
+            const campaignData = await campaignRepository.getById(product.campaignId);
+            setCampaign(campaignData);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching context for breadcrumb:", error);
+      }
+    };
+    
+    fetchContext();
+  }, [fetchSchedules, commercialProductIdFromUrl, collaboratorId]);
 
   const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   const hours = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
 
+  const visibleSchedules = React.useMemo(() => {
+    if (view === 'day') {
+      return schedules.filter(s => {
+        const d = new Date(s.fromDate);
+        return d.toDateString() === selectedDate.toDateString();
+      });
+    } else if (view === 'week') {
+      const d = new Date(selectedDate);
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      const weekStart = new Date(d.setDate(diff));
+      weekStart.setHours(0, 0, 0, 0);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 7);
+      weekEnd.setHours(0, 0, 0, 0);
+
+      return schedules.filter(s => {
+        const date = new Date(s.fromDate);
+        return date >= weekStart && date < weekEnd;
+      });
+    } else {
+      // month view
+      return schedules.filter(s => {
+        const d = new Date(s.fromDate);
+        return d.getMonth() === selectedDate.getMonth() && d.getFullYear() === selectedDate.getFullYear();
+      });
+    }
+  }, [schedules, view, selectedDate]);
+
   const groupSchedulesByDay = useCallback((daySchedules: Schedule[]) => {
-    const sorted = [...daySchedules].sort((a, b) => a.fromTime.localeCompare(b.fromTime));
+    const sorted = [...daySchedules].sort((a, b) => (a as any).fromTime.localeCompare((b as any).fromTime));
     const groups: Schedule[][] = [];
 
     sorted.forEach(schedule => {
       let placed = false;
       for (const group of groups) {
         // Overlap detection
-        const overlaps = group.some(s => (schedule.fromTime < s.toTime && schedule.toTime > s.fromTime));
+        const overlaps = group.some(s => ((schedule as any).fromTime < (s as any).toTime && (schedule as any).toTime > (s as any).fromTime));
         if (overlaps) {
           group.push(schedule);
           placed = true;
@@ -83,32 +199,39 @@ export default function ScheduleAgendaPage() {
     const schedule = schedules.find(s => s.id === scheduleId);
     if (!schedule) return;
 
-    // Preserve duration
-    const startMins = parseInt(schedule.fromTime.split(':')[0]) * 60 + parseInt(schedule.fromTime.split(':')[1]);
-    const endMins = parseInt(schedule.toTime.split(':')[0]) * 60 + parseInt(schedule.toTime.split(':')[1]);
-    const duration = endMins - startMins;
+    // Calculate dates based on selectedDate and target dayCode
+    const daysOfWeek = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+    const d = new Date(selectedDate);
+    const targetIdx = daysOfWeek.indexOf(dayCode);
+    const currentIdx = d.getDay() === 0 ? 6 : d.getDay() - 1;
+    const diff = targetIdx - currentIdx;
+    d.setDate(d.getDate() + diff);
 
-    const newFromTime = `${hourIdx.toString().padStart(2, '0')}:00`;
-    const newEndMins = hourIdx * 60 + duration;
-    const newToTime = `${Math.floor(newEndMins / 60).toString().padStart(2, '0')}:${(newEndMins % 60).toString().padStart(2, '0')}`;
+    const oldFrom = new Date(schedule.fromDate);
+    const oldTo = new Date(schedule.toDate);
+    const durationMs = oldTo.getTime() - oldFrom.getTime();
+
+    const newFrom = new Date(d);
+    newFrom.setHours(hourIdx, 0, 0, 0);
+
+    const newTo = new Date(newFrom.getTime() + durationMs);
 
     try {
       setIsLoading(true);
       await scheduleRepository.update({
         ...schedule,
-        dayCode,
-        fromTime: newFromTime,
-        toTime: newToTime
-      });
+        fromDate: newFrom,
+        toDate: newTo
+      } as any);
       await fetchSchedules();
     } catch (error) {
       console.error("Error moving schedule:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [schedules, fetchSchedules]);
+  }, [schedules, fetchSchedules, selectedDate]);
 
-  if (!commercialProductId) {
+  if (!commercialProductIdFromUrl && !collaboratorId) {
     return (
       <div className="p-8 text-center">
         <p className="text-destructive font-bold">{t(SCHEDULE_CONSTANTS.NO_PRODUCT_ID)}</p>
@@ -119,6 +242,18 @@ export default function ScheduleAgendaPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
+      <Breadcrumb 
+        items={[
+          { label: t(SCHEDULE_CONSTANTS.CAMPAIGNS) || 'Campaigns', href: campaign ? CAMPAIGN_ROUTES.DETAIL(campaign) : CAMPAIGN_ROUTES.LIST },
+          { label: campaign?.name || '...', href: campaign ? CAMPAIGN_ROUTES.DETAIL(campaign) : undefined },
+          { label: commercialProduct?.name || '...', href: commercialProduct ? COMMERCIAL_PRODUCT_ROUTES.LIST(commercialProduct.campaignId) : undefined },
+          ...(collaboratorId ? [
+            { label: t(SCHEDULE_CONSTANTS.COLLABORATORS) || 'Collaborators', href: resolvedProductId ? COLLABORATOR_ROUTES.LIST(resolvedProductId) : undefined },
+            { label: collaboratorName || '...' }
+          ] : []),
+          { label: t(SCHEDULE_CONSTANTS.LIST_TITLE) || 'Schedule' }
+        ]} 
+      />
       <div className="flex justify-between items-center bg-background/80 backdrop-blur-md sticky top-0 z-10 py-4 border-b border-border/10 mb-2">
         <div className="flex items-center gap-4">
           <Button
@@ -235,8 +370,8 @@ export default function ScheduleAgendaPage() {
                     </span>
                   )}
                 </div>
-                <div className="relative h-[1920px]">
-                  {groupSchedulesByDay(schedules.filter(s => s.dayCode === day)).map((group, gIdx) => {
+                 <div className="relative h-[1920px]">
+                  {groupSchedulesByDay(visibleSchedules.filter(s => s.dayCode === day)).map((group, gIdx) => {
                     const mainSchedule = group[0];
                     const count = group.length;
 
@@ -291,8 +426,8 @@ export default function ScheduleAgendaPage() {
                             </Badge>
                           )}
                         </div>
-                        <div className={cn("text-[8px] font-black truncate mt-0.5 uppercase opacity-60", count > 1 ? "text-amber-600" : "text-primary")}>
-                          {count > 1 ? `${count} ${t('common.schedules')}` : `${mainSchedule.quantity} ${mainSchedule.unitMeasureCode}`}
+                         <div className={cn("text-[8px] font-black truncate mt-0.5 uppercase opacity-60", count > 1 ? "text-amber-600" : "text-primary")}>
+                          {count > 1 ? `${count} ${t(SCHEDULE_CONSTANTS.SCHEDULES)}` : `${t(SCHEDULE_CONSTANTS.QTY)}: ${mainSchedule.quantity || 0}`}
                         </div>
                       </div>
                     );
@@ -346,9 +481,14 @@ export default function ScheduleAgendaPage() {
               }
 
               for (let d = 1; d <= totalDays; d++) {
-                const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), d);
-                const dayCode = days[date.getDay() === 0 ? 6 : date.getDay() - 1];
-                const daySchedules = schedules.filter(s => s.dayCode === dayCode);
+                 const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), d);
+                 const dayCode = days[date.getDay() === 0 ? 6 : date.getDay() - 1];
+                 const daySchedules = schedules.filter(s => {
+                   const sDate = new Date(s.fromDate);
+                   return sDate.getDate() === d &&
+                          sDate.getMonth() === selectedDate.getMonth() &&
+                          sDate.getFullYear() === selectedDate.getFullYear();
+                 });
                 const isToday = new Date().toDateString() === date.toDateString();
 
                 cells.push(
@@ -365,12 +505,12 @@ export default function ScheduleAgendaPage() {
                     <div className="space-y-1">
                       {daySchedules.slice(0, 3).map((s, idx) => (
                         <div key={s.id} className="text-[8px] font-black bg-primary/10 text-primary border border-primary/20 rounded px-1.5 py-0.5 truncate uppercase tracking-tighter">
-                          {s.fromTime} - {s.quantity}{s.unitMeasureCode}
+                          {s.fromTime} - {t(SCHEDULE_CONSTANTS.QTY)}: {s.quantity || 0}
                         </div>
                       ))}
                       {daySchedules.length > 3 && (
                         <div className="text-[8px] font-black text-muted-foreground ml-1.5 uppercase">
-                          + {daySchedules.length - 3} {t('common.more')}
+                          + {daySchedules.length - 3} {t(SCHEDULE_CONSTANTS.MORE)}
                         </div>
                       )}
                     </div>
@@ -406,10 +546,12 @@ export default function ScheduleAgendaPage() {
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchSchedules}
         id={selectedScheduleId}
-        commercialProductId={commercialProductId}
+        commercialProductId={resolvedProductId || commercialProductIdFromUrl || ''}
+        collaboratorId={collaboratorId || undefined}
         initialDay={initialData.day}
         initialFromTime={initialData.fromTime}
         initialToTime={initialData.toTime}
+        selectedDateWeekRef={selectedDate}
       />
 
       <ScheduleListModal

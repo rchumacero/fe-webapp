@@ -4,8 +4,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '@kplian/i18n';
 import { SCHEDULE_CONSTANTS } from '../../constants/schedule-constants';
 import { SCHEDULE_ROUTES } from '../../routes/schedule-routes';
-import { Schedule, CreateScheduleDto, UpdateScheduleDto } from '../../domain/Schedule';
-import { ScheduleRepositoryImpl } from '../../infrastructure/ScheduleRepositoryImpl';
+import { Schedule, CreateScheduleDto, UpdateScheduleDto } from '@kplian/core';
+import { ScheduleRepositoryImpl } from '@kplian/infrastructure';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,14 +29,11 @@ const personRepository = new PersonRepositoryImpl();
 const organizationRepository = new OrganizationRepositoryImpl();
 
 const scheduleSchema = z.object({
-  commercialProductId: z.string().min(1, "Commercial Product is required"),
   organizationId: z.string().min(1, "Organization is required"),
-  collaboratorId: z.string().min(1, "Collaborator is required"),
-  dayCode: z.string().min(1, "Day is required"),
-  fromTime: z.string().min(1, "Start time is required"),
-  toTime: z.string().min(1, "End time is required"),
-  quantity: z.coerce.number().min(1, "Quantity must be at least 1"),
-  unitMeasureCode: z.string().min(1, "Unit of measure is required"),
+  collaboratorId: z.string().optional().nullable(),
+  fromDate: z.string().min(1, "From date is required"),
+  toDate: z.string().min(1, "To date is required"),
+  quantity: z.coerce.number().min(0, "Quantity must be positive").optional().nullable(),
   status: z.string().optional().default('ACTIVE'),
 });
 
@@ -98,9 +95,6 @@ export default function ScheduleFormPage({ id }: ScheduleFormPageProps) {
     parameters: SCHEDULE_DOMAIN_PARAMETERS
   });
 
-  const dayOptions = parametersData[P_DAY] || [];
-  const unitMeasureOptions = parametersData[P_UNIT_MEASURE] || [];
-
   const {
     register,
     handleSubmit,
@@ -110,14 +104,11 @@ export default function ScheduleFormPage({ id }: ScheduleFormPageProps) {
   } = useForm<ScheduleFormData>({
     resolver: zodResolver(scheduleSchema),
     defaultValues: {
-      commercialProductId: commercialProductId || '',
       organizationId: 'MAIN', // Default or fetch
       collaboratorId: 'SYSTEM', // Default or fetch
-      dayCode: 'MON',
-      fromTime: '08:00',
-      toTime: '09:00',
+      fromDate: new Date().toISOString().slice(0, 16),
+      toDate: new Date(Date.now() + 3600000).toISOString().slice(0, 16),
       quantity: 1,
-      unitMeasureCode: 'UNIT',
       status: 'ACTIVE',
     }
   });
@@ -129,14 +120,11 @@ export default function ScheduleFormPage({ id }: ScheduleFormPageProps) {
         try {
           const data = await scheduleRepository.getById(id);
           reset({
-            commercialProductId: data.commercialProductId,
             organizationId: data.organizationId,
-            collaboratorId: data.collaboratorId,
-            dayCode: data.dayCode,
-            fromTime: data.fromTime,
-            toTime: data.toTime,
-            quantity: data.quantity,
-            unitMeasureCode: data.unitMeasureCode,
+            collaboratorId: data.collaboratorId || null,
+            fromDate: data.fromDate ? new Date(data.fromDate).toISOString().slice(0, 16) : '',
+            toDate: data.toDate ? new Date(data.toDate).toISOString().slice(0, 16) : '',
+            quantity: data.quantity || 1,
             status: data.status || 'ACTIVE',
           });
         } catch (error) {
@@ -152,10 +140,15 @@ export default function ScheduleFormPage({ id }: ScheduleFormPageProps) {
   const onSubmit = async (data: ScheduleFormData) => {
     setIsSubmitting(true);
     try {
+      const payload = {
+        ...data,
+        fromDate: new Date(data.fromDate),
+        toDate: new Date(data.toDate),
+      };
       if (id) {
-        await scheduleRepository.update({ ...data, id });
+        await scheduleRepository.update({ ...payload, id });
       } else {
-        await scheduleRepository.create(data);
+        await scheduleRepository.create(payload as any);
       }
       router.back();
     } catch (error) {
@@ -296,30 +289,28 @@ export default function ScheduleFormPage({ id }: ScheduleFormPageProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-2">
-                  <CalendarIcon size={14} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.DAY)}
+                  <CalendarIcon size={14} className="text-primary" /> From Date
                 </label>
-                <Controller
-                  name="dayCode"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
-                    >
-                      <option value="">{t(SCHEDULE_CONSTANTS.FORM.SELECT_OPTION) || 'Select Day'}</option>
-                      {dayOptions.map((p: any, idx: number) => {
-                        const val = (p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '')).toUpperCase();
-                        const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
-                        return (
-                          <option key={`${val}-${idx}`} value={val}>
-                            {t(SCHEDULE_CONSTANTS.DAYS[val as keyof typeof SCHEDULE_CONSTANTS.DAYS]) || label}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  )}
-                />
-                {errors.dayCode && <p className="text-[10px] text-destructive font-medium ml-1">{errors.dayCode.message}</p>}
+                <Input type="datetime-local" {...register("fromDate")} className="h-11 bg-card/80 border-border/50" />
+                {errors.fromDate && <p className="text-[10px] text-destructive font-medium ml-1">{errors.fromDate.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-2">
+                  <CalendarIcon size={14} className="text-primary" /> To Date
+                </label>
+                <Input type="datetime-local" {...register("toDate")} className="h-11 bg-card/80 border-border/50" />
+                {errors.toDate && <p className="text-[10px] text-destructive font-medium ml-1">{errors.toDate.message}</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-2">
+                  <Hash size={14} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.QUANTITY)}
+                </label>
+                <Input type="number" {...register("quantity")} className="h-11 bg-card/80 border-border/50" />
+                {errors.quantity && <p className="text-[10px] text-destructive font-medium ml-1">{errors.quantity.message}</p>}
               </div>
 
               <div className="space-y-2">
@@ -339,62 +330,6 @@ export default function ScheduleFormPage({ id }: ScheduleFormPageProps) {
                     </select>
                   )}
                 />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-2">
-                  <Clock size={14} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.FROM_TIME)}
-                </label>
-                <Input type="time" {...register("fromTime")} className="h-11 bg-card/80 border-border/50" />
-                {errors.fromTime && <p className="text-[10px] text-destructive font-medium ml-1">{errors.fromTime.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-2">
-                  <Clock size={14} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.TO_TIME)}
-                </label>
-                <Input type="time" {...register("toTime")} className="h-11 bg-card/80 border-border/50" />
-                {errors.toTime && <p className="text-[10px] text-destructive font-medium ml-1">{errors.toTime.message}</p>}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-2">
-                  <Hash size={14} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.QUANTITY)}
-                </label>
-                <Input type="number" {...register("quantity")} className="h-11 bg-card/80 border-border/50" />
-                {errors.quantity && <p className="text-[10px] text-destructive font-medium ml-1">{errors.quantity.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-2">
-                  <Hash size={14} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.UNIT_MEASURE)}
-                </label>
-                <Controller
-                  name="unitMeasureCode"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
-                    >
-                      <option value="">{t(SCHEDULE_CONSTANTS.FORM.SELECT_OPTION) || 'Select unit measure'}</option>
-                      {unitMeasureOptions.map((p: any, idx: number) => {
-                        const val = p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '');
-                        const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
-                        return (
-                          <option key={`${val}-${idx}`} value={val}>
-                            {label}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  )}
-                />
-                {errors.unitMeasureCode && <p className="text-[10px] text-destructive font-medium ml-1">{errors.unitMeasureCode.message}</p>}
               </div>
             </div>
           </CardContent>

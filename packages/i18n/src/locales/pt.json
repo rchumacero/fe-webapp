@@ -226,6 +226,7 @@
             "quantity": "Quantidade",
             "unitMeasure": "Unidade de Medida",
             "configurationCode": "Código de Configuração",
+            "scheduleType": "Tipo de Horário",
             "name": "Nome do Produto Comercial"
         },
         "schedule": {

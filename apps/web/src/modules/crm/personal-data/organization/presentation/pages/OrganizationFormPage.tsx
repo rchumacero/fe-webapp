@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useTranslation } from '@kplian/i18n';
@@ -9,139 +9,160 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   Save,
-  Users,
-  Loader2
+  Building2,
+  Loader2,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { CONTACT_CONSTANTS } from '../../constants/contact-constants';
-import { ContactRepositoryImpl } from '../../infrastructure/repositories/ContactRepositoryImpl';
-import { CONTACT_DOMAIN_PARAMETERS, P_MEMBER_TYPE } from '../../constants/parameter';
+import { ORGANIZATION_CONSTANTS } from '../../constants/organization-constants';
+import { OrganizationRepositoryImpl } from '../../infrastructure/repositories/OrganizationRepositoryImpl';
+import { ORGANIZATION_DOMAIN_PARAMETERS, P_ORGANIZATION_TYPE, P_TICKET_METHOD } from '../../constants/parameter';
 import { useDomainParameters } from '@/hooks/use-domain-parameters';
 import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { useVendor } from '@/hooks/use-vendor';
-import { PersonRepositoryImpl } from '@/modules/crm/personal-data/person/infrastructure/repositories/PersonRepositoryImpl';
-import { Person } from '@/modules/crm/personal-data/person/domain/entities/Person';
+import { toast } from '@/hooks/use-toast';
 
-const contactSchema = z.object({
+const organizationSchema = z.object({
   personId: z.string().min(1, "Person ID is required"),
-  personCompId: z.string().min(1, "Linked Person ID is required"),
+  code: z.string().trim().min(1, "Code is required").max(20, "Too long"),
+  name: z.string().trim().min(1, "Name is required").max(100, "Too long"),
+  address: z.string().trim().max(500, "Too long").nullable().optional().or(z.literal('')),
+  organizationId: z.string().nullable().optional().or(z.literal('')),
+  maxAttentionSchedule: z.number().nullable().optional().or(z.literal('')),
+  ticketMethodCode: z.string().nullable().optional().or(z.literal('')),
+  ticketCounter: z.number().nullable().optional().or(z.literal('')),
   type: z.string().trim().min(1, "Type is required"),
-  relationDescription: z.string().trim().max(200, "Too long").optional().or(z.literal('')),
 });
 
-type ContactFormData = z.infer<typeof contactSchema>;
+type OrganizationFormData = z.infer<typeof organizationSchema>;
 
-const contactRepository = new ContactRepositoryImpl();
-const personRepository = new PersonRepositoryImpl();
+const organizationRepository = new OrganizationRepositoryImpl();
 
-interface ContactFormPageProps {
-  params?: Promise<{ id?: string }>;
+interface OrganizationFormPageProps {
+  id?: string | null;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+  defaultParentId?: string | null;
 }
 
-export const ContactFormPage = ({ params }: ContactFormPageProps) => {
-  const resolvedParams = params ? React.use(params) : null;
+export const OrganizationFormPage = ({ id, onSuccess, onCancel, defaultParentId }: OrganizationFormPageProps) => {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { vendor } = useVendor();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
-  const [persons, setPersons] = useState<Person[]>([]);
-  const [isLoadingPersons, setIsLoadingPersons] = useState(false);
+  const [parentOrganizations, setParentOrganizations] = useState<any[]>([]);
 
-  const id = resolvedParams?.id || null;
   const personId = searchParams.get('personId') || null;
 
   const { data: parametersData } = useDomainParameters({
-    parameters: CONTACT_DOMAIN_PARAMETERS
+    parameters: ORGANIZATION_DOMAIN_PARAMETERS
   });
-  const typeOptions = parametersData[P_MEMBER_TYPE] || [];
+  const typeOptions = parametersData[P_ORGANIZATION_TYPE] || [];
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isDirty },
     setValue,
+    formState: { errors, isDirty },
     control
-  } = useForm<ContactFormData>({
-    resolver: zodResolver(contactSchema),
+  } = useForm<OrganizationFormData>({
+    resolver: zodResolver(organizationSchema),
     defaultValues: {
       personId: personId || '',
-      personCompId: '',
+      code: '',
+      name: '',
+      address: '',
+      organizationId: defaultParentId || '',
+      maxAttentionSchedule: null,
+      ticketMethodCode: '',
+      ticketCounter: 0,
       type: '',
-      relationDescription: '',
     }
   });
 
-  // Load vendor's persons for the dropdown
-  const fetchPersons = useCallback(async () => {
-    if (!vendor) return;
-    setIsLoadingPersons(true);
+  useEffect(() => {
+    if (defaultParentId) {
+      setValue('organizationId', defaultParentId);
+    }
+  }, [defaultParentId, setValue]);
+
+  const fetchParentOrganizations = useCallback(async () => {
+    if (!personId) return;
     try {
-      const data = await personRepository.getByVendorId(vendor);
-      setPersons(data);
+      const data = await organizationRepository.getAllByPersonId(personId);
+      // Filter out current organization if editing to avoid circular reference
+      setParentOrganizations(data.filter(org => org.id !== id));
     } catch (error) {
-      console.error("Error fetching persons by vendor:", error);
-    } finally {
-      setIsLoadingPersons(false);
+      console.error("Error fetching parent organizations:", error);
     }
-  }, [vendor]);
+  }, [personId, id]);
 
   useEffect(() => {
-    fetchPersons();
-  }, [fetchPersons]);
-
-  useEffect(() => {
-    if (personId && !id) {
-      setValue('personId', personId);
-    }
-  }, [personId, id, setValue]);
+    fetchParentOrganizations();
+  }, [fetchParentOrganizations]);
 
   useEffect(() => {
     if (id) {
-      const fetchContact = async () => {
+      const fetchOrganization = async () => {
         setIsLoading(true);
         try {
-          const data = await contactRepository.getById(id);
+          const org = await organizationRepository.getById(id);
           reset({
-            personId: data.personId,
-            personCompId: data.personCompId,
-            type: data.type,
-            relationDescription: data.relationDescription,
+            personId: org.personId,
+            code: org.code,
+            name: org.name,
+            address: org.address || '',
+            organizationId: org.organizationId || '',
+            maxAttentionSchedule: org.maxAttentionSchedule || '',
+            ticketMethodCode: org.ticketMethodCode || '',
+            ticketCounter: org.ticketCounter || 0,
+            type: org.type || '',
           });
         } catch (error) {
-          console.error("Error fetching contact:", error);
+          console.error("Error fetching organization:", error);
+          toast.error("Error loading organization data");
         } finally {
           setIsLoading(false);
         }
       };
-      fetchContact();
+      fetchOrganization();
     }
   }, [id, reset]);
 
-  useEffect(() => {
-    if (Object.keys(errors).length > 0) {
-      console.warn("Contact validation errors:", errors);
-    }
-  }, [errors]);
-
-  const onSubmit = async (data: ContactFormData) => {
+  const onSubmit: SubmitHandler<OrganizationFormData> = async (data) => {
     setIsSubmitting(true);
     try {
+      const payload = {
+        ...data,
+        maxAttentionSchedule: data.maxAttentionSchedule === '' ? null : Number(data.maxAttentionSchedule),
+        ticketCounter: data.ticketCounter === '' ? 0 : Number(data.ticketCounter),
+        organizationId: data.organizationId === '' ? null : data.organizationId,
+        ticketMethodCode: data.ticketMethodCode === '' ? null : data.ticketMethodCode,
+        address: data.address === '' ? null : data.address,
+      };
+
       if (id) {
-        await contactRepository.update({ ...data, id });
+        await organizationRepository.update({ ...payload, id } as any);
+        toast.success(t('common.recordUpdated') || "Organization updated successfully");
       } else {
-        await contactRepository.create(data);
+        await organizationRepository.create(payload as any);
+        toast.success(t('common.recordCreated') || "Organization created successfully");
       }
-      router.back();
+      
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.back();
+      }
     } catch (error) {
-      console.error("Error saving contact:", error);
+      console.error("Error saving organization:", error);
+      toast.error("Error saving organization");
     } finally {
       setIsSubmitting(false);
     }
@@ -150,159 +171,173 @@ export const ContactFormPage = ({ params }: ContactFormPageProps) => {
   const handleCancel = () => {
     if (isDirty) {
       setShowConfirmCancel(true);
-      return;
+    } else if (onCancel) {
+      reset();
+      onCancel();
+    } else {
+      router.back();
     }
-    router.back();
-  };
-
-  const confirmCancel = () => {
-    setShowConfirmCancel(false);
-    router.back();
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-20">
+      <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="animate-spin text-primary" size={40} />
       </div>
     );
   }
 
   return (
-    <div className="max-w-xl mx-auto space-y-6 py-6 px-4">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={handleCancel} className="rounded-full h-10 w-10">
-          <ArrowLeft size={20} />
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={handleCancel} className="gap-2 group">
+          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+          {t('common.back')}
         </Button>
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-foreground uppercase">
-            {id ? t(CONTACT_CONSTANTS.EDIT_TITLE) : t(CONTACT_CONSTANTS.CREATE_TITLE)}
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm">{id ? t(CONTACT_CONSTANTS.DESCRIPTION_EDIT) : t(CONTACT_CONSTANTS.DESCRIPTION_TITLE)}</p>
-        </div>
       </div>
 
-      <Card className="border-border/40 bg-card/60 backdrop-blur-sm shadow-xl">
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <input type="hidden" {...register("personId")} />
-          <CardContent className="space-y-6 pt-8">
+      <Card className="border-border/40 bg-card/60 backdrop-blur-sm shadow-xl overflow-hidden">
+        <CardHeader className="border-b border-border/40 bg-accent/5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg text-primary">
+              <Building2 size={24} />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-bold tracking-tight">
+                {id ? t(ORGANIZATION_CONSTANTS.EDIT_TITLE) : t(ORGANIZATION_CONSTANTS.CREATE_TITLE)}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                {id ? t(ORGANIZATION_CONSTANTS.DESCRIPTION_EDIT) : t(ORGANIZATION_CONSTANTS.DESCRIPTION_TITLE)}
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          <form id="organization-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(ORGANIZATION_CONSTANTS.FORM.CODE)}</label>
+                <Input {...register("code")} className={cn(errors.code && "border-destructive focus-visible:ring-destructive/20")} />
+                {errors.code && <p className="text-[10px] text-destructive font-medium ml-1">{errors.code.message}</p>}
+              </div>
 
-            {/* Person (linked contact) dropdown */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                {t(CONTACT_CONSTANTS.FORM.PERSON_COMP)}
-              </label>
-              <Controller
-                name="personCompId"
-                control={control}
-                render={({ field }) => (
-                  <div className="relative">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(ORGANIZATION_CONSTANTS.FORM.NAME)}</label>
+                <Input {...register("name")} className={cn(errors.name && "border-destructive focus-visible:ring-destructive/20")} />
+                {errors.name && <p className="text-[10px] text-destructive font-medium ml-1">{errors.name.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(ORGANIZATION_CONSTANTS.FORM.TYPE)}</label>
+                <Controller
+                  name="type"
+                  control={control}
+                  render={({ field }) => (
                     <select
                       {...field}
-                      disabled={isLoadingPersons || !vendor}
-                      className={cn(
-                        "w-full h-10 px-3 py-2 text-sm bg-card border border-border/40 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none",
-                        errors.personCompId ? "border-destructive" : "focus:border-primary/40",
-                        (isLoadingPersons || !vendor) && "opacity-60 cursor-not-allowed"
-                      )}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
-                      <option value="">
-                        {isLoadingPersons
-                          ? t('common.loading') || 'Loading...'
-                          : t(CONTACT_CONSTANTS.FORM.SELECT_OPTION) || 'Select Person'}
-                      </option>
-                      {persons.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.completeName || `${p.name1 ?? ''} ${p.surname1 ?? ''}`.trim() || p.code}
-                        </option>
+                      <option value="">{t(ORGANIZATION_CONSTANTS.FORM.SELECT_OPTION)}</option>
+                      {typeOptions.map((opt: any, idx: number) => {
+                        const val = opt.KEY ?? opt.CODE ?? opt.VALUE ?? opt.ID ?? opt.code ?? opt.value ?? opt.id ?? opt.fullCode ?? opt;
+                        const label = opt.NAME || opt.name || opt.label || opt.description || val || `Option ${idx}`;
+                        return (
+                          <option key={`${val}-${idx}`} value={val}>
+                            {label}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  )}
+                />
+                {errors.type && <p className="text-[10px] text-destructive font-medium ml-1">{errors.type.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(ORGANIZATION_CONSTANTS.FORM.PARENT_ORG)}</label>
+                <Controller
+                  name="organizationId"
+                  control={control}
+                  render={({ field }) => (
+                    <select
+                      value={field.value || ''}
+                      onChange={(e) => field.onChange(e.target.value || null)}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="">{t(ORGANIZATION_CONSTANTS.FORM.SELECT_OPTION)}</option>
+                      {parentOrganizations.map((org: any, idx: number) => (
+                        <option key={`${org.id}-${idx}`} value={org.id}>{org.name}</option>
                       ))}
                     </select>
-                    {isLoadingPersons && (
-                      <Loader2
-                        size={14}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground pointer-events-none"
-                      />
-                    )}
-                  </div>
-                )}
-              />
-              {errors.personCompId && <p className="text-[10px] text-destructive font-bold uppercase">{errors.personCompId.message}</p>}
-            </div>
+                  )}
+                />
+              </div>
 
-            {/* Type */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                {t(CONTACT_CONSTANTS.FORM.TYPE)}
-              </label>
-              <Controller
-                name="type"
-                control={control}
-                render={({ field }) => (
-                  <select
-                    {...field}
-                    className={cn(
-                      "w-full h-10 px-3 py-2 text-sm bg-card border border-border/40 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all",
-                      errors.type ? "border-destructive" : "focus:border-primary/40"
-                    )}
-                  >
-                    <option value="">{t(CONTACT_CONSTANTS.FORM.SELECT_OPTION) || 'Select Relation Type'}</option>
-                    {typeOptions.map((p: any, idx: number) => {
-                      const val = p.KEY ?? p.CODE ?? p.VALUE ?? p.ID ?? p.code ?? p.value ?? p.id ?? p.valueStr ?? p.fullCode ?? p;
-                      const label = p.NAME || p.name || p.label || p.description || p.valueStr || val || `Item ${idx}`;
-                      return (
-                        <option key={`${val}-${idx}`} value={val}>
-                          {label}
-                        </option>
-                      );
-                    })}
-                  </select>
-                )}
-              />
-              {errors.type && <p className="text-[10px] text-destructive font-bold uppercase">{errors.type.message}</p>}
-            </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(ORGANIZATION_CONSTANTS.FORM.MAX_ATTENTION)}</label>
+                <Input type="number" {...register("maxAttentionSchedule", { valueAsNumber: true })} />
+              </div>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                {t(CONTACT_CONSTANTS.FORM.DESCRIPTION)}
-              </label>
-              <Input
-                {...register("relationDescription")}
-                placeholder={t(CONTACT_CONSTANTS.FORM.EX_DESCRIPTION) || 'Relationship description...'}
-                className={errors.relationDescription ? "border-destructive focus-visible:ring-destructive/20" : ""}
-              />
-              {errors.relationDescription && <p className="text-[10px] text-destructive font-bold uppercase">{errors.relationDescription.message}</p>}
-            </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(ORGANIZATION_CONSTANTS.FORM.TICKET_METHOD)}</label>
+                <Controller
+                  name="ticketMethodCode"
+                  control={control}
+                  render={({ field }) => (
+                    <select
+                      {...field}
+                      className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                    >
+                      <option value="">{t(ORGANIZATION_CONSTANTS.FORM.SELECT_OPTION)}</option>
+                      {(parametersData[P_TICKET_METHOD] || []).map((opt: any, idx: number) => {
+                        const val = opt.KEY ?? opt.CODE ?? opt.VALUE ?? opt.ID ?? opt.code ?? opt.value ?? opt.id ?? opt.fullCode ?? opt;
+                        const label = opt.NAME || opt.name || opt.label || opt.description || val || `Option ${idx}`;
+                        return (
+                          <option key={`${val}-${idx}`} value={val}>
+                            {label}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  )}
+                />
+              </div>
 
-          </CardContent>
-          <CardFooter className="flex justify-end gap-3 pb-8 pt-4 px-8 border-t border-border/10">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={handleCancel}
-              className="font-bold uppercase text-[10px] tracking-widest px-6"
-            >
-              {t(CONTACT_CONSTANTS.FORM.CANCEL)}
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="font-bold uppercase text-[10px] tracking-widest px-8 shadow-lg shadow-primary/20"
-            >
-              {isSubmitting ? <Loader2 className="animate-spin mr-2" size={14} /> : <Save className="mr-2" size={14} />}
-              {t(CONTACT_CONSTANTS.FORM.SUBMIT)}
-            </Button>
-          </CardFooter>
-        </form>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(ORGANIZATION_CONSTANTS.FORM.ADDRESS)}</label>
+                <Input {...register("address")} />
+              </div>
+            </div>
+          </form>
+        </CardContent>
+        <CardFooter className="border-t border-border/40 bg-accent/5 p-6 flex justify-end gap-3">
+          <Button variant="ghost" onClick={handleCancel} disabled={isSubmitting}>
+            <X size={18} className="mr-2" />
+            {t(ORGANIZATION_CONSTANTS.FORM.CANCEL)}
+          </Button>
+          <Button form="organization-form" type="submit" disabled={isSubmitting} className="min-w-[120px]">
+            {isSubmitting ? <Loader2 className="animate-spin mr-2" size={18} /> : <Save size={18} className="mr-2" />}
+            {t(ORGANIZATION_CONSTANTS.FORM.SUBMIT)}
+          </Button>
+        </CardFooter>
       </Card>
+
       <ConfirmDialog
         open={showConfirmCancel}
         onOpenChange={setShowConfirmCancel}
-        title={t(CONTACT_CONSTANTS.FORM.CONFIRM_CANCEL, 'Discard Changes?')}
-        description={t(CONTACT_CONSTANTS.FORM.DIRTY_WARNING) || "You have unsaved changes. Are you sure you want to cancel?"}
-        confirmText={t(CONTACT_CONSTANTS.FORM.YES_DISCARD, 'Yes, Discard')}
-        cancelText={t(CONTACT_CONSTANTS.FORM.NO_STAY, 'No, Stay')}
-        onConfirm={confirmCancel}
+        title={t(ORGANIZATION_CONSTANTS.FORM.CONFIRM_CANCEL)}
+        description={t(ORGANIZATION_CONSTANTS.FORM.DIRTY_WARNING)}
+        confirmText={t(ORGANIZATION_CONSTANTS.FORM.YES_DISCARD)}
+        cancelText={t(ORGANIZATION_CONSTANTS.FORM.NO_STAY)}
+        onConfirm={() => {
+          setShowConfirmCancel(false);
+          if (onCancel) {
+            reset();
+            onCancel();
+          } else {
+            router.back();
+          }
+        }}
         type="warning"
       />
     </div>

@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import * as Icons from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSession } from 'next-auth/react';
-import { getMenuByUser, MenuItem } from '@kplian/core';
+import { getMenuByUser, MenuItem, MENU_CODES } from '@kplian/core';
 import {
   Tooltip,
   TooltipContent,
@@ -204,7 +204,7 @@ export const AccessMenu = ({ isCollapsed }: AccessMenuProps) => {
     const fetchMenu = async (force = false) => {
       if (!userCode) return;
       if (force) setMenuData([]);
-      const data = await getMenuByUser(userCode, force);
+      const data = await getMenuByUser(userCode, MENU_CODES.WEB_APP, force);
       setMenuData(data);
     };
 
