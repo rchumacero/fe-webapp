@@ -14,14 +14,15 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.mobile"
+      "bundleIdentifier": "com.mobile.crm"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.mobile.crm"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,6 +31,6 @@
       "expo-secure-store",
       "expo-web-browser"
     ],
-    "scheme": "com.myapp.crm"
+    "scheme": "com.mobile.crm"
   }
 }

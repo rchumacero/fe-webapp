@@ -36,7 +36,7 @@ const ZITADEL_CLIENT_ID = process.env.EXPO_PUBLIC_ZITADEL_CLIENT_ID || '';
 
 // Deep Linking redirect URI
 const redirectUri = AuthSession.makeRedirectUri({
-  scheme: 'com.myapp.crm', // Must match your scheme in app.json
+  scheme: "com.mobile.crm", // Must match your scheme in app.json
   path: 'oauth-callback',
 });
 
