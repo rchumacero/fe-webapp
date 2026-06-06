@@ -6,10 +6,12 @@ export * from './shared/date-utils';
 
 // CRM Module
 export * from './modules/crm/api/contactService';
+export * from './modules/crm/commercial/entities/Campaign';
 export * from './modules/crm/commercial/entities/CommercialProduct';
 export * from './modules/crm/commercial/entities/CampaignProduct';
 export * from './modules/crm/commercial/entities/Schedule';
 export * from './modules/crm/commercial/entities/Collaborator';
+export * from './modules/crm/commercial/repositories/ICampaignRepository';
 export * from './modules/crm/commercial/repositories/ICommercialProductRepository';
 export * from './modules/crm/commercial/repositories/ICampaignProductRepository';
 export * from './modules/crm/commercial/repositories/IScheduleRepository';

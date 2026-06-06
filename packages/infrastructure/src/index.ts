@@ -9,6 +9,7 @@ export { encrypt, decrypt } from './security/crypto';
 export { getRoute } from './utils/route';
 
 // CRM Repositories
+export * from './repositories/crm/commercial/CampaignRepositoryImpl';
 export * from './repositories/crm/commercial/CommercialProductRepositoryImpl';
 export * from './repositories/crm/commercial/CampaignProductRepositoryImpl';
 export * from './repositories/crm/commercial/ScheduleRepositoryImpl';

@@ -18,13 +18,14 @@ import { PersonRepositoryImpl } from '@/modules/crm/personal-data/person/infrast
 import { useVendor } from '@/hooks/use-vendor';
 import { Person } from '@/modules/crm/personal-data/person/domain/entities/Person';
 import { useDomainParameters } from '@/hooks/use-domain-parameters';
-import { CAMPAIGN_DOMAIN_PARAMETERS, P_STATUS, P_CURRENCY } from '../../constants/parameter';
+import { CAMPAIGN_DOMAIN_PARAMETERS, P_STATUS, P_CURRENCY, P_CATEGORY } from '../../constants/parameter';
 
 const campaignRepository = new CampaignRepositoryImpl();
 const personRepository = new PersonRepositoryImpl();
 
 const campaignSchema = z.object({
   code: z.string().min(1, "Code is required"),
+  categoryCode: z.string().optional().nullable(),
   name: z.string().min(2, "Name is required"),
   fromDate: z.string().min(1, "From date is required"),
   toDate: z.string().optional(),
@@ -54,6 +55,7 @@ export default function CampaignFormPage({ id, mode = 'custom' }: CampaignFormPr
 
   const statusOptions = parametersData[P_STATUS] || [];
   const currencyOptions = parametersData[P_CURRENCY] || [];
+  const categoryOptions = parametersData[P_CATEGORY] || [];
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -69,6 +71,7 @@ export default function CampaignFormPage({ id, mode = 'custom' }: CampaignFormPr
     resolver: zodResolver(campaignSchema),
     defaultValues: {
       code: '',
+      categoryCode: '',
       name: '',
       fromDate: '',
       toDate: '',
@@ -102,6 +105,7 @@ export default function CampaignFormPage({ id, mode = 'custom' }: CampaignFormPr
           const campaign = await campaignRepository.getById(id);
           const data: CampaignFormData = {
             code: campaign.code || '',
+            categoryCode: campaign.categoryCode || '',
             name: campaign.name || '',
             fromDate: campaign.fromDate ? campaign.fromDate.split('T')[0] : '',
             toDate: campaign.toDate ? campaign.toDate.split('T')[0] : '',
@@ -191,11 +195,37 @@ export default function CampaignFormPage({ id, mode = 'custom' }: CampaignFormPr
         <div className="lg:col-span-2">
           <Card className="border-border/40 shadow-xl overflow-hidden bg-card/50 backdrop-blur-sm h-full">
             <CardContent className="p-8 space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_CONSTANTS.FORM.CODE)}</label>
                   <Input {...register("code")} className={errors.code ? "border-destructive focus-visible:ring-destructive/20" : ""} />
                   {errors.code && <p className="text-[10px] text-destructive font-medium ml-1">{errors.code.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_CONSTANTS.FORM.CATEGORY)}</label>
+                  <Controller
+                    name="categoryCode"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                      >
+                        <option value="">{t(CAMPAIGN_CONSTANTS.FORM.SELECT_OPTION) || 'Select category'}</option>
+                        {categoryOptions.map((p: any, idx: number) => {
+                          const val = p.code || p.CODE || p.fullCode || p.value || p.id || (typeof p === 'string' ? p : '');
+                          const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
+                          return (
+                            <option key={`${val}-${idx}`} value={val}>
+                              {label}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    )}
+                  />
+                  {errors.categoryCode && <p className="text-[10px] text-destructive font-medium ml-1">{errors.categoryCode.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_CONSTANTS.FORM.STATUS)}</label>
@@ -209,8 +239,8 @@ export default function CampaignFormPage({ id, mode = 'custom' }: CampaignFormPr
                       >
                         <option value="">{t(CAMPAIGN_CONSTANTS.FORM.SELECT_OPTION) || 'Select status'}</option>
                         {statusOptions.map((p: any, idx: number) => {
-                          const val = p.CODE || p.value || p.id || p.fullCode || p;
-                          const label = p.NAME || p.name || p.label || p.description || val || `Item ${idx}`;
+                          const val = p.code || p.CODE || p.fullCode || p.value || p.id || (typeof p === 'string' ? p : '');
+                          const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
                           return (
                             <option key={`${val}-${idx}`} value={val}>
                               {label}
@@ -270,8 +300,8 @@ export default function CampaignFormPage({ id, mode = 'custom' }: CampaignFormPr
                       >
                         <option value="">{t(CAMPAIGN_CONSTANTS.FORM.SELECT_OPTION) || 'Select currency'}</option>
                         {currencyOptions.map((p: any, idx: number) => {
-                          const val = p.CODE || p.value || p.id || p.fullCode || p;
-                          const label = p.NAME || p.name || p.label || p.description || val || `Item ${idx}`;
+                          const val = p.code || p.CODE || p.fullCode || p.value || p.id || (typeof p === 'string' ? p : '');
+                          const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
                           return (
                             <option key={`${val}-${idx}`} value={val}>
                               {label}

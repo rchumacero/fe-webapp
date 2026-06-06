@@ -9,6 +9,7 @@ import {
 export const COMMERCIAL_PRODUCT_API_ROUTES = {
   COMMERCIAL_PRODUCT: '/v1/commercial-products',
   COMMERCIAL_PRODUCT_BY_CAMPAIGN: (campaignId: string | number) => `/v1/campaigns/${campaignId}/commercial-products`,
+  COMMERCIAL_PRODUCT_BY_CATEGORY: (categoryCode: string) => `/v1/commercial-products/category/${categoryCode}`,
   COMMERCIAL_PRODUCT_UPDATE: (id: string | number) => `/v1/commercial-products/${id}`,
   COMMERCIAL_PRODUCT_DELETE: (id: string | number) => `/v1/commercial-products/${id}`,
   COMMERCIAL_PRODUCT_BY_ID: (id: string | number) => `/v1/commercial-products/${id}`,
@@ -27,6 +28,13 @@ export class CommercialProductRepositoryImpl implements ICommercialProductReposi
   async getByCampaignId(campaignId: string): Promise<CommercialProduct[]> {
     const response = await this.api.get<CommercialProduct[]>(
       COMMERCIAL_PRODUCT_API_ROUTES.COMMERCIAL_PRODUCT_BY_CAMPAIGN(campaignId)
+    );
+    return response.data || [];
+  }
+
+  async getByCategoryCode(categoryCode: string): Promise<CommercialProduct[]> {
+    const response = await this.api.get<CommercialProduct[]>(
+      COMMERCIAL_PRODUCT_API_ROUTES.COMMERCIAL_PRODUCT_BY_CATEGORY(categoryCode)
     );
     return response.data || [];
   }

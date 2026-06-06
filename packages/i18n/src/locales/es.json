@@ -65,6 +65,7 @@
     "currency": "Moneda",
     "spreadPercent": "Porcentaje de Spread",
     "customer": "Cliente",
+    "category": "Categoría",
     "description": "Descripción",
     "product": "Producto",
     "monday": "Lunes",
@@ -138,6 +139,7 @@
     "customer_service": {
       "title": "Atención al Cliente",
       "create_appointment": "Agendar Cita",
+      "select_category": "Seleccionar Categoría",
       "select_product": "Seleccionar Servicio",
       "select_vendor": "Seleccionar Profesional",
       "select_schedule": "Seleccionar Horario",

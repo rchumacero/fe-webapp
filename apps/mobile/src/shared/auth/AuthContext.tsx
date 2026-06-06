@@ -113,14 +113,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       });
 
-      // Handle 401 globally (Disabled for debugging 401 issues)
-      /*
       setGlobalErrorHandler((message, code) => {
         if (code === '401') {
           logout();
         }
       });
-      */
 
       // 2. Handle OAuth callback on Web (direct redirect, not popup)
       if (Platform.OS === 'web' && window.location.search.includes('code=')) {
@@ -148,7 +145,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { code } = response.params;
       // On Web, the redirect callback is handled in initialize() to ensure PKCE verifier is restored from storage.
       if (Platform.OS !== 'web') {
-        exchangeCode(code, response.authenticationRequest?.codeVerifier || request?.codeVerifier);
+        exchangeCode(code, (response as any).authenticationRequest?.codeVerifier || request?.codeVerifier);
       }
     }
   }, [response, request]);
@@ -157,14 +154,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const idToken = await storage.getItem('idToken');
       const accessToken = await storage.getItem('accessToken');
-      const token = idToken || accessToken;
-      if (token) {
-        const dots = (token.match(/\./g) || []).length;
-        console.log('[Auth Debug] Restored Token Stats:', { length: token.length, dots });
+      if (idToken || accessToken) {
         setAccessToken(accessToken);
         setIdToken(idToken);
-        await getUserInfo(token);
-        const vid = await loadVendor(token);
+        const tokenForBackend = idToken || accessToken!;
+        
+        // If web, set axios defaults directly as fallback. We can import axios dynamically or avoid it.
+        // For mobile, client.ts handles interceptors.
+        
+        const userCode = await getUserInfo(accessToken!);
+        const vid = await loadVendor(idToken || accessToken!, userCode);
         setVendorId(vid);
       }
     } catch (e) {
@@ -199,18 +198,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAccessToken(tokenResult.accessToken);
       setIdToken(tokenResult.idToken || null);
       
-      const token = tokenResult.accessToken;
-      const dots = (token.match(/\./g) || []).length;
-      console.log('[Auth Debug] Token Stats:', {
-        length: token.length,
-        dots: dots,
-        firstChars: token.substring(0, 20),
-        lastChars: token.substring(token.length - 20)
-      });
-
-      await getUserInfo(tokenResult.accessToken);
-      const vid = await loadVendor(tokenResult.accessToken);
-      setVendorId(vid);
+      if (tokenResult.accessToken || tokenResult.idToken) {
+        const tokenForBackend = tokenResult.idToken || tokenResult.accessToken;
+        const userCode = await getUserInfo(tokenResult.accessToken);
+        const vid = await loadVendor(tokenResult.idToken || tokenResult.accessToken, userCode);
+        setVendorId(vid);
+      }
     } catch (err) {
       console.error("Error exchanging code", err);
     } finally {
@@ -232,36 +225,72 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email: data.email,
         roles: data['urn:zitadel:iam:org:project:roles'] ? Object.keys(data['urn:zitadel:iam:org:project:roles']) : []
       });
+      return data.preferred_username;
     } catch (err) {
       console.error("Error fetching user profile", err);
+      return null;
     }
   };
 
-  const loadVendor = async (token: string): Promise<string | null> => {
+  const loadVendor = async (token: string, userCode: string | null): Promise<string | null> => {
     try {
-      // 1. Get userinfo to get the preferred_username (code)
-      const uiRes = await fetch(`${ZITADEL_ISSUER}/oidc/v1/userinfo`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const uiData = await uiRes.json();
-      const userCode = uiData.preferred_username;
-
+      const dots = (token || '').split('.').length - 1;
+      console.log('[Auth Debug] loadVendor Token:', { length: token?.length, dots, userCode });
+      
       if (userCode) {
-        // 2. Fetch person by code from CRM
+        // 2. Fetch person by code from CRM using fetch since axios is not in package.json
         const apiBase = process.env.API_GATEWAY_URL || 'https://api-dev-local.kplian.com';
-        const res = await fetch(`${apiBase}/crm/api/v1/persons/by-code/${userCode}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const encodedCode = encodeURIComponent(userCode);
         
-        if (res.ok) {
-          const person = await res.json();
-          if (person && person.id) {
-            await storage.setItem('vendorPersonId', String(person.id));
-            console.log('[Auth Debug] Vendor ID set:', person.id);
-            return String(person.id);
+        try {
+          const res = await fetch(`${apiBase}/crm/api/v1/persons/by-code/${encodedCode}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (res.status === 401) {
+            console.warn('[Auth Debug] Persons endpoint returned 401. Token might lack scopes or backend rejected it. Not logging out to prevent infinite loop.');
+            return null;
           }
-        } else {
-          console.warn('[Auth Debug] Failed to fetch vendor info', res.status);
+          
+          if (res.ok) {
+            const person = await res.json();
+            if (person && person.id) {
+              await storage.setItem('vendorPersonId', String(person.id));
+              console.log('[Auth Debug] Vendor ID set:', person.id);
+              return String(person.id);
+            }
+          } else if (res.status === 404) {
+            console.log('[Auth Debug] Person not found. Provisioning JIT...');
+            const createBody = {
+              code: userCode,
+              vendorCode: userCode,
+              name1: 'Unknown',
+              surname1: 'Unknown',
+              completeName: userCode,
+              type: 'nat'
+            };
+            
+            const createRes = await fetch(`${apiBase}/crm/api/v1/persons`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify(createBody)
+            });
+            
+            if (createRes.ok) {
+              const newPerson = await createRes.json();
+              if (newPerson && newPerson.id) {
+                await storage.setItem('vendorPersonId', String(newPerson.id));
+                console.log('[Auth Debug] Vendor ID created JIT:', newPerson.id);
+                return String(newPerson.id);
+              }
+            } else {
+              console.warn('[Auth Debug] Failed to create vendor JIT', createRes.status);
+            }
+          } else {
+            console.warn('[Auth Debug] Failed to fetch vendor info', res.status);
+          }
+        } catch (err: any) {
+          console.warn('[Auth Debug] Network error fetching vendor info', err.message);
         }
       }
     } catch (err) {

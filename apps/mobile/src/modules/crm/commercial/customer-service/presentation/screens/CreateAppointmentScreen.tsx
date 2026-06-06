@@ -6,10 +6,12 @@ import { Colors, Spacing, Typography } from '../../../../../../shared/theme/cons
 import { 
   CommercialProductRepositoryImpl, 
   ScheduleRepositoryImpl,
+  CampaignRepositoryImpl,
 } from '@kplian/infrastructure';
 import { 
   CommercialProduct, 
-  Schedule 
+  Schedule,
+  Campaign,
 } from '@kplian/core';
 import { CUSTOMER_SERVICE_CONSTANTS } from '../../constants/customer-service-constants';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,37 +20,63 @@ import { useVendor } from '../../../../../../shared/auth/AuthContext';
 // Repositorios
 const productRepo = new CommercialProductRepositoryImpl();
 const scheduleRepo = new ScheduleRepositoryImpl();
+const campaignRepo = new CampaignRepositoryImpl();
 
-type WizardStep = 'PRODUCT' | 'VENDOR' | 'SCHEDULE' | 'CONFIRM';
+type WizardStep = 'CATEGORY' | 'PRODUCT' | 'VENDOR' | 'SCHEDULE' | 'CONFIRM';
+
+interface MobileSchedule extends Schedule {
+  fromTime?: string;
+  toTime?: string;
+  dayCode?: string;
+}
 
 export default function CreateAppointmentScreen({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
   const { vendor: vendorId } = useVendor();
   
-  const [step, setStep] = useState<WizardStep>('PRODUCT');
+  const [step, setStep] = useState<WizardStep>('CATEGORY');
   const [loading, setLoading] = useState(false);
   
   // Datos de selección
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [products, setProducts] = useState<CommercialProduct[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<CommercialProduct | null>(null);
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [schedules, setSchedules] = useState<MobileSchedule[]>([]);
+  const [selectedSchedule, setSelectedSchedule] = useState<MobileSchedule | null>(null);
 
-  // Carga inicial de productos
+  // Carga inicial de campañas de categoría
   useEffect(() => {
-    const fetchProducts = async () => {
+    if (!vendorId) return;
+    
+    const fetchCampaigns = async () => {
       setLoading(true);
       try {
-        const data = await productRepo.getAll();
-        setProducts(data);
+        const data = await campaignRepo.getAvailable();
+        setCampaigns(data);
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Error fetching campaigns:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchProducts();
-  }, []);
+    fetchCampaigns();
+  }, [vendorId]);
+
+  // Carga de productos por categoría al seleccionar campaña
+  const handleCampaignSelect = async (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setLoading(true);
+    try {
+      const data = await productRepo.getByCategoryCode(campaign.categoryCode || '');
+      setProducts(data);
+      setStep('PRODUCT');
+    } catch (error) {
+      console.error("Error fetching products for category:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Carga de horarios al seleccionar producto
   const handleProductSelect = async (product: CommercialProduct) => {
@@ -65,25 +93,59 @@ export default function CreateAppointmentScreen({ onBack }: { onBack: () => void
     }
   };
 
+  const handleBack = () => {
+    if (step === 'CONFIRM') {
+      setStep('SCHEDULE');
+    } else if (step === 'SCHEDULE') {
+      setStep('PRODUCT');
+    } else if (step === 'PRODUCT') {
+      setStep('CATEGORY');
+    } else {
+      onBack();
+    }
+  };
+
   const renderStepIndicator = () => (
     <View style={styles.stepContainer}>
-      {['PRODUCT', 'SCHEDULE', 'CONFIRM'].map((s, idx) => (
+      {['CATEGORY', 'PRODUCT', 'SCHEDULE', 'CONFIRM'].map((s, idx) => (
         <View key={s} style={styles.stepWrapper}>
           <View style={[
             styles.stepCircle, 
             step === s && styles.stepActive,
-            idx < ['PRODUCT', 'SCHEDULE', 'CONFIRM'].indexOf(step) && styles.stepCompleted
+            idx < ['CATEGORY', 'PRODUCT', 'SCHEDULE', 'CONFIRM'].indexOf(step) && styles.stepCompleted
           ]}>
-            {idx < ['PRODUCT', 'SCHEDULE', 'CONFIRM'].indexOf(step) ? (
+            {idx < ['CATEGORY', 'PRODUCT', 'SCHEDULE', 'CONFIRM'].indexOf(step) ? (
               <Ionicons name="checkmark" size={16} color="#fff" />
             ) : (
               <Text style={styles.stepNumber}>{idx + 1}</Text>
             )}
           </View>
-          {idx < 2 && <View style={styles.stepLine} />}
+          {idx < 3 && <View style={styles.stepLine} />}
         </View>
       ))}
     </View>
+  );
+
+  const renderCategoryStep = () => (
+    <ScrollView style={styles.scroll}>
+      <Text style={styles.sectionTitle}>{t(CUSTOMER_SERVICE_CONSTANTS.SELECT_CATEGORY)}</Text>
+      {campaigns.map(campaign => (
+        <TouchableOpacity 
+          key={campaign.id} 
+          style={styles.productCard}
+          onPress={() => handleCampaignSelect(campaign)}
+        >
+          <View style={styles.productIcon}>
+            <Ionicons name="pricetag-outline" size={24} color={Colors.primary} />
+          </View>
+          <View style={styles.productInfo}>
+            <Text style={styles.productName}>{campaign.name}</Text>
+            <Text style={styles.productDesc} numberOfLines={1}>{campaign.code}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={Colors.muted} />
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
   );
 
   const renderProductStep = () => (
@@ -159,7 +221,7 @@ export default function CreateAppointmentScreen({ onBack }: { onBack: () => void
           <Text style={styles.detailLabel}>Horario:</Text>
           <Text style={styles.detailValue}>{selectedSchedule?.dayCode} {selectedSchedule?.fromTime}</Text>
         </View>
-
+ 
         <TouchableOpacity style={styles.finishButton} onPress={() => alert('Cita Registrada')}>
           <Text style={styles.finishButtonText}>{t(CUSTOMER_SERVICE_CONSTANTS.CONFIRM_APPOINTMENT)}</Text>
         </TouchableOpacity>
@@ -169,19 +231,29 @@ export default function CreateAppointmentScreen({ onBack }: { onBack: () => void
 
   return (
     <MainLayout headerTitle={t(CUSTOMER_SERVICE_CONSTANTS.TITLE)}>
-      <TouchableOpacity style={styles.backLink} onPress={onBack}>
+      <TouchableOpacity style={styles.backLink} onPress={handleBack}>
         <Ionicons name="arrow-back" size={20} color={Colors.muted} />
         <Text style={styles.backLinkText}>Volver</Text>
       </TouchableOpacity>
 
       {renderStepIndicator()}
       
-      {loading ? (
+      {loading || !vendorId ? (
         <View style={styles.loader}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          {!vendorId ? (
+            <>
+              <Ionicons name="alert-circle-outline" size={48} color={Colors.destructive} />
+              <Text style={{color: Colors.destructive, marginTop: Spacing.md, textAlign: 'center'}}>
+                La sesión no está completamente configurada (Vendor ID faltante).
+              </Text>
+            </>
+          ) : (
+            <ActivityIndicator size="large" color={Colors.primary} />
+          )}
         </View>
       ) : (
         <>
+          {step === 'CATEGORY' && renderCategoryStep()}
           {step === 'PRODUCT' && renderProductStep()}
           {step === 'SCHEDULE' && renderScheduleStep()}
           {step === 'CONFIRM' && renderConfirmStep()}

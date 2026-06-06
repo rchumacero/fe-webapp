@@ -1,6 +1,7 @@
 export interface Campaign {
     id: string;
     code: string;
+    categoryCode?: string | null;
     name: string;
     fromDate: string;
     toDate: string;
@@ -21,6 +22,7 @@ export interface Campaign {
 
 export interface CreateCampaignDto {
     code: string;
+    categoryCode?: string | null;
     name: string;
     fromDate: string;
     toDate: string;
@@ -35,3 +37,4 @@ export interface CreateCampaignDto {
 export interface UpdateCampaignDto extends Partial<CreateCampaignDto> {
     id: string;
 }
+

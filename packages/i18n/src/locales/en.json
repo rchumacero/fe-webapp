@@ -65,6 +65,7 @@
     "currency": "Currency",
     "spreadPercent": "Spread Percent",
     "customer": "Customer",
+    "category": "Category",
     "description": "Description",
     "product": "Product",
     "monday": "Monday",
@@ -155,6 +156,7 @@
     "customer_service": {
       "title": "Customer Service",
       "create_appointment": "Schedule Appointment",
+      "select_category": "Select Category",
       "select_product": "Select Service",
       "select_vendor": "Select Professional",
       "select_schedule": "Select Schedule",

@@ -2,6 +2,7 @@ import { DomainParameter } from "@kplian/core";
 
 export const P_STATUS = 'GEN/MAIN/STA';
 export const P_CURRENCY = 'FIN/CUR/CUR';
+export const P_CATEGORY = 'CRM/GEN/CAT';
 
 export const CAMPAIGN_DOMAIN_PARAMETERS: DomainParameter[] = [
   {
@@ -10,6 +11,10 @@ export const CAMPAIGN_DOMAIN_PARAMETERS: DomainParameter[] = [
   },
   {
     fullCode: P_CURRENCY,
+    vendorCode: ''
+  },
+  {
+    fullCode: P_CATEGORY,
     vendorCode: ''
   }
 ];

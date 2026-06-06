@@ -19,22 +19,3 @@ export interface Campaign {
     deletedBy?: string | null;
     deletedAt?: string | null;
 }
-
-export interface CreateCampaignDto {
-    code: string;
-    categoryCode?: string | null;
-    name: string;
-    fromDate: string;
-    toDate: string;
-    currencyCode: string;
-    defaultSpreadPercent: number;
-    status: string;
-    priority: number;
-    personId?: string | null;
-    vendorId?: string | null;
-}
-
-export interface UpdateCampaignDto extends Partial<CreateCampaignDto> {
-    id: string;
-}
-

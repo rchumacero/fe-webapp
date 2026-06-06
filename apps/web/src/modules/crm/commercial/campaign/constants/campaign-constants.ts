@@ -28,6 +28,7 @@ export const CAMPAIGN_CONSTANTS = {
     STATUS: "common.status",
     PRIORITY: "common.priority",
     CUSTOMER: "common.customer",
+    CATEGORY: "common.category",
     SUBMIT: "common.save",
     CANCEL: "common.cancel",
     DIRTY_WARNING: "common.dirty_warning",

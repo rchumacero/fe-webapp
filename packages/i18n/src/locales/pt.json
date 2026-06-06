@@ -65,6 +65,7 @@
         "currency": "Moeda",
         "spreadPercent": "Percentual de Spread",
         "customer": "Cliente",
+        "category": "Categoria",
         "description": "Descrição",
         "product": "Produto",
         "monday": "Segunda-feira",

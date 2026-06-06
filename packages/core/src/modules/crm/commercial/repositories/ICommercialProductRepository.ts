@@ -7,6 +7,7 @@ import {
 export interface ICommercialProductRepository {
   getAll(): Promise<CommercialProduct[]>;
   getByCampaignId(campaignId: string): Promise<CommercialProduct[]>;
+  getByCategoryCode(categoryCode: string): Promise<CommercialProduct[]>;
   getById(id: string): Promise<CommercialProduct>;
   create(data: CreateCommercialProductDto): Promise<CommercialProduct>;
   update(data: UpdateCommercialProductDto): Promise<CommercialProduct>;
