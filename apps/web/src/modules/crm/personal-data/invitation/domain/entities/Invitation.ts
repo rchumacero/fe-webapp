@@ -7,7 +7,7 @@ export interface Invitation {
   subjectNotify: string;
   bodyNotify: string;
   to: string;
-  profiles: string;
+  profiles: string | string[];
   createdBy?: string;
   createdAt?: string;
   updatedBy?: string | null;
@@ -22,7 +22,7 @@ export interface CreateInvitationDTO {
   subjectNotify: string;
   bodyNotify: string;
   to: string;
-  profiles: string;
+  profiles: string[];
 }
 
 export interface UpdateInvitationDTO extends CreateInvitationDTO {

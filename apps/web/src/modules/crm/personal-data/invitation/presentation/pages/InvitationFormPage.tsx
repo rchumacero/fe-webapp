@@ -45,6 +45,23 @@ const invitationSchema = z.object({
 
 type InvitationFormData = z.infer<typeof invitationSchema>;
 
+function toDateInputValue(value?: string | null): string {
+  if (!value) return '';
+  const match = String(value).match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : '';
+}
+
+function profilesToFormValue(profiles: string | string[] | null | undefined): string {
+  if (Array.isArray(profiles)) return profiles.filter(Boolean).join(',');
+  if (typeof profiles === 'string') return profiles;
+  return '';
+}
+
+function profilesToApiValue(profiles?: string): string[] {
+  if (!profiles) return [];
+  return profiles.split(',').map((p) => p.trim()).filter(Boolean);
+}
+
 interface InvitationFormProps {
   id?: string;
   personId?: string;
@@ -108,9 +125,9 @@ export default function InvitationFormPage({ id, personId }: InvitationFormProps
             subjectNotify: invitation.subjectNotify,
             bodyNotify: invitation.bodyNotify,
             url: invitation.url,
-            fromDate: invitation.fromDate.split(' ')[0],
-            toDate: invitation.toDate.split(' ')[0],
-            profiles: invitation.profiles || '',
+            fromDate: toDateInputValue(invitation.fromDate),
+            toDate: toDateInputValue(invitation.toDate),
+            profiles: profilesToFormValue(invitation.profiles),
           });
         } catch (error) {
           console.error("Error fetching invitation:", error);
@@ -131,10 +148,15 @@ export default function InvitationFormPage({ id, personId }: InvitationFormProps
   const onSubmit = async (formData: InvitationFormData) => {
     setIsSubmitting(true);
     try {
+      const payload = {
+        ...formData,
+        personId: personId || '',
+        profiles: profilesToApiValue(formData.profiles),
+      };
       if (id) {
-        await invitationRepository.update({ ...formData, id, personId: personId || '' });
+        await invitationRepository.update({ ...payload, id });
       } else {
-        await invitationRepository.create({ ...formData, personId: personId || '' });
+        await invitationRepository.create(payload);
       }
       router.push(INVITATION_ROUTES.LIST);
     } catch (error) {
