@@ -6,7 +6,6 @@ export interface CommercialProduct {
   description: string;
   priceType: string;
   totalCost: number;
-  attentionGroupCode: string;
   channelCode: string;
   type: 'UNIQUE' | 'COMBO';
   productCode?: string;
@@ -28,7 +27,6 @@ export interface CreateCommercialProductDto {
   description: string;
   priceType: string;
   totalCost: number;
-  attentionGroupCode: string;
   channelCode: string;
   type: 'UNIQUE' | 'COMBO';
   productCode?: string;

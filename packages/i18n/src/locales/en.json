@@ -251,14 +251,15 @@
       "endOfRecords": "End of campaigns list",
       "new": "New Campaign",
       "name": "Campaign Name",
-      "viewProducts": "View Products"
+      "viewProducts": "View Products",
+      "viewCommercialProducts": "View Commercial Products"
     },
     "commercialProduct": {
       "title": "Commercial Product",
       "listTitle": "Commercial Products List",
-      "create": "Register Product",
+      "create": "Register Commercial Product",
       "createDescription": "Add a new product to this campaign",
-      "edit": "Edit Product",
+      "edit": "Edit Commercial Product",
       "editDescription": "Modify product details",
       "priceType": "Price Type",
       "totalCost": "Total Cost",
@@ -271,8 +272,12 @@
       "quantity": "Quantity",
       "unitMeasure": "Unit of Measure",
       "configurationCode": "Configuration Code",
-      "scheduleType": "Schedule Type",
-      "name": "Commercial Product Name"
+      "scheduleTypeCode": "Schedule Type",
+      "timeBasedCode": "Time Based",
+      "requireConfirmationCode": "Require Confirmation",
+      "name": "Commercial Product Name",
+      "warehouseCode": "Warehouse",
+      "attentionChannel": "Attention Channel"
     },
     "schedule": {
       "title": "Schedule",
@@ -317,5 +322,40 @@
     "descriptionCreate": "Add a new field to this form",
     "viewForms": "View Forms",
     "processList": "Process"
+  },
+  "admin": {
+    "crm": {
+      "sale": {
+        "title": "Sales",
+        "list": {
+          "title": "Sales List"
+        },
+        "create": {
+          "title": "Create Sale"
+        },
+        "edit": {
+          "title": "Edit Sale"
+        },
+        "search": {
+          "placeholder": "Filter sales..."
+        },
+        "actions": "Actions",
+        "columns": {
+          "customer": "Customer",
+          "date": "Sale Date",
+          "amount": "Total Amount",
+          "status": "Status",
+          "payment_method": "Payment Method"
+        },
+        "form": {
+          "customer": "Customer Name",
+          "campaign": "Campaign",
+          "amount": "Sale Amount",
+          "payment_method": "Payment Method",
+          "status": "Status",
+          "submit": "Save Sale"
+        }
+      }
+    }
   }
 }

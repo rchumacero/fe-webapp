@@ -1,6 +1,6 @@
 import { DomainParameter } from "@kplian/core";
 
-export const P_STATUS = 'GEN/MAIN/STA';
+export const P_STATUS = 'CRM/GEN/STA';
 export const P_CURRENCY = 'FIN/CUR/CUR';
 export const P_CATEGORY = 'CRM/GEN/CAT';
 

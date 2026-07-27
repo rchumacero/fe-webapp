@@ -1,0 +1,12 @@
+[
+  {
+    "id": "var-uuid-0001",
+    "code": "CODE",
+    "name": "Item Code",
+    "type": "string",
+    "columnOrder": "1",
+    "parameterId": "param-uuid-1111-2222",
+    "primaryKey": 1,
+    "display": 1
+  }
+]

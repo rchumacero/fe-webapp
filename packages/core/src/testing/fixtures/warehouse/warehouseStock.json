@@ -1,0 +1,8 @@
+[
+  {
+    "id": "whs-uuid-9999",
+    "warehouseId": "wh-uuid-1111",
+    "itemCode": "ITEM-001",
+    "quantity": 150
+  }
+]

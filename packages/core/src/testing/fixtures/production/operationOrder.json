@@ -1,0 +1,10 @@
+[
+  {
+    "id": "opero-uuid-4444",
+    "orderNumber": "ORD-2026-001",
+    "productId": "prod-uuid-1111",
+    "quantity": 500,
+    "status": "IN_PROGRESS",
+    "dueDate": "2026-07-20T18:00:00Z"
+  }
+]

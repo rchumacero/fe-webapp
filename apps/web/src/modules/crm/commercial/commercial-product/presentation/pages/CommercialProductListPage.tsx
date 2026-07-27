@@ -30,6 +30,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from 'next/navigation';
+import { useDomainParameters } from '@/hooks/use-domain-parameters';
+import { COMMERCIAL_PRODUCT_DOMAIN_PARAMETERS, P_STATUS, P_PRICE_TYPE, P_CHANNEL, P_SCHEDULE_TYPE, P_TIME_BASED, P_REQUIRE_CONFIRMATION } from '../../constants/parameter';
 
 const commercialProductRepository = new CommercialProductRepositoryImpl();
 const campaignRepository = new CampaignRepositoryImpl();
@@ -45,6 +47,19 @@ export default function CommercialProductListPage({ campaignId }: CommercialProd
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
+
+  const { data: parametersData } = useDomainParameters({
+    parameters: COMMERCIAL_PRODUCT_DOMAIN_PARAMETERS
+  });
+
+  const getParameterLabel = useCallback((domainCode: string, value: string) => {
+    const list = parametersData[domainCode] || [];
+    const item = list.find((i: any) => {
+      const itemVal = i.KEY ?? i.CODE ?? i.VALUE ?? i.ID ?? i.code ?? i.value ?? i.id ?? i.valueStr ?? i.fullCode ?? i;
+      return String(itemVal).toLowerCase() === String(value).toLowerCase();
+    });
+    return item?.NAME || item?.name || item?.label || value;
+  }, [parametersData]);
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
@@ -160,7 +175,7 @@ export default function CommercialProductListPage({ campaignId }: CommercialProd
                       <Package className="mr-2 h-4 w-4 text-orange-500" /> {t(COMMERCIAL_PRODUCT_CONSTANTS.VIEW_SUB_PRODUCTS) || 'View Sub Products'}
                     </Link>
                   </DropdownMenuItem>
-                  {(product.planScheduleCode === 'YES' || product.planScheduleCode === 'Y') && product.scheduleType?.toLowerCase() === 'open' && (
+                  {(product.planScheduleCode === 'YES' || product.planScheduleCode === 'Y') && product.scheduleTypeCode?.toLowerCase() === 'open' && (
                     <DropdownMenuItem className="cursor-pointer">
                       <Link href={SCHEDULE_ROUTES.LIST(product.id)} className="flex items-center w-full">
                         <Calendar className="mr-2 h-4 w-4 text-primary" />{t(SCHEDULE_CONSTANTS.VIEW_SCHEDULE) || 'Schedule'}
@@ -187,18 +202,28 @@ export default function CommercialProductListPage({ campaignId }: CommercialProd
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground mt-1">
                     <DollarSign size={14} className="text-primary/60" />
-                    <span>{product.priceType}: {product.totalCost}</span>
+                    <span>{getParameterLabel(P_PRICE_TYPE, product.priceType || '')}: {product.totalCost}</span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground mt-1">
-                    <Badge variant={product.status === 'ACTIVE' ? 'default' : 'secondary'} className="text-[10px] py-0 h-4 mr-1">
-                      {product.status}
+                    <Badge variant={String(product.status).toLowerCase() === 'active' || String(product.status).toLowerCase() === 'ac' ? 'default' : 'secondary'} className="text-[10px] py-0 h-4 mr-1">
+                      {getParameterLabel(P_STATUS, product.status || '')}
                     </Badge>
                     <Badge variant="outline" className="text-[10px] py-0 h-4">
-                      {product.channelCode}
+                      {getParameterLabel(P_CHANNEL, product.channelCode || '')}
                     </Badge>
-                    {(product.planScheduleCode === 'YES' || product.planScheduleCode === 'Y') && product.scheduleType && (
+                    {(product.planScheduleCode === 'YES' || product.planScheduleCode === 'Y') && product.scheduleTypeCode && (
                       <Badge variant="secondary" className="text-[10px] py-0 h-4 bg-primary/5 text-primary border-primary/20">
-                        {product.scheduleType}
+                        {getParameterLabel(P_SCHEDULE_TYPE, product.scheduleTypeCode)}
+                      </Badge>
+                    )}
+                    {product.timeBasedCode && (
+                      <Badge variant="outline" className="text-[10px] py-0 h-4 bg-amber-500/5 text-amber-600 border-amber-500/20">
+                        TB: {getParameterLabel(P_TIME_BASED, product.timeBasedCode)}
+                      </Badge>
+                    )}
+                    {product.requireConfirmationCode && (
+                      <Badge variant="outline" className="text-[10px] py-0 h-4 bg-blue-500/5 text-blue-600 border-blue-500/20">
+                        RC: {getParameterLabel(P_REQUIRE_CONFIRMATION, product.requireConfirmationCode)}
                       </Badge>
                     )}
                   </div>

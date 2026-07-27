@@ -1,0 +1,9 @@
+[
+  {
+    "id": "mov-uuid-6666",
+    "warehouseId": "wh-uuid-1111",
+    "type": "IN",
+    "status": "COMPLETED",
+    "date": "2026-07-06T14:00:00Z"
+  }
+]

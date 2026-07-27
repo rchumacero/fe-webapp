@@ -8,9 +8,10 @@ export const CAMPAIGN_API_ROUTES = {
 export class CampaignRepositoryImpl implements ICampaignRepository {
   private api = createApiClient('crm');
 
-  async getAvailable(): Promise<Campaign[]> {
+  async getAvailable(date?: string): Promise<Campaign[]> {
     const response = await this.api.get<Campaign[]>(
-      CAMPAIGN_API_ROUTES.AVAILABLE
+      CAMPAIGN_API_ROUTES.AVAILABLE,
+      { params: date ? { date } : {} }
     );
     return response.data || [];
   }

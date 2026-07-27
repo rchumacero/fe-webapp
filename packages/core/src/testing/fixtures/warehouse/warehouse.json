@@ -1,0 +1,11 @@
+[
+  {
+    "id": "wh-uuid-1111",
+    "code": "GEN",
+    "name": "General Warehouse",
+    "description": "Main General Warehouse",
+    "address": "123 Main St",
+    "status": "ACTIVE",
+    "parentId": null
+  }
+]

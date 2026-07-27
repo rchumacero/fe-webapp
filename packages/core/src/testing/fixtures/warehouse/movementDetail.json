@@ -1,0 +1,9 @@
+[
+  {
+    "id": "movd-uuid-7777",
+    "movementId": "mov-uuid-6666",
+    "itemCode": "ITEM-001",
+    "quantity": 50,
+    "unitPrice": 10.5
+  }
+]

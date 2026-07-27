@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 import { setTokenProvider, setLanguageProvider, setTimezoneProvider, setGlobalErrorHandler, setVendorProvider } from '@kplian/infrastructure';
 import i18n from '@kplian/i18n';
 import { User } from '@kplian/core';
@@ -76,6 +77,8 @@ const discovery = {
   revocationEndpoint: `${ZITADEL_ISSUER}/oauth/v2/revoke`,
 };
 
+let isLoggingOut = false;
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -98,7 +101,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // 1. Storage Setup: inject token getter for API client
       setTokenProvider(async () => {
         try {
-          return (await storage.getItem('idToken')) || (await storage.getItem('accessToken'));
+          return (await storage.getItem('accessToken')) || (await storage.getItem('idToken'));
         } catch (e) {
           return null;
         }
@@ -115,7 +118,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       setGlobalErrorHandler((message, code) => {
         if (code === '401') {
-          logout();
+          if (!isLoggingOut) {
+            logout();
+          }
+        } else {
+          const finalMsg = message || 'Ha ocurrido un error inesperado.';
+          if (Platform.OS === 'web') {
+            window.alert(`Error: ${finalMsg}`);
+          } else {
+            Alert.alert('Error', finalMsg);
+          }
         }
       });
 
@@ -143,6 +155,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (response?.type === 'success') {
       const { code } = response.params;
+      if (!code) return; // Prevent exchange if it's a logout redirect
+
       // On Web, the redirect callback is handled in initialize() to ensure PKCE verifier is restored from storage.
       if (Platform.OS !== 'web') {
         exchangeCode(code, (response as any).authenticationRequest?.codeVerifier || request?.codeVerifier);
@@ -155,6 +169,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const idToken = await storage.getItem('idToken');
       const accessToken = await storage.getItem('accessToken');
       if (idToken || accessToken) {
+        isLoggingOut = false;
         setAccessToken(accessToken);
         setIdToken(idToken);
         const tokenForBackend = idToken || accessToken!;
@@ -163,7 +178,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // For mobile, client.ts handles interceptors.
         
         const userCode = await getUserInfo(accessToken!);
-        const vid = await loadVendor(idToken || accessToken!, userCode);
+        const vid = await loadVendor(accessToken! || idToken!, userCode);
         setVendorId(vid);
       }
     } catch (e) {
@@ -174,6 +189,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const exchangeCode = async (code: string, codeVerifier?: string) => {
+    if (!code) return;
     setIsLoading(true);
     try {
       const verifier = codeVerifier || request?.codeVerifier || '';
@@ -199,9 +215,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIdToken(tokenResult.idToken || null);
       
       if (tokenResult.accessToken || tokenResult.idToken) {
-        const tokenForBackend = tokenResult.idToken || tokenResult.accessToken;
+        isLoggingOut = false;
+        const tokenForBackend = tokenResult.accessToken || tokenResult.idToken;
         const userCode = await getUserInfo(tokenResult.accessToken);
-        const vid = await loadVendor(tokenResult.idToken || tokenResult.accessToken, userCode);
+        const vid = await loadVendor(tokenResult.accessToken || tokenResult.idToken || '', userCode);
         setVendorId(vid);
       }
     } catch (err) {
@@ -239,7 +256,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (userCode) {
         // 2. Fetch person by code from CRM using fetch since axios is not in package.json
-        const apiBase = process.env.API_GATEWAY_URL || 'https://api-dev-local.kplian.com';
+        const apiBase = process.env.EXPO_PUBLIC_API_GATEWAY_URL || process.env.EXPO_PUBLIC_API_URL || process.env.API_GATEWAY_URL || 'https://api-dev-local.kplian.com';
         const encodedCode = encodeURIComponent(userCode);
         
         try {
@@ -326,6 +343,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
+    if (isLoggingOut) return;
+    isLoggingOut = true;
+
+    const currentIdToken = idToken || (await storage.getItem('idToken'));
+
     await storage.deleteItem('accessToken');
     await storage.deleteItem('idToken');
     await storage.deleteItem('refreshToken');
@@ -334,10 +356,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (Platform.OS === 'web') {
       const postLogoutUrl = window.location.origin;
       let logoutUrl = `${ZITADEL_ISSUER}/oidc/v1/end_session?post_logout_redirect_uri=${encodeURIComponent(postLogoutUrl)}`;
-      if (idToken) {
-        logoutUrl += `&id_token_hint=${idToken}`;
+      if (currentIdToken) {
+        logoutUrl += `&id_token_hint=${currentIdToken}`;
       }
       window.location.href = logoutUrl;
+    } else {
+      const postLogoutUrl = redirectUri;
+      let logoutUrl = `${ZITADEL_ISSUER}/oidc/v1/end_session?post_logout_redirect_uri=${encodeURIComponent(postLogoutUrl)}`;
+      if (currentIdToken) {
+        logoutUrl += `&id_token_hint=${currentIdToken}`;
+      }
+      try {
+        await WebBrowser.openAuthSessionAsync(logoutUrl, redirectUri);
+      } catch (e) {
+        console.warn('Failed to clear Zitadel session on Native:', e);
+      }
     }
     
     setUser(null);
@@ -355,6 +388,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const useAuth = () => useContext(AuthContext);
 
 export const useVendor = () => {
-  const { vendorId } = useAuth();
-  return { vendor: vendorId };
+  const { vendorId, user } = useAuth();
+  return { 
+    vendor: vendorId, 
+    vendorCode: user?.username || user?.email || null 
+  };
 };

@@ -6,9 +6,10 @@ export interface CommercialProduct {
   description: string;
   priceType: string;
   totalCost: number;
-  attentionGroupCode: string;
   channelCode: string;
-  scheduleType?: string;
+  scheduleTypeCode?: string;
+  timeBasedCode?: string;
+  requireConfirmationCode?: string;
   type: 'UNIQUE' | 'COMBO';
   productCode?: string;
   cost?: number;
@@ -16,6 +17,7 @@ export interface CommercialProduct {
   unitMeasureCode?: string;
   configurationCode?: string;
   planScheduleCode?: string;
+  warehouseCode?: string;
   status?: string;
   createdAt?: string;
   createdBy?: string;
@@ -31,9 +33,10 @@ export interface CreateCommercialProductDto {
   description: string;
   priceType: string;
   totalCost: number;
-  attentionGroupCode: string;
   channelCode: string;
-  scheduleType?: string;
+  scheduleTypeCode?: string;
+  timeBasedCode?: string;
+  requireConfirmationCode?: string;
   type: 'UNIQUE' | 'COMBO';
   productCode?: string;
   cost?: number;
@@ -41,6 +44,7 @@ export interface CreateCommercialProductDto {
   unitMeasureCode?: string;
   configurationCode?: string;
   planScheduleCode?: string;
+  warehouseCode?: string;
   status: string;
 
   campaignProduct?: {

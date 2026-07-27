@@ -101,6 +101,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
             (user as any).vendorPersonName = user.name || userCode;
 
+            (user as any).vendorPersonCode = userCode;
+
             // Use invitation endpoint if ID is present, otherwise standard create
             const registrationUrl = invitationId
               ? `${crmApiUrl}/crm/api/v1/persons/invitation/${invitationId}`
@@ -118,6 +120,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (createRes.ok) {
               const created = await createRes.json();
               (user as any).vendorPersonId = created?.id || null;
+              (user as any).vendorPersonCode = created?.vendorCode || created?.code || userCode;
               (user as any).vendorPersonName = created?.completeName ||
                 (created?.name1 ? `${created.name1} ${created.surname1 || ""}`.trim() : null) ||
                 user.name ||
@@ -132,6 +135,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             try {
               const existing = JSON.parse(checkText);
               (user as any).vendorPersonId = existing?.id || null;
+              (user as any).vendorPersonCode = existing?.vendorCode || existing?.code || userCode;
               (user as any).vendorPersonName = existing?.completeName ||
                 (existing?.name1 ? `${existing.name1} ${existing.surname1 || ""}`.trim() : null) ||
                 user.name ||
@@ -161,7 +165,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                   return {
                     id: c.personCompId,
-                    name: resolvedName
+                    name: resolvedName,
+                    code: p?.vendorCode || p?.code || c.personCompCode || c.personCompId
                   };
                 });
 
@@ -170,6 +175,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                   {
                     id: (user as any).vendorPersonId,
                     name: (user as any).vendorPersonName,
+                    code: (user as any).vendorPersonCode || userCode,
                     isSelf: true
                   },
                   ...mapped
@@ -195,6 +201,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if ((user as any).vendorPersonId) {
           token.vendorPersonId = (user as any).vendorPersonId;
           token.vendorPersonName = (user as any).vendorPersonName;
+          token.vendorPersonCode = (user as any).vendorPersonCode || (user as any).username || user.email;
         }
         if ((user as any).relatedVendors) {
           token.relatedVendors = (user as any).relatedVendors;
@@ -206,6 +213,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.vendorPersonId = session.vendor;
         if (session.vendorName) {
           token.vendorPersonName = session.vendorName;
+        }
+        if (session.vendorCode) {
+          token.vendorPersonCode = session.vendorCode;
         }
       }
 
@@ -228,6 +238,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // Expose vendor personId — null when session expires
       (session as any).vendor = (token.vendorPersonId as string) || null;
       (session as any).vendorName = (token.vendorPersonName as string) || null;
+      (session as any).vendorCode = (token.vendorPersonCode as string) || (token.username as string) || (token.email as string) || null;
       (session as any).relatedVendors = (token.relatedVendors as any[]) || [];
       return session;
     },

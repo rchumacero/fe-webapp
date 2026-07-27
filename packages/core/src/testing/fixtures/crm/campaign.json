@@ -1,0 +1,9 @@
+[
+  {
+    "id": "camp-uuid-1111",
+    "name": "Summer Promotion",
+    "status": "ACTIVE",
+    "startDate": "2026-07-01T00:00:00Z",
+    "endDate": "2026-07-31T23:59:59Z"
+  }
+]

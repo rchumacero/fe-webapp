@@ -1,0 +1,9 @@
+[
+  {
+    "id": "sched-uuid-5555",
+    "collaboratorId": "col-uuid-3333",
+    "title": "Meeting with Client",
+    "startTime": "2026-07-06T10:00:00Z",
+    "endTime": "2026-07-06T11:00:00Z"
+  }
+]

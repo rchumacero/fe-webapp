@@ -24,7 +24,7 @@ export const COLLABORATOR_CONSTANTS = {
     SUBMIT: "common.save",
     CANCEL: "common.cancel",
     DIRTY_WARNING: "common.dirty_warning",
-    CONFIRM_CANCEL: "common.confirmCancel",
+    CONFIRM_CANCEL: "common.dirty_warning",
     YES_DISCARD: "common.yesDiscard",
     NO_STAY: "common.noStay",
     FORM_STATUS: "common.formStatus",

@@ -226,7 +226,8 @@
       "quantity": "Quantité",
       "unitMeasure": "Unité de mesure",
       "configurationCode": "Code de configuration",
-      "name": "Nom du produit commercial"
+      "name": "Nom du produit commercial",
+      "warehouseCode": "Entrepôt"
     },
     "schedule": {
       "title": "Planning",

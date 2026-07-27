@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { 
   StyleSheet, 
   View, 
@@ -30,15 +31,16 @@ export const Drawer = ({ isOpen, onClose, onNavigate }: DrawerProps) => {
   const [translateX] = useState(new Animated.Value(-DRAWER_WIDTH));
   const [backdropOpacity] = useState(new Animated.Value(0));
 
-  useEffect(() => {
-    const fetchMenu = async () => {
-      if (user?.username) {
-        const data = await getMenuByUser(user.username, MENU_CODES.MOBILE_APP);
-        setMenuData(data);
-      }
-    };
-    fetchMenu();
+  const fetchMenu = useCallback(async () => {
+    if (user?.username) {
+      const data = await getMenuByUser(user.username, MENU_CODES.MOBILE_APP);
+      setMenuData(data);
+    }
   }, [user]);
+
+  useEffect(() => {
+    fetchMenu();
+  }, [fetchMenu]);
 
   useEffect(() => {
     Animated.parallel([
@@ -139,7 +141,12 @@ export const Drawer = ({ isOpen, onClose, onNavigate }: DrawerProps) => {
               <Text style={styles.logoInitial}>K</Text>
             </View>
             <View style={styles.headerText}>
-              <Text style={styles.brand}>KPLIAN CRM</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+                <Text style={styles.brand}>KPLIAN CRM</Text>
+                <TouchableOpacity onPress={fetchMenu} style={{ padding: 4 }}>
+                  <Ionicons name="refresh" size={16} color={Colors.primary} />
+                </TouchableOpacity>
+              </View>
               <Text style={styles.version}>v.1.0.4</Text>
             </View>
           </View>

@@ -261,8 +261,11 @@
       "quantity": "Cantidad",
       "unitMeasure": "Unidad de Medida",
       "configurationCode": "Código de Configuración",
-      "scheduleType": "Tipo de Horario",
-      "name": "Nombre del Producto Comercial"
+      "scheduleTypeCode": "Tipo de Horario",
+      "timeBasedCode": "Basado en Tiempo",
+      "requireConfirmationCode": "Requiere Confirmación",
+      "name": "Nombre del Producto Comercial",
+      "warehouseCode": "Almacén"
     },
     "schedule": {
       "title": "Horario",
@@ -271,6 +274,11 @@
       "time": "Hora",
       "noProductId": "No se proporcionó ID de Producto Comercial",
       "appointment": "Cita"
+    },
+    "collaborator": {
+      "view": "Ver Colaborador",
+      "title": "Colaboradores",
+      "listTitle": "Colaboradores"
     }
   },
   "dashboard": {
@@ -287,5 +295,40 @@
     "sale_by_gender": "Ventas por género",
     "yearly_sales": "Ventas anuales",
     "more_than_last_year": "(+{{percentage}}%) más que el año pasado"
+  },
+  "admin": {
+    "crm": {
+      "sale": {
+        "title": "Ventas",
+        "list": {
+          "title": "Lista de Ventas"
+        },
+        "create": {
+          "title": "Crear Venta"
+        },
+        "edit": {
+          "title": "Editar Venta"
+        },
+        "search": {
+          "placeholder": "Filtrar ventas..."
+        },
+        "actions": "Acciones",
+        "columns": {
+          "customer": "Cliente",
+          "date": "Fecha de Venta",
+          "amount": "Monto Total",
+          "status": "Estado",
+          "payment_method": "Método de Pago"
+        },
+        "form": {
+          "customer": "Nombre del Cliente",
+          "campaign": "Campaña",
+          "amount": "Monto de Venta",
+          "payment_method": "Método de Pago",
+          "status": "Estado",
+          "submit": "Guardar Venta"
+        }
+      }
+    }
   }
 }

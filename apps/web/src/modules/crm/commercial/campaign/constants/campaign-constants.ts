@@ -47,5 +47,6 @@ export const CAMPAIGN_CONSTANTS = {
   },
   VIEW_DETAIL: "common.viewDetail",
   EDIT_RECORD: "common.editRecord",
-  VIEW_PRODUCTS: "crm.campaign.viewProducts"
+  VIEW_PRODUCTS: "crm.campaign.viewProducts",
+  VIEW_COMMERCIAL_PRODUCTS: "crm.campaign.viewCommercialProducts",
 };

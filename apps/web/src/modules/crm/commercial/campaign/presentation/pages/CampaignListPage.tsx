@@ -200,7 +200,7 @@ export default function CampaignListPage({ mode = 'custom' }: CampaignListPagePr
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer">
                     <Link href={COMMERCIAL_PRODUCT_ROUTES.LIST(campaign.id)} className="flex items-center w-full">
-                      <Search className="mr-2 h-4 w-4" /> {t(CAMPAIGN_CONSTANTS.VIEW_PRODUCTS) || 'View Products'}
+                      <Search className="mr-2 h-4 w-4" /> {t(CAMPAIGN_CONSTANTS.VIEW_COMMERCIAL_PRODUCTS) || 'View Products'}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-destructive cursor-pointer focus:bg-destructive/10">

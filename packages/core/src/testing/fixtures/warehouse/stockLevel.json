@@ -1,0 +1,10 @@
+[
+  {
+    "id": "sl-uuid-2222",
+    "warehouseId": "wh-uuid-1111",
+    "itemCode": "ITEM-001",
+    "quantity": 150,
+    "minimumQuantity": 20,
+    "maximumQuantity": 500
+  }
+]

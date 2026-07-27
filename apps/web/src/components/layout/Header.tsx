@@ -65,7 +65,7 @@ export const Header = () => {
 
   const handleLogout = async () => {
     // Federated Logout: Clear Next-Auth session and redirect to Zitadel end_session
-    const issuer = process.env.NEXT_PUBLIC_ZITADEL_ISSUER;
+    const issuer = process.env.NEXT_PUBLIC_ZITADEL_ISSUER || "https://dev-zitadel.kplian.com";
     const postLogoutUrl = window.location.origin;
     const idToken = (session as any)?.idToken;
 

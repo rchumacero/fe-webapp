@@ -11,7 +11,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "test": "turbo run test",
-    "pages:build": "npx turbo run pages:build --filter=web"
+    "pages:build": "npm run test && npx turbo run pages:build --filter=web"
   },
   "devDependencies": {
     "prettier": "latest",

@@ -1,0 +1,9 @@
+[
+  {
+    "id": "prod-uuid-1111",
+    "code": "PROD-001",
+    "name": "Standard Widget",
+    "description": "Premium industrial widget",
+    "status": "ACTIVE"
+  }
+]

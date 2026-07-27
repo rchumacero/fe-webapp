@@ -1,0 +1,10 @@
+[
+  {
+    "id": "pay-uuid-7777",
+    "saleId": "sale-uuid-8888",
+    "paymentMethod": "CREDIT_CARD",
+    "amount": 105.0,
+    "status": "APPROVED",
+    "date": "2026-07-06T15:00:00Z"
+  }
+]

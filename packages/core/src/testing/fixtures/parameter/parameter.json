@@ -1,0 +1,11 @@
+[
+  {
+    "id": "param-uuid-1111-2222",
+    "code": "ITEM",
+    "name": "Warehouse Item",
+    "description": "Item description",
+    "type": "list",
+    "structureId": "bec06b9b-55a4-5499-aa37-9e120472d925",
+    "fullCode": "WAR/MAIN/ITEM"
+  }
+]

@@ -1,0 +1,9 @@
+[
+  {
+    "id": "prodc-uuid-2222",
+    "productId": "prod-uuid-1111",
+    "version": "1.0",
+    "status": "APPROVED",
+    "effectiveDate": "2026-07-01T00:00:00Z"
+  }
+]

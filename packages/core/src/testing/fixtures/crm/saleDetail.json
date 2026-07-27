@@ -1,0 +1,9 @@
+[
+  {
+    "id": "saled-uuid-9999",
+    "saleId": "sale-uuid-8888",
+    "productCode": "PROD-001",
+    "quantity": 1,
+    "price": 100.0
+  }
+]

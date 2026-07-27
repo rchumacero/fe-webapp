@@ -1,0 +1,10 @@
+[
+  {
+    "id": "sla-uuid-3333",
+    "stockLevelId": "sl-uuid-2222",
+    "alertType": "MINIMUM_BREACH",
+    "message": "Stock level fell below minimum limits.",
+    "status": "UNRESOLVED",
+    "createdAt": "2026-07-06T12:00:00Z"
+  }
+]

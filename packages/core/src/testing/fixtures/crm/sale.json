@@ -1,0 +1,10 @@
+[
+  {
+    "id": "sale-uuid-8888",
+    "customerName": "John Doe",
+    "vendorCode": "rodrychm@gmail.com",
+    "status": "COMPLETED",
+    "total": 105.0,
+    "date": "2026-07-06T14:30:00Z"
+  }
+]

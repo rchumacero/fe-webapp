@@ -1,0 +1,10 @@
+[
+  {
+    "id": "invd-uuid-5555",
+    "inventoryId": "inv-uuid-4444",
+    "itemCode": "ITEM-001",
+    "expectedQuantity": 150,
+    "realQuantity": 148,
+    "difference": -2
+  }
+]

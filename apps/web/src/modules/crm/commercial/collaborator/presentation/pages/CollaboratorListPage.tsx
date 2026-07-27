@@ -34,6 +34,8 @@ import { SCHEDULE_CONSTANTS } from '../../../schedule/constants/schedule-constan
 import { useVendor } from '@/hooks/use-vendor';
 import { PersonRepositoryImpl } from '@/modules/crm/personal-data/person/infrastructure/repositories/PersonRepositoryImpl';
 import { Person } from '@/modules/crm/personal-data/person/domain/entities/Person';
+import { useDomainParameters } from '@/hooks/use-domain-parameters';
+import { COLLABORATOR_DOMAIN_PARAMETERS, P_STATUS, P_CURRENCY, P_UNIT_MEASURE } from '../../constants/parameter';
 
 const collaboratorRepository = new CollaboratorRepositoryImpl();
 const commercialProductRepository = new CommercialProductRepositoryImpl();
@@ -55,6 +57,19 @@ export default function CollaboratorListPage() {
 
   const [persons, setPersons] = useState<Person[]>([]);
   const [isLoadingPersons, setIsLoadingPersons] = useState(false);
+
+  const { data: parametersData } = useDomainParameters({
+    parameters: COLLABORATOR_DOMAIN_PARAMETERS
+  });
+
+  const getParameterLabel = useCallback((domainCode: string, value: string) => {
+    const list = parametersData[domainCode] || [];
+    const item = list.find((i: any) => {
+      const itemVal = i.KEY ?? i.CODE ?? i.VALUE ?? i.ID ?? i.code ?? i.value ?? i.id ?? i.valueStr ?? i.fullCode ?? i;
+      return itemVal === value;
+    });
+    return item?.NAME || item?.name || item?.label || value;
+  }, [parametersData]);
 
   const fetchPersons = useCallback(async () => {
     if (!vendor) return;
@@ -126,9 +141,8 @@ export default function CollaboratorListPage() {
 
   const filteredCollaborators = collaborators.filter(collab => {
     const name = getCollaboratorName(collab.employeeId).toLowerCase();
-    const type = (collab.type || '').toLowerCase();
     const query = search.toLowerCase();
-    return name.includes(query) || type.includes(query) || collab.employeeId.toLowerCase().includes(query);
+    return name.includes(query) || collab.employeeId.toLowerCase().includes(query);
   });
 
   if (!commercialProductId) {
@@ -195,7 +209,7 @@ export default function CollaboratorListPage() {
           >
             <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
               <div className="space-y-1 overflow-hidden flex-1 mr-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">{collab.type || 'Standard'}</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Collaborator</p>
                 <CardTitle className="text-lg font-bold group-hover:text-primary transition-colors truncate max-w-full block flex items-center gap-2">
                   <User size={18} className="text-primary/60" /> {getCollaboratorName(collab.employeeId)}
                 </CardTitle>
@@ -210,7 +224,7 @@ export default function CollaboratorListPage() {
                       <Edit2 className="mr-2 h-4 w-4" /> {t(COLLABORATOR_CONSTANTS.EDIT_RECORD) || 'Edit'}
                     </Link>
                   </DropdownMenuItem>
-                  {(commercialProduct?.planScheduleCode === 'YES' || commercialProduct?.planScheduleCode === 'Y') && commercialProduct?.scheduleType?.toLowerCase() === 'close' && (
+                  {(commercialProduct?.planScheduleCode === 'YES' || commercialProduct?.planScheduleCode === 'Y') && commercialProduct?.scheduleTypeCode?.toLowerCase() === 'close' && (
                     <DropdownMenuItem className="cursor-pointer">
                       <Link href={`${SCHEDULE_ROUTES.LIST('')}&collaboratorId=${collab.id}`} className="flex items-center w-full">
                         <Calendar className="mr-2 h-4 w-4 text-primary" /> {t(SCHEDULE_CONSTANTS.VIEW_SCHEDULE) || 'Schedule'}
@@ -228,18 +242,18 @@ export default function CollaboratorListPage() {
                 {collab.feeAmount !== undefined && (
                   <div className="flex items-center gap-2">
                     <DollarSign size={14} className="text-primary/60" />
-                    <span>Fee: {collab.feeAmount} {collab.currencyCode || ''}</span>
+                    <span>Fee: {collab.feeAmount} {getParameterLabel(P_CURRENCY, collab.currencyCode || '')}</span>
                   </div>
                 )}
                 {collab.appointmentTime && (
                   <div className="flex items-center gap-2">
                     <Clock size={14} className="text-primary/60" />
-                    <span>Time Slot: {collab.appointmentTime} {collab.unitMeasureCode || ''}</span>
+                    <span>Time Slot: {collab.appointmentTime} {getParameterLabel(P_UNIT_MEASURE, collab.unitMeasureCode || '')}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant={collab.status === 'ACTIVE' ? 'default' : 'secondary'} className="text-[10px] py-0 h-4">
-                    {collab.status}
+                    {getParameterLabel(P_STATUS, collab.status || '')}
                   </Badge>
                 </div>
               </div>

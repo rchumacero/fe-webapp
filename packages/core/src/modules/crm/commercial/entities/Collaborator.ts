@@ -2,7 +2,6 @@ export class Collaborator {
   id!: string;
   commercialProductId!: string;
   employeeId!: string;
-  type?: string | null;
   status!: string;
   feeAmount?: number | null;
   currencyCode?: string | null;
@@ -17,7 +16,6 @@ export class Collaborator {
 export interface CreateCollaboratorDto {
   commercialProductId: string;
   employeeId: string;
-  type?: string | null;
   status: string;
   feeAmount?: number | null;
   currencyCode?: string | null;

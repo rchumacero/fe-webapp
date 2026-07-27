@@ -6,6 +6,8 @@ import axios from 'axios';
  */
 const getGatewayUrl = () => {
   if (typeof process !== 'undefined' && process.env) {
+    if (process.env.EXPO_PUBLIC_API_GATEWAY_URL) return process.env.EXPO_PUBLIC_API_GATEWAY_URL;
+    if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
     if (process.env.NEXT_PUBLIC_API_GATEWAY_URL) return process.env.NEXT_PUBLIC_API_GATEWAY_URL;
     if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
     if (process.env.API_GATEWAY_URL) return process.env.API_GATEWAY_URL;
@@ -18,7 +20,7 @@ const getGatewayUrl = () => {
       if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
     }
   }
-  return 'https://api-dev-local.kplian.com';
+  return 'http://local-dev-gateway.kplian.com';
 };
 
 const GATEWAY_BASE_URL = getGatewayUrl();
@@ -91,6 +93,9 @@ export const createApiClient = (moduleName: string) => {
     baseURL: `${GATEWAY_BASE_URL}/${moduleName}/api`,
     headers: {
       'Content-Type': 'application/json',
+    },
+    paramsSerializer: {
+      indexes: null
     }
   });
 
@@ -171,6 +176,117 @@ export const createApiClient = (moduleName: string) => {
 
       if (globalErrorHandler) {
         globalErrorHandler(message, code, details);
+      }
+
+      return Promise.reject(error);
+    }
+  );
+
+  return instance;
+};
+
+const getWarehouseUrl = () => {
+  if (typeof process !== 'undefined' && process.env) {
+    if (process.env.EXPO_PUBLIC_WAREHOUSE_API_URL) return process.env.EXPO_PUBLIC_WAREHOUSE_API_URL;
+    if (process.env.NEXT_PUBLIC_WAREHOUSE_API_URL) return process.env.NEXT_PUBLIC_WAREHOUSE_API_URL;
+    if (process.env.WAREHOUSE_API_URL) return process.env.WAREHOUSE_API_URL;
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      // @ts-ignore
+      if (import.meta.env.VITE_WAREHOUSE_API_URL) return import.meta.env.VITE_WAREHOUSE_API_URL;
+      // @ts-ignore
+      if (import.meta.env.EXPO_PUBLIC_WAREHOUSE_API_URL) return import.meta.env.EXPO_PUBLIC_WAREHOUSE_API_URL;
+    }
+  }
+  return `${GATEWAY_BASE_URL}/warehouse/api`;
+};
+
+const WAREHOUSE_BASE_URL = getWarehouseUrl();
+
+export const createWarehouseApiClient = () => {
+  const instance = axios.create({
+    baseURL: WAREHOUSE_BASE_URL,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    paramsSerializer: {
+      indexes: null
+    }
+  });
+
+  instance.interceptors.request.use(async (config) => {
+    if (isApiLocked) {
+      console.warn("Infrastructure: API is currently LOCKED. Aborting request to:", config.url);
+      const controller = new AbortController();
+      config.signal = controller.signal;
+      controller.abort('API is locked due to session expiration');
+      return Promise.reject(new Error('API_LOCKED'));
+    }
+
+    try {
+      if (globalLanguageProvider) {
+        const lang = globalLanguageProvider();
+        if (lang) {
+          config.headers['Accept-Language'] = lang;
+        }
+      }
+
+      if (globalTimezoneProvider) {
+        const tz = globalTimezoneProvider();
+        if (tz) {
+          config.headers['Time-Zone'] = tz;
+        }
+      }
+
+      if (globalTokenProvider) {
+        const token = await globalTokenProvider();
+        if (token) {
+          config.headers['Authorization'] = `Bearer ${token}`;
+        }
+      }
+      
+      if (globalVendorProvider) {
+        const vendorId = await Promise.race([
+          globalVendorProvider(),
+          new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Vendor provider timeout')), 5000))
+        ]);
+        
+        if (vendorId) {
+          config.headers['X-Vendor-Id'] = String(vendorId);
+        }
+      }
+
+      console.log(`[Warehouse API Request] ${config.method?.toUpperCase()} ${config.url}`, {
+        params: config.params,
+        data: config.data
+      });
+    } catch (error) {
+      console.warn("Infrastructure: Warehouse request interceptor error", error);
+    }
+    
+    return config;
+  });
+
+  instance.interceptors.response.use(
+    (response) => {
+      console.log(`[Warehouse API Response] ${response.config.method?.toUpperCase()} ${response.config.url} Status: ${response.status}`, {
+        data: response.data
+      });
+      return response;
+    },
+    (error) => {
+      const message = error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message;
+      const code = error.response?.status?.toString();
+
+      console.error(`[Warehouse API Error] Message: ${message}`, {
+        status: error.response?.status,
+        data: error.response?.data
+      });
+
+      if (globalErrorHandler) {
+        globalErrorHandler(message, code);
       }
 
       return Promise.reject(error);

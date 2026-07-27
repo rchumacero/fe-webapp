@@ -12,4 +12,5 @@ export interface IScheduleRepository {
   create(data: CreateScheduleDto): Promise<Schedule>;
   update(data: UpdateScheduleDto): Promise<Schedule>;
   delete(id: string): Promise<void>;
+  transitionNext(scheduleId: string): Promise<any>;
 }

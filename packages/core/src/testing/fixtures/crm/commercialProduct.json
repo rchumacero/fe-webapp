@@ -1,0 +1,9 @@
+[
+  {
+    "id": "comp-uuid-4444",
+    "code": "PROD-001",
+    "name": "Commercial Widget",
+    "price": 100.0,
+    "description": "Standard Widget"
+  }
+]

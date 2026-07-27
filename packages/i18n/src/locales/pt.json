@@ -227,8 +227,11 @@
             "quantity": "Quantidade",
             "unitMeasure": "Unidade de Medida",
             "configurationCode": "Código de Configuração",
-            "scheduleType": "Tipo de Horário",
-            "name": "Nome do Produto Comercial"
+            "scheduleTypeCode": "Tipo de Horário",
+            "timeBasedCode": "Baseado em Tempo",
+            "requireConfirmationCode": "Requer Confirmação",
+            "name": "Nome do Produto Comercial",
+            "warehouseCode": "Armazém"
         },
         "schedule": {
             "title": "Agenda",

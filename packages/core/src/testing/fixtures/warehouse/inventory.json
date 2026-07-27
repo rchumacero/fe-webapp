@@ -1,0 +1,9 @@
+[
+  {
+    "id": "inv-uuid-4444",
+    "warehouseId": "wh-uuid-1111",
+    "status": "DRAFT",
+    "startDate": "2026-07-06T09:00:00Z",
+    "endDate": null
+  }
+]

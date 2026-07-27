@@ -13,6 +13,7 @@ export const SCHEDULE_API_ROUTES = {
   SCHEDULE_UPDATE: (id: string | number) => `/v1/schedules/${id}`,
   SCHEDULE_DELETE: (id: string | number) => `/v1/schedules/${id}`,
   SCHEDULE_BY_ID: (id: string | number) => `/v1/schedules/${id}`,
+  SCHEDULE_NEXT: '/v1/schedules/next',
 };
 
 export class ScheduleRepositoryImpl implements IScheduleRepository {
@@ -66,5 +67,13 @@ export class ScheduleRepositoryImpl implements IScheduleRepository {
     await this.api.delete(
       SCHEDULE_API_ROUTES.SCHEDULE_DELETE(id)
     );
+  }
+
+  async transitionNext(scheduleId: string): Promise<any> {
+    const response = await this.api.post<any>(
+      SCHEDULE_API_ROUTES.SCHEDULE_NEXT,
+      { id: scheduleId, scheduleId: scheduleId }
+    );
+    return response.data;
   }
 }

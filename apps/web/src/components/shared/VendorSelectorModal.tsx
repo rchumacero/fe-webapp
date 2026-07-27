@@ -57,7 +57,8 @@ export function VendorSelectorModal() {
         const selectedVendor = relatedVendors.find((v: any) => v.id === selectedId);
         await update({ 
           vendor: selectedId,
-          vendorName: selectedVendor?.name 
+          vendorName: selectedVendor?.name,
+          vendorCode: selectedVendor?.code
         });
         sessionStorage.setItem('vendor_selected', 'true');
         

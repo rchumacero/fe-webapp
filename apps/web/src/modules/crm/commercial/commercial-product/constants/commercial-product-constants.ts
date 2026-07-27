@@ -10,7 +10,7 @@ export const COMMERCIAL_PRODUCT_CONSTANTS = {
   RECORD_NOT_FOUND: "common.recordNotFound",
   END_OF_RECORDS: "common.endOfRecords",
   ACTIONS: "common.actions",
-  VIEW_SUB_PRODUCTS: "crm.viewSubProducts",
+  VIEW_SUB_PRODUCTS: "crm.campaign.viewProducts",
   COLUMNS: {
     CODE: "common.code",
     NAME: "common.name",
@@ -26,6 +26,7 @@ export const COMMERCIAL_PRODUCT_CONSTANTS = {
     TOTAL_COST: "crm.commercialProduct.totalCost",
     ATTENTION_GROUP: "crm.commercialProduct.attentionGroup",
     CHANNEL: "crm.commercialProduct.channel",
+    ATTENTION_CHANNEL: "crm.commercialProduct.attentionChannel",
     STATUS: "common.status",
     TYPE: "common.type",
     UNIQUE_PRODUCT: "crm.commercialProduct.uniqueProduct",
@@ -44,7 +45,10 @@ export const COMMERCIAL_PRODUCT_CONSTANTS = {
     FORM_STATUS: "common.formStatus",
     FORM_MODIFIED: "common.formModified",
     SELECT_OPTION: "common.selectOption",
-    SCHEDULE_TYPE: "crm.commercialProduct.scheduleType"
+    SCHEDULE_TYPE_CODE: "crm.commercialProduct.scheduleTypeCode",
+    TIME_BASED: "crm.commercialProduct.timeBasedCode",
+    REQUIRE_CONFIRMATION: "crm.commercialProduct.requireConfirmationCode",
+    WAREHOUSE: "crm.commercialProduct.warehouseCode"
   },
   VALIDATION: {
     CAMPAIGN_REQUIRED: "crm.commercialProduct.validation.campaignRequired",

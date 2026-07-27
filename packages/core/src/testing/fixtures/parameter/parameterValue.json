@@ -1,0 +1,10 @@
+[
+  {
+    "id": "val-uuid-9999",
+    "value": "SAMPLE-ITEM",
+    "dataType": "string",
+    "row": 1,
+    "variableId": "var-uuid-0001",
+    "vendorCode": "rodrychm@gmail.com"
+  }
+]

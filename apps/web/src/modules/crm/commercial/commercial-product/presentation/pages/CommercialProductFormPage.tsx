@@ -4,12 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from '@kplian/i18n';
 import { COMMERCIAL_PRODUCT_CONSTANTS } from '../../constants/commercial-product-constants';
 import { COMMERCIAL_PRODUCT_ROUTES } from '../../routes/commercial-product-routes';
-import { CommercialProductRepositoryImpl } from '@kplian/infrastructure';
+import { CommercialProductRepositoryImpl, WarehouseRepositoryImpl } from '@kplian/infrastructure';
 import { CampaignRepositoryImpl } from '../../../campaign/infrastructure/repositories/CampaignRepositoryImpl';
 import { Campaign } from '../../../campaign/domain/entities/Campaign';
 import { CAMPAIGN_ROUTES } from '../../../campaign/routes/campaign-routes';
 import { Breadcrumb } from '@/components/shared/Breadcrumb';
-import { CommercialProduct, CreateCommercialProductDto, UpdateCommercialProductDto } from '@kplian/core';
+import { CommercialProduct, CreateCommercialProductDto, UpdateCommercialProductDto, Warehouse } from '@kplian/core';
 import { ProductRepositoryImpl } from '@/modules/production/product/infrastructure/ProductRepositoryImpl';
 import { Product } from '@/modules/production/product/domain/Product';
 import { Button } from '@/components/ui/button';
@@ -26,12 +26,13 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { useDomainParameters } from '@/hooks/use-domain-parameters';
-import { COMMERCIAL_PRODUCT_DOMAIN_PARAMETERS, P_STATUS, P_PRICE_TYPE, P_CHANNEL, P_ATTENTION_GROUP, P_UNIT_MEASURE, PRODUCT_TYPE_UNIQUE, PRODUCT_TYPE_COMBO, P_SCHEDULE_TYPE, P_PLAN_SCHEDULE } from '../../constants/parameter';
+import { COMMERCIAL_PRODUCT_DOMAIN_PARAMETERS, P_STATUS, P_PRICE_TYPE, P_CHANNEL, P_UNIT_MEASURE, PRODUCT_TYPE_UNIQUE, PRODUCT_TYPE_COMBO, P_SCHEDULE_TYPE, P_PLAN_SCHEDULE, P_TIME_BASED, P_REQUIRE_CONFIRMATION } from '../../constants/parameter';
 import { useVendor } from '@/hooks/use-vendor';
 
 const commercialProductRepository = new CommercialProductRepositoryImpl();
 const productRepository = new ProductRepositoryImpl();
 const campaignRepository = new CampaignRepositoryImpl();
+const warehouseRepository = new WarehouseRepositoryImpl();
 
 const commercialProductSchema = z.object({
   campaignId: z.string().min(1, COMMERCIAL_PRODUCT_CONSTANTS.VALIDATION.CAMPAIGN_REQUIRED),
@@ -40,7 +41,6 @@ const commercialProductSchema = z.object({
   description: z.string().optional().default(''),
   priceType: z.string().min(1, COMMERCIAL_PRODUCT_CONSTANTS.VALIDATION.PRICE_TYPE_REQUIRED),
   totalCost: z.coerce.number().min(0),
-  attentionGroupCode: z.string().min(1, COMMERCIAL_PRODUCT_CONSTANTS.VALIDATION.ATTENTION_GROUP_REQUIRED),
   channelCode: z.string().min(1, COMMERCIAL_PRODUCT_CONSTANTS.VALIDATION.CHANNEL_REQUIRED),
   status: z.string().min(1, COMMERCIAL_PRODUCT_CONSTANTS.VALIDATION.STATUS_REQUIRED),
   type: z.enum([PRODUCT_TYPE_UNIQUE, PRODUCT_TYPE_COMBO]),
@@ -50,7 +50,10 @@ const commercialProductSchema = z.object({
   unitMeasureCode: z.string().optional(),
   configurationCode: z.string().optional(),
   planScheduleCode: z.string().optional(),
-  scheduleType: z.string().optional().nullable(),
+  scheduleTypeCode: z.string().optional().nullable(),
+  timeBasedCode: z.string().optional().nullable(),
+  requireConfirmationCode: z.string().optional().nullable(),
+  warehouseCode: z.string().optional().nullable(),
   id: z.string().optional(),
 }).superRefine((data, ctx) => {
   // Only enforce unique product fields if we are NOT in edit mode
@@ -83,7 +86,7 @@ interface CommercialProductFormProps {
 export default function CommercialProductFormPage({ id, campaignId }: CommercialProductFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { vendor } = useVendor();
+  const { vendor, vendorCode } = useVendor();
 
   const { data: parametersData } = useDomainParameters({
     parameters: COMMERCIAL_PRODUCT_DOMAIN_PARAMETERS
@@ -92,12 +95,14 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
   const statusOptions = parametersData[P_STATUS] || [];
   const priceTypeOptions = parametersData[P_PRICE_TYPE] || [];
   const channelOptions = parametersData[P_CHANNEL] || [];
-  const attentionGroupOptions = parametersData[P_ATTENTION_GROUP] || [];
   const unitMeasureOptions = parametersData[P_UNIT_MEASURE] || [];
   const scheduleTypeOptions = parametersData[P_SCHEDULE_TYPE] || [];
   const planScheduleOptions = parametersData[P_PLAN_SCHEDULE] || [];
+  const timeBasedOptions = parametersData[P_TIME_BASED] || [];
+  const requireConfirmationOptions = parametersData[P_REQUIRE_CONFIRMATION] || [];
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -119,12 +124,19 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
       description: '',
       priceType: '',
       totalCost: 0,
-      attentionGroupCode: '',
       channelCode: '',
       status: 'ACTIVE',
       type: PRODUCT_TYPE_UNIQUE,
       planScheduleCode: '',
-      scheduleType: null,
+      scheduleTypeCode: null,
+      timeBasedCode: null,
+      requireConfirmationCode: null,
+      warehouseCode: null,
+      productCode: '',
+      cost: '',
+      quantity: '',
+      unitMeasureCode: '',
+      configurationCode: '',
       id: id,
     }
   });
@@ -178,6 +190,22 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
   }, [vendor]);
 
   useEffect(() => {
+    if (vendorCode) {
+      const fetchWarehouses = async () => {
+        try {
+          console.log("CommercialProductForm: Calling warehouseRepository.getByVendor with vendorCode:", vendorCode);
+          const data = await warehouseRepository.getByVendor(vendorCode);
+          console.log("CommercialProductForm: Warehouses received:", data?.length || 0, "items");
+          setWarehouses(data);
+        } catch (error) {
+          console.error("CommercialProductForm: Error fetching warehouses:", error);
+        }
+      };
+      fetchWarehouses();
+    }
+  }, [vendorCode]);
+
+  useEffect(() => {
     if (id) {
       const fetchProduct = async () => {
         setIsLoading(true);
@@ -190,7 +218,6 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
             description: product.description || '',
             priceType: product.priceType,
             totalCost: product.totalCost,
-            attentionGroupCode: product.attentionGroupCode,
             channelCode: product.channelCode,
             status: product.status || 'ACTIVE',
             type: (product.numberProducts ?? 0) > 1 ? PRODUCT_TYPE_COMBO : PRODUCT_TYPE_UNIQUE,
@@ -200,7 +227,10 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
             unitMeasureCode: product.unitMeasureCode,
             configurationCode: product.configurationCode,
             planScheduleCode: product.planScheduleCode || '',
-            scheduleType: product.scheduleType || null,
+            scheduleTypeCode: product.scheduleTypeCode || null,
+            timeBasedCode: product.timeBasedCode || null,
+            requireConfirmationCode: product.requireConfirmationCode || null,
+            warehouseCode: product.warehouseCode || null,
             id: product.id,
           });
           setNumberProducts(product.numberProducts);
@@ -506,32 +536,7 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.ATTENTION_GROUP)}</label>
-                  <Controller
-                    name="attentionGroupCode"
-                    control={control}
-                    render={({ field }) => (
-                      <select
-                        {...field}
-                        className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
-                      >
-                        <option value="">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.SELECT_OPTION) || 'Select attention group'}</option>
-                        {attentionGroupOptions.map((p: any, idx: number) => {
-                          const val = p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '');
-                          const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
-                          return (
-                            <option key={`${val}-${idx}`} value={val}>
-                              {label}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    )}
-                  />
-                  {errors.attentionGroupCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.attentionGroupCode.message as string)}</p>}
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.CHANNEL)}</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.ATTENTION_CHANNEL)}</label>
                   <Controller
                     name="channelCode"
                     control={control}
@@ -556,9 +561,9 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
                   {errors.channelCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.channelCode.message as string)}</p>}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.SCHEDULE_TYPE) || 'Schedule Type'}</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.SCHEDULE_TYPE_CODE) || 'Schedule Type'}</label>
                   <Controller
-                    name="scheduleType"
+                    name="scheduleTypeCode"
                     control={control}
                     render={({ field }) => (
                       <select
@@ -579,7 +584,7 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
                       </select>
                     )}
                   />
-                  {errors.scheduleType && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.scheduleType.message as string)}</p>}
+                  {errors.scheduleTypeCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.scheduleTypeCode.message as string)}</p>}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Plan Schedule</label>
@@ -606,6 +611,80 @@ export default function CommercialProductFormPage({ id, campaignId }: Commercial
                     )}
                   />
                   {errors.planScheduleCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.planScheduleCode.message as string)}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.TIME_BASED) || 'Time Based'}</label>
+                  <Controller
+                    name="timeBasedCode"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                        className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                      >
+                        <option value="">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.SELECT_OPTION) || 'Select option'}</option>
+                        {timeBasedOptions.map((p: any, idx: number) => {
+                          const val = p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '');
+                          const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
+                          return (
+                            <option key={`${val}-${idx}`} value={val}>
+                              {label}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    )}
+                  />
+                  {errors.timeBasedCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.timeBasedCode.message as string)}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.REQUIRE_CONFIRMATION) || 'Require Confirmation'}</label>
+                  <Controller
+                    name="requireConfirmationCode"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                        className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                      >
+                        <option value="">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.SELECT_OPTION) || 'Select option'}</option>
+                        {requireConfirmationOptions.map((p: any, idx: number) => {
+                          const val = p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '');
+                          const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
+                          return (
+                            <option key={`${val}-${idx}`} value={val}>
+                              {label}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    )}
+                  />
+                  {errors.requireConfirmationCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.requireConfirmationCode.message as string)}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.WAREHOUSE) || 'Warehouse'}</label>
+                  <Controller
+                    name="warehouseCode"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                        className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                      >
+                        <option value="">{t(COMMERCIAL_PRODUCT_CONSTANTS.FORM.SELECT_OPTION) || 'Select warehouse'}</option>
+                        {warehouses.map((w, idx) => (
+                          <option key={`${w.code}-${idx}`} value={w.code}>
+                            {w.name} ({w.code})
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                  {errors.warehouseCode && <p className="text-[10px] text-destructive font-medium ml-1">{t(errors.warehouseCode.message as string)}</p>}
                 </div>
               </div>
             </CardContent>

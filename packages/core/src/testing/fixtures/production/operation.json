@@ -1,0 +1,9 @@
+[
+  {
+    "id": "oper-uuid-3333",
+    "name": "Widget Assembly",
+    "type": "MANUAL",
+    "estimatedDuration": 300,
+    "status": "ACTIVE"
+  }
+]

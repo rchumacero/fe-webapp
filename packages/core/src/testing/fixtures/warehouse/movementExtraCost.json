@@ -1,0 +1,8 @@
+[
+  {
+    "id": "movec-uuid-8888",
+    "movementId": "mov-uuid-6666",
+    "description": "Shipping extra cost",
+    "amount": 25.0
+  }
+]

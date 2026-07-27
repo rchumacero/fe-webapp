@@ -32,9 +32,10 @@ export class CommercialProductRepositoryImpl implements ICommercialProductReposi
     return response.data || [];
   }
 
-  async getByCategoryCode(categoryCode: string): Promise<CommercialProduct[]> {
+  async getByCategoryCode(categoryCode: string, date?: string): Promise<CommercialProduct[]> {
     const response = await this.api.get<CommercialProduct[]>(
-      COMMERCIAL_PRODUCT_API_ROUTES.COMMERCIAL_PRODUCT_BY_CATEGORY(categoryCode)
+      COMMERCIAL_PRODUCT_API_ROUTES.COMMERCIAL_PRODUCT_BY_CATEGORY(categoryCode),
+      { params: date ? { date } : {} }
     );
     return response.data || [];
   }
