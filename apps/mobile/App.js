@@ -21,6 +21,8 @@ import ParameterCRMValuesScreen from './src/modules/parameter/presentation/scree
 import ParameterCustomScreen from './src/modules/parameter/presentation/screens/ParameterCustomScreen';
 import MainEntityScreen from './src/modules/workflow/presentation/screens/MainEntityScreen';
 import { useTranslation } from '@kplian/i18n';
+import ResourceScreen from './src/modules/access/presentation/screens/ResourceScreent';
+// import {ResourceScreen} from ''
 
 
 // Manual login to avoid race conditions with logout and background 401s
@@ -51,6 +53,9 @@ function AppContent() {
 
   const handleNavigation = (route) => {
     console.log('[Navigation] Menu route clicked:', route);
+    if (route == '/access/resources'){
+      setCurrentScreen('RESOURCE')
+    }
     if (route === '/crm/commercial/customer-service/create' || route === 'crm/commercial/customer-service/create') {
       setCurrentScreen('APPOINTMENT');
     }
@@ -120,6 +125,10 @@ function AppContent() {
 
   if (!user) {
     return <LoginScreen />;
+  }
+
+  if(currentScreen === 'RESOURCE'){
+    return<ResourceScreen onBack={() => setCurrentScreen('HOME')}/>
   }
 
   if (currentScreen === 'APPOINTMENT') {
