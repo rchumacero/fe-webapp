@@ -82,18 +82,21 @@ export default function ResourceScreen({ onBack, onNavigate }: ResourceScreenPro
 		setActiveMenuId(null);
 	}, []);
 
-	const handleSave = useCallback(async () => {
+	const handleSaveResource = useCallback(async () => {
+		console.log("save button")
 		setLoading(true)
 		try {
-			if (modalMode === 'create') {
+			console.log("modalmode", modalMode)
+			if (modalMode === "create") {
 				const resource: CreateResourceDto = {
 					code: form.code,
 					description: form.description,
 					name: form.name,
 					endpoint: form.endpoint,
 					restricted: form.restricted,
-					type: form.type,
-					menuId: "",
+					type: "view",
+					// type: form.type,
+					menuId: "4b8b92b7-74ec-46ba-a2d2-12166a16879c",
 					moduleCode: "CRM",
 					resourceId: ""
 				}
@@ -105,21 +108,23 @@ export default function ResourceScreen({ onBack, onNavigate }: ResourceScreenPro
 					name: form.name,
 					endpoint: form.endpoint,
 					restricted: form.restricted,
-					type: form.type,
-					menuId: "",
+					// type: form.type,
+					type: "view",
+					menuId: "4b8b92b7-74ec-46ba-a2d2-12166a16879c",
 					moduleCode: "CRM",
 					resourceId: ""
 				}
 				await resourceRepository.update(selectedResource.id, resource)
 			}
 			setModalMode(null)
+			getResources()
 		} catch (error) {
 			console.error('Error saving resource:', error);
 		} finally {
 			setLoading(false)
 		}
 
-	}, [])
+	}, [modalMode, form])
 
 	const handleEditResource = (resource: Resource) => {
 		setActiveMenuResource(null);
@@ -157,8 +162,14 @@ export default function ResourceScreen({ onBack, onNavigate }: ResourceScreenPro
 		handleCloseMenu();
 	}, [handleCloseMenu]);
 
-	const handleDelete = useCallback((resource: Resource) => {
-		handleCloseMenu();
+	const handleDeleteResource = useCallback(async (resource: Resource) => {
+		try {
+			await resourceRepository.delete(resource.id)
+			setResources(prev => prev.filter(r => r.id !== resource.id));
+			handleCloseMenu();
+		} catch (error) {
+			console.error('Error:', error);
+		}
 	}, [handleCloseMenu]);
 
 	useEffect(() => {
@@ -198,7 +209,7 @@ export default function ResourceScreen({ onBack, onNavigate }: ResourceScreenPro
 							{modalMode === 'detail' && 'Resource Details'}
 						</Text>
 						{modalMode !== 'detail' ? (
-							<TouchableOpacity onPress={handleSave}>
+							<TouchableOpacity onPress={handleSaveResource}>
 								<Text style={styles.saveText}>Save</Text>
 							</TouchableOpacity>
 						) : (
@@ -316,7 +327,7 @@ export default function ResourceScreen({ onBack, onNavigate }: ResourceScreenPro
 													bottom: -1000,
 													zIndex: 998,
 												}}
-												onPress={() => setActiveMenuId(null)}
+												onPress={() => setActiveMenuResource(null)}
 											/>
 
 
@@ -339,6 +350,17 @@ export default function ResourceScreen({ onBack, onNavigate }: ResourceScreenPro
 													}}
 												>
 													<Text style={styles.dropdownMenuText}>Detail</Text>
+												</TouchableOpacity>
+
+												<TouchableOpacity
+													style={styles.dropdownMenuItem}
+													onPress={(e) => {
+														e.stopPropagation();
+														handleDeleteResource(resource);
+														activeMenuResource(null)
+													}}
+												>
+													<Text style={[styles.dropdownMenuText, { color: Colors.destructive }]}>Delete</Text>
 												</TouchableOpacity>
 											</View>
 										</>
