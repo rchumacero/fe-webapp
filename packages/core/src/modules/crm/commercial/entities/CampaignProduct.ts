@@ -1,11 +1,10 @@
 export interface CampaignProduct {
   id: string;
   commercialProductId: string;
-  productCode: string;
   cost: number;
   quantity: number;
   unitMeasureCode: string;
-  configurationCode: string;
+  itemCode?: string | null;
   status?: string;
   createdAt?: string;
   createdBy?: string;
@@ -15,11 +14,10 @@ export interface CampaignProduct {
 
 export interface CreateCampaignProductDto {
   commercialProductId: string;
-  productCode: string;
   cost: number;
   quantity: number;
   unitMeasureCode: string;
-  configurationCode: string;
+  itemCode?: string | null;
   status?: string;
 }
 

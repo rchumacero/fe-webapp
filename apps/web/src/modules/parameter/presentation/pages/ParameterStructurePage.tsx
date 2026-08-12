@@ -32,10 +32,12 @@ import {
   FolderTree,
   Store,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Database
 } from 'lucide-react';
 import StructureTree from '../components/StructureTree';
 import VariableManagerModal from '../components/VariableManagerModal';
+import { ParameterValueManagerModal } from '../components/ParameterValueManagerModal';
 import { useVendor } from '@/hooks/use-vendor';
 import { useSession } from 'next-auth/react';
 
@@ -61,6 +63,7 @@ export default function ParameterStructurePage() {
   const [isParameterModalOpen, setIsParameterModalOpen] = useState(false);
   const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
   const [isVariableModalOpen, setIsVariableModalOpen] = useState(false);
+  const [isValuesModalOpen, setIsValuesModalOpen] = useState(false);
 
   const [editingStructure, setEditingStructure] = useState<Structure | null>(null);
   const [parentStructure, setParentStructure] = useState<Structure | null>(null);
@@ -474,6 +477,18 @@ export default function ParameterStructurePage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="size-8 text-primary hover:bg-primary/10"
+                            onClick={() => {
+                              setSelectedParameter(param);
+                              setIsValuesModalOpen(true);
+                            }}
+                            title="Manage Values"
+                          >
+                            <Database className="size-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="size-8 hover:bg-destructive/10 hover:text-destructive"
                             onClick={() => handleDeleteParameter(param.id)}
                           >
@@ -672,6 +687,13 @@ export default function ParameterStructurePage() {
         parameter={selectedParameter}
         isOpen={isVariableModalOpen}
         onClose={() => setIsVariableModalOpen(false)}
+      />
+
+      {/* Value Manager Modal (Transposed row records) */}
+      <ParameterValueManagerModal
+        parameter={selectedParameter}
+        isOpen={isValuesModalOpen}
+        onClose={() => setIsValuesModalOpen(false)}
       />
     </div>
   );

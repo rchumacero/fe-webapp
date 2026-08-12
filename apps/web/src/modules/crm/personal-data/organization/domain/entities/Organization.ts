@@ -8,6 +8,8 @@ export interface Organization {
   maxAttentionSchedule: number | null; //1 para citas medicas por ejemplo, y n para cajas
   ticketMethodCode: string | null; //FIFO, SCH schedule, ...
   ticketCounter: number | null; //Contador de tickets, deberia ser reiniciado cada dia
+  latitude?: number | null;
+  longitude?: number | null;
   createdAt?: string;
   createdBy?: string;
   updatedAt?: string;
@@ -23,6 +25,8 @@ export interface CreateOrganizationDto {
   maxAttentionSchedule: number | null; //1 para citas medicas por ejemplo, y n para cajas
   ticketMethodCode: string | null; //FIFO, SCH schedule, ...
   ticketCounter: number | null; //Contador de tickets, deberia ser reiniciado cada dia
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface UpdateOrganizationDto extends CreateOrganizationDto {

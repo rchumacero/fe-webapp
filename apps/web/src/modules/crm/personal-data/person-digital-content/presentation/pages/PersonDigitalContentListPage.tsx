@@ -74,9 +74,10 @@ export const PersonDigitalContentListPage = ({ personId }: PersonDigitalContentL
         return !tLower.includes('video') && !tLower.includes('doc') && !tLower.includes('pdf');
       });
 
+      const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
       const idsToFetch = imageRecords
         .map(c => c.digitalContentCode)
-        .filter((code): code is string => !!code && code !== 'PENDING_UPLOAD');
+        .filter((code): code is string => !!code && code !== 'PENDING_UPLOAD' && isUUID(code));
 
       if (idsToFetch.length > 0) {
         try {

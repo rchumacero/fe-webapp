@@ -14,6 +14,7 @@ import WarehouseScreen from './src/modules/warehouse/presentation/Warehouse/Ware
 import SalesScreen from './src/modules/crm/sales/presentation/screens/SalesScreen';
 import MovementScreen from './src/modules/warehouse/presentation/Movement/MovementScreen';
 import InventoryScreen from './src/modules/warehouse/presentation/Inventory/InventoryScreen';
+import MovementReportScreen from './src/modules/warehouse/presentation/Movement/MovementReportScreen';
 import ParameterStructureScreen from './src/modules/parameter/presentation/screens/ParameterStructureScreen';
 import ParameterSecretScreen from './src/modules/parameter/presentation/screens/ParameterSecretScreen';
 import ParameterStructureVendorScreen from './src/modules/parameter/presentation/screens/ParameterStructureVendorScreen';
@@ -71,6 +72,15 @@ function AppContent() {
     }
     if (route === '/warehouse/inventory' || route === 'warehouse/inventory') {
       setCurrentScreen('INVENTORY_SCREEN');
+    }
+    if (route === '/warehouse/rep_daily' || route === 'warehouse/rep_daily') {
+      setCurrentScreen('REP_DAILY');
+    }
+    if (route === '/warehouse/rep_kardex' || route === 'warehouse/rep_kardex') {
+      setCurrentScreen('REP_KARDEX');
+    }
+    if (route === '/warehouse/rep_stock' || route === 'warehouse/rep_stock') {
+      setCurrentScreen('REP_STOCK');
     }
     if (route === '/parameter/structure' || route === 'parameter/structure') {
       setCurrentScreen('PARAMETER_STRUCTURE');
@@ -164,6 +174,18 @@ function AppContent() {
 
   if (currentScreen === 'INVENTORY_SCREEN') {
     return <InventoryScreen onBack={() => setCurrentScreen('HOME')} onNavigate={handleNavigation} />;
+  }
+
+  if (currentScreen === 'REP_DAILY') {
+    return <MovementReportScreen type="rep_daily" onBack={() => setCurrentScreen('HOME')} onNavigate={handleNavigation} />;
+  }
+
+  if (currentScreen === 'REP_KARDEX') {
+    return <MovementReportScreen type="rep_kardex" onBack={() => setCurrentScreen('HOME')} onNavigate={handleNavigation} />;
+  }
+
+  if (currentScreen === 'REP_STOCK') {
+    return <MovementReportScreen type="rep_stock" onBack={() => setCurrentScreen('HOME')} onNavigate={handleNavigation} />;
   }
 
   if (currentScreen === 'PARAMETER_STRUCTURE') {

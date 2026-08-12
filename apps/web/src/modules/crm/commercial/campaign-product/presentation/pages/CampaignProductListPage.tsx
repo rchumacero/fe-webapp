@@ -37,7 +37,7 @@ interface CampaignProductListPageProps {
 export default function CampaignProductListPage({ commercialProductId }: CampaignProductListPageProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { vendor } = useVendor();
+  const { vendorCode } = useVendor();
   const [products, setProducts] = useState<CampaignProduct[]>([]);
   const [baseProducts, setBaseProducts] = useState<Product[]>([]);
   const [commercialProduct, setCommercialProduct] = useState<CommercialProduct | null>(null);
@@ -51,14 +51,14 @@ export default function CampaignProductListPage({ commercialProductId }: Campaig
   const campaignRepository = new CampaignRepositoryImpl();
 
   const fetchBaseProducts = useCallback(async () => {
-    if (!vendor) return;
+    if (!vendorCode) return;
     try {
-      const data = await productRepository.getAll(vendor);
+      const data = await productRepository.getByVendor(vendorCode);
       setBaseProducts(data);
     } catch (error) {
       console.error("Error fetching base products:", error);
     }
-  }, [vendor]);
+  }, [vendorCode]);
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
@@ -90,10 +90,10 @@ export default function CampaignProductListPage({ commercialProductId }: Campaig
       };
       fetchContext();
     }
-    if (vendor) {
+    if (vendorCode) {
       fetchBaseProducts();
     }
-  }, [commercialProductId, fetchProducts, vendor, fetchBaseProducts]);
+  }, [commercialProductId, fetchProducts, vendorCode, fetchBaseProducts]);
 
   const getProductName = (productCode: string) => {
     const baseProduct = baseProducts.find(p => p.code === productCode);

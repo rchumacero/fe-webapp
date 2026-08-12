@@ -17,7 +17,8 @@ import {
   Search,
   Edit2,
   Trash2,
-  Menu
+  Menu,
+  MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -32,6 +33,7 @@ import { EconomicActivityListPage } from '@/modules/crm/personal-data/economic-a
 import { PersonDigitalContentListPage } from '@/modules/crm/personal-data/person-digital-content/presentation/pages/PersonDigitalContentListPage';
 import { ContactListPage } from '@/modules/crm/personal-data/contact/presentation/pages/ContactListPage';
 import { WorkExperienceListPage } from '@/modules/crm/personal-data/work-experience/presentation/pages/WorkExperienceListPage';
+import { AddressListPage } from '@/modules/crm/personal-data/address/presentation/pages/AddressListPage';
 import Link from 'next/link';
 import { PERSON_ROUTES } from '../../routes/person-routes';
 import { cn } from '@/lib/utils';
@@ -43,6 +45,7 @@ import { ECONOMIC_ACTIVITY_CONSTANTS } from '../../../economic-activity/constant
 import { PERSON_DIGITAL_CONTENT_CONSTANTS } from '../../../person-digital-content/constants/person-digital-content-constants';
 import { CONTACT_CONSTANTS } from '../../../contact/constants/contact-constants';
 import { WORK_EXPERIENCE_CONSTANTS } from '../../../work-experience/constants/work-experience-constants';
+import { ADDRESS_CONSTANTS } from '../../../address/constants/address-constants';
 
 interface Section {
   id: string;
@@ -59,6 +62,7 @@ const SECTIONS: Section[] = [
   { id: 'images', label: PERSON_DIGITAL_CONTENT_CONSTANTS.LIST_TITLE, icon: <ImageIcon size={18} /> },
   { id: 'contacts', label: CONTACT_CONSTANTS.LIST_TITLE, icon: <Phone size={18} /> },
   { id: 'work', label: WORK_EXPERIENCE_CONSTANTS.LIST_TITLE, icon: <User size={18} /> },
+  { id: 'address', label: ADDRESS_CONSTANTS.LIST_TITLE, icon: <MapPin size={18} /> },
 ];
 
 export default function PersonDetailLayout({
@@ -231,8 +235,13 @@ export default function PersonDetailLayout({
         </section>
 
         {/* Work Section */}
-        <section id="work" className="scroll-mt-8 border-t border-border/10 pt-12 pb-12">
+        <section id="work" className="scroll-mt-8 border-t border-border/10 pt-12">
           <WorkExperienceListPage personId={resolvedParams.id} />
+        </section>
+
+        {/* Address Section */}
+        <section id="address" className="scroll-mt-8 border-t border-border/10 pt-12 pb-12">
+          <AddressListPage personId={resolvedParams.id} />
         </section>
 
         <div className="h-32" /> {/* Bottom spacer for better scrolling */}

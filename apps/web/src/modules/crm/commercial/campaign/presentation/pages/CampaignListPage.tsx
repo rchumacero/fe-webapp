@@ -10,7 +10,7 @@ import { formatDate, formatDateTime, DEFAULT_PAGE_SIZE } from '@kplian/core';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { RefreshCw, Plus, Search, Edit2, Trash2, Calendar, MoreHorizontal, Loader2, Flag, User } from 'lucide-react';
+import { RefreshCw, Plus, Search, Edit2, Trash2, Calendar, MoreHorizontal, Loader2, Flag, User, Coins } from 'lucide-react';
 import Link from 'next/link';
 import { useVendor } from '@/hooks/use-vendor';
 import { Badge } from '@/components/ui/badge';

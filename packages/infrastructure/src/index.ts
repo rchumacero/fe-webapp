@@ -14,6 +14,15 @@ export * from './repositories/crm/commercial/CommercialProductRepositoryImpl';
 export * from './repositories/crm/commercial/CampaignProductRepositoryImpl';
 export * from './repositories/crm/commercial/ScheduleRepositoryImpl';
 export * from './repositories/crm/commercial/CollaboratorRepositoryImpl';
+export * from './repositories/crm/commercial/PromoRepositoryImpl';
+export * from './repositories/crm/commercial/CommercialProductPriceRepositoryImpl';
+export * from './repositories/crm/commercial/AttentionChargeRepositoryImpl';
+export * from './repositories/crm/commercial/PictureRepositoryImpl';
+export * from './repositories/crm/commercial/ShoppingCartRepositoryImpl';
+export * from './repositories/crm/commercial/ShoppingCartDetailRepositoryImpl';
+export * from './repositories/crm/commercial/ContractRepositoryImpl';
+export * from './repositories/crm/commercial/CustomerTicketRepositoryImpl';
+export * from './repositories/crm/commercial/PosTicketRepositoryImpl';
 
 // CRM Sales Repositories
 export * from './repositories/crm/sales/SaleRepositoryImpl';

@@ -136,37 +136,28 @@ export default function MovementScreen({ type, onBack, onNavigate }: MovementScr
 
   const [itemOptions, setItemOptions] = useState<{ CODE: string; name: string }[]>([]);
 
-  // Subtype options based on movement type
-  const subtypeOptions = useMemo(() => {
-    if (type === 'in') {
-      return [
-        { CODE: 'ING_COMPRAS', name: 'Compras / Proveedor' },
-        { CODE: 'ING_AJUSTE', name: 'Ajuste de Inventario (+)' },
-        { CODE: 'ING_DEVOLUCION', name: 'Devolución de Cliente' },
-        { CODE: 'ING_TRASPASO', name: 'Traspaso entre Almacenes' }
-      ];
-    } else {
-      return [
-        { CODE: 'EGR_VENTAS', name: 'Venta / Entrega' },
-        { CODE: 'EGR_AJUSTE', name: 'Ajuste de Inventario (-)' },
-        { CODE: 'EGR_PRODUCCION', name: 'Consumo para Producción' },
-        { CODE: 'EGR_TRASPASO', name: 'Traspaso entre Almacenes' }
-      ];
-    }
-  }, [type]);
+  // Subtype options based on movement type loaded dynamically
+  const [subtypeOptions, setSubtypeOptions] = useState<{ CODE: string; name: string }[]>([]);
 
   const currencyOptions = [
     { CODE: 'BOB', name: 'BOB - Boliviano' },
     { CODE: 'USD', name: 'USD - Dólar' }
   ];
 
-  // Load items from parameters on mount
+  // Load items and subtypes from parameters on mount or when type changes
   useEffect(() => {
     const fetchParams = async () => {
       try {
         const mapped = await loadDomainParameters(
           getBatchParameters,
-          [{ fullCode: 'WAR/MAIN/ITEM' }]
+          [
+            { fullCode: 'WAR/MAIN/ITEM' },
+            { 
+              fullCode: 'WAR/MAIN/STMOV', 
+              vendorCode: '', 
+              filter: { type: type === 'in' ? '1' : '2' } 
+            }
+          ]
         );
         if (mapped['WAR/MAIN/ITEM']) {
           const list = mapped['WAR/MAIN/ITEM'].map((x: any) => ({
@@ -178,12 +169,19 @@ export default function MovementScreen({ type, onBack, onNavigate }: MovementScr
             setLocalItem(prev => ({ ...prev, itemCode: list[0].CODE }));
           }
         }
+        if (mapped['WAR/MAIN/STMOV']) {
+          const list = mapped['WAR/MAIN/STMOV'].map((x: any) => ({
+            CODE: x.CODE || x.code,
+            name: x.NAME || x.name || x.description || x.CODE || x.code
+          }));
+          setSubtypeOptions(list);
+        }
       } catch (err) {
         console.error('Failed to load item parameters:', err);
       }
     };
     fetchParams();
-  }, []);
+  }, [type]);
 
   useEffect(() => {
     fetchMovements();

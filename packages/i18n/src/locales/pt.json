@@ -228,6 +228,7 @@
             "unitMeasure": "Unidade de Medida",
             "configurationCode": "Código de Configuração",
             "scheduleTypeCode": "Tipo de Horário",
+            "planScheduleCode": "Plano de Horários",
             "timeBasedCode": "Baseado em Tempo",
             "requireConfirmationCode": "Requer Confirmação",
             "name": "Nome do Produto Comercial",

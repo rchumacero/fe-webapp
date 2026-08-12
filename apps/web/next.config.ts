@@ -1,3 +1,4 @@
+import path from "path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -9,6 +10,11 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ["lightningcss"],
   webpack: (config, { nextRuntime }) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      react: path.resolve(__dirname, "../../node_modules/react"),
+      "react-dom": path.resolve(__dirname, "../../node_modules/react-dom"),
+    };
     if (nextRuntime === "edge") {
       config.resolve.fallback = {
         ...config.resolve.fallback,

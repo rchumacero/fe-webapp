@@ -1,5 +1,5 @@
 import { createWarehouseApiClient } from "../../api/client";
-import { Movement, CreateMovementDto, UpdateMovementDto, IMovementRepository, CheckStockItemResult } from "@kplian/core";
+import { Movement, CreateMovementDto, UpdateMovementDto, IMovementRepository, CheckStockItemResult, MovementReportItem, MovementReportFilterDto } from "@kplian/core";
 
 function mapDetailToDomain(raw: any): any {
   if (!raw) return raw;
@@ -173,5 +173,28 @@ export class MovementRepositoryImpl implements IMovementRepository {
 
   async finishOut(id: string): Promise<void> {
     await this.api.post(`/v1/movement/out/${id}/finish`);
+  }
+
+  async getMovementsReport(filters: MovementReportFilterDto): Promise<MovementReportItem[]> {
+    const response = await this.api.get<any>('/v1/movement/movements', {
+      params: filters
+    });
+    const rawList = response.data || [];
+    return rawList.map((raw: any) => ({
+      warehouseCode: raw.warehouse_code || raw.warehouseCode,
+      warehouseName: raw.warehouse_name || raw.warehouseName,
+      costMethodCode: raw.cost_method_code || raw.costMethodCode,
+      itemCode: raw.item_code || raw.itemCode,
+      movementDate: raw.movement_date || raw.movementDate,
+      movementCode: raw.movement_code || raw.movementCode,
+      inbound: typeof raw.inbound === 'number' ? raw.inbound : parseFloat(raw.inbound || 0),
+      outbound: typeof raw.outbound === 'number' ? raw.outbound : parseFloat(raw.outbound || 0),
+      available: typeof raw.available === 'number' ? raw.available : parseFloat(raw.available || 0),
+      balance: typeof raw.balance === 'number' ? raw.balance : parseFloat(raw.balance || 0),
+      unitCost: typeof raw.unit_cost === 'number' ? raw.unit_cost : (raw.unitCost !== undefined ? parseFloat(raw.unitCost) : parseFloat(raw.unit_cost || 0)),
+      inboundValue: typeof raw.inbound_value === 'number' ? raw.inbound_value : (raw.inboundValue !== undefined ? parseFloat(raw.inboundValue) : parseFloat(raw.inbound_value || 0)),
+      outboundValue: typeof raw.outbound_value === 'number' ? raw.outbound_value : (raw.outboundValue !== undefined ? parseFloat(raw.outboundValue) : parseFloat(raw.outbound_value || 0)),
+      balanceCost: typeof raw.balance_cost === 'number' ? raw.balance_cost : (raw.balanceCost !== undefined ? parseFloat(raw.balanceCost) : parseFloat(raw.balance_cost || 0)),
+    }));
   }
 }

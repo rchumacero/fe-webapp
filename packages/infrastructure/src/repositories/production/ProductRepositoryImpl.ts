@@ -5,8 +5,8 @@ export class ProductRepositoryImpl implements IProductRepository {
   private api = createApiClient('production');
 
   async getAll(): Promise<Product[]> {
-    const response = await this.api.get<Product[]>('/v1/product');
-    return response.data || [];
+    const response = await this.api.get('/v1/product/search', { params: { size: 100 } });
+    return response.data?.content || response.data?.data || response.data || [];
   }
 
   async getById(id: string): Promise<Product> {
@@ -20,8 +20,8 @@ export class ProductRepositoryImpl implements IProductRepository {
   }
 
   async getByVendor(vendorCode: string): Promise<Product[]> {
-    const response = await this.api.get<Product[]>(`/v1/product/vendor/${vendorCode}`);
-    return response.data || [];
+    const response = await this.api.get('/v1/product/search', { params: { vendorCode, size: 100 } });
+    return response.data?.content || response.data?.data || response.data || [];
   }
 
   async getByType(type: string): Promise<Product[]> {

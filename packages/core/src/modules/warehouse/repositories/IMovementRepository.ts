@@ -1,5 +1,5 @@
 import { Movement, CreateMovementDto, UpdateMovementDto } from "../entities/Movement";
-
+import { MovementReportItem, MovementReportFilterDto } from "../entities/MovementReport";
 export interface CheckStockItemResult {
   itemCode: string;
   description: string;
@@ -36,4 +36,5 @@ export interface IMovementRepository {
   finishIn(id: string): Promise<void>;
   requestOut(id: string): Promise<void>;
   finishOut(id: string): Promise<void>;
+  getMovementsReport(filters: MovementReportFilterDto): Promise<MovementReportItem[]>;
 }

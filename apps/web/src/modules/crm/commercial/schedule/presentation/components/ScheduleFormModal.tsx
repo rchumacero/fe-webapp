@@ -7,7 +7,8 @@ import { ScheduleRepositoryImpl } from '@kplian/infrastructure';
 import { SCHEDULE_CONSTANTS } from '../../constants/schedule-constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Save, X, Loader2, Clock, Calendar as CalendarIcon, Hash, Users, Building } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Save, X, Loader2, Clock, Calendar as CalendarIcon, Hash, Users, Building, AlignLeft } from 'lucide-react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -36,6 +37,7 @@ const scheduleSchema = z.object({
   status: z.string().optional().default('ACTIVE'),
   repeat: z.boolean().optional().default(false),
   until: z.string().optional().nullable(),
+  notes: z.string().max(2000, "Notes cannot exceed 2000 characters").optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.repeat && !data.until) {
     ctx.addIssue({
@@ -78,7 +80,7 @@ export function ScheduleFormModal({
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
 
-  const { vendor } = useVendor();
+  const { vendor, relatedVendors } = useVendor();
   const [persons, setPersons] = useState<Person[]>([]);
   const [isLoadingPersons, setIsLoadingPersons] = useState(false);
 
@@ -99,17 +101,33 @@ export function ScheduleFormModal({
   }, [vendor]);
 
   const fetchOrganizations = useCallback(async () => {
-    if (!vendor) return;
+    console.log("fetchOrganizations debug: vendor =", vendor, "relatedVendors =", relatedVendors);
+    let companyId = vendor;
+    if (relatedVendors && relatedVendors.length > 0) {
+      const currentVendorObj = relatedVendors.find(v => v.id === vendor);
+      console.log("fetchOrganizations debug: found currentVendorObj =", currentVendorObj);
+      if (currentVendorObj?.isSelf) {
+        const company = relatedVendors.find(v => !v.isSelf);
+        console.log("fetchOrganizations debug: found company =", company);
+        if (company) {
+          companyId = company.id;
+        }
+      }
+    }
+
+    console.log("fetchOrganizations debug: final companyId being queried =", companyId);
+    if (!companyId) return;
     setIsLoadingOrganizations(true);
     try {
-      const data = await organizationRepository.getAllByPersonId(vendor);
+      const data = await organizationRepository.getAllByPersonId(companyId);
+      console.log("fetchOrganizations debug: received data =", data);
       setOrganizations(data);
     } catch (error) {
-      console.error("Error fetching organizations by vendor:", error);
+      console.error("Error fetching organizations by companyId:", error);
     } finally {
       setIsLoadingOrganizations(false);
     }
-  }, [vendor]);
+  }, [vendor, relatedVendors]);
 
   useEffect(() => {
     if (isOpen) {
@@ -174,6 +192,7 @@ export function ScheduleFormModal({
       status: 'ACTIVE',
       repeat: false,
       until: '',
+      notes: '',
     }
   });
 
@@ -195,6 +214,7 @@ export function ScheduleFormModal({
             status: data.status || 'ACTIVE',
             repeat: data.until ? true : false,
             until: data.until ? toLocalISOString(data.until).slice(0, 10) : '',
+            notes: data.notes || '',
           });
         } catch (error) {
           console.error("Error fetching schedule:", error);
@@ -215,6 +235,7 @@ export function ScheduleFormModal({
         status: 'ACTIVE',
         repeat: false,
         until: '',
+        notes: '',
       });
     }
   }, [id, isOpen, reset, getInitialDates, collaboratorId, commercialProductId, toLocalISOString]);
@@ -231,6 +252,7 @@ export function ScheduleFormModal({
         quantity: data.quantity,
         status: data.status,
         until: data.repeat && data.until ? new Date(data.until) : null,
+        notes: data.notes,
       };
       if (id) {
         await scheduleRepository.update({ ...payload, id });
@@ -431,6 +453,18 @@ export function ScheduleFormModal({
                     )}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1 flex items-center gap-2">
+                  <AlignLeft size={12} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.NOTES)}
+                </label>
+                <Textarea 
+                  {...register("notes")} 
+                  className="min-h-[80px] bg-card/50 border-border/40 rounded-lg resize-y" 
+                  placeholder={t(SCHEDULE_CONSTANTS.FORM.NOTES) || 'Notes'}
+                />
+                {errors.notes && <p className="text-[10px] text-destructive font-bold uppercase ml-1">{errors.notes.message}</p>}
               </div>
 
               <div className="flex gap-4 pt-4">

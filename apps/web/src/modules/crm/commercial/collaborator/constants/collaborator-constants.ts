@@ -3,7 +3,7 @@ export const COLLABORATOR_CONSTANTS = {
   LIST_TITLE: "crm.collaborator.listTitle",
   CREATE_TITLE: "crm.collaborator.title",
   DESCRIPTION_TITLE: "common.createDescription",
-  EDIT_TITLE: "crm.collaborator.editTitle",
+  EDIT_TITLE: "crm.collaborator.title",
   DESCRIPTION_EDIT: "common.editDescription",
   SEARCH_PLACEHOLDER: "common.filter",
   CONFIRM_DELETE: "common.delete",

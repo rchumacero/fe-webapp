@@ -48,7 +48,8 @@ export const SCHEDULE_CONSTANTS = {
     FORM_STATUS: "common.formStatus",
     FORM_MODIFIED: "common.formModified",
     FORM_WARNING: "common.formWarning",
-    SELECT_OPTION: "common.selectOption"
+    SELECT_OPTION: "common.selectOption",
+    NOTES: "common.notes"
   },
   ROUTES: {
     BACK: -1,

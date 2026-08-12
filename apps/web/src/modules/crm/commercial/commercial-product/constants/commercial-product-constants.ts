@@ -46,6 +46,7 @@ export const COMMERCIAL_PRODUCT_CONSTANTS = {
     FORM_MODIFIED: "common.formModified",
     SELECT_OPTION: "common.selectOption",
     SCHEDULE_TYPE_CODE: "crm.commercialProduct.scheduleTypeCode",
+    PLAN_SCHEDULE: "crm.commercialProduct.planScheduleCode",
     TIME_BASED: "crm.commercialProduct.timeBasedCode",
     REQUIRE_CONFIRMATION: "crm.commercialProduct.requireConfirmationCode",
     WAREHOUSE: "crm.commercialProduct.warehouseCode"
@@ -68,5 +69,12 @@ export const COMMERCIAL_PRODUCT_CONSTANTS = {
     BACK: -1,
     COMMERCIAL_PRODUCT: "/crm/commercial/commercial-product",
   },
-  EDIT_RECORD: "common.editRecord"
+  EDIT_RECORD: "common.editRecord",
+  CAMPAIGNS: "campaigns",
+  SCHEDULE_TITLE: "common.schedule",
+  TOAST: {
+    RECORD_UPDATED: "common.recordUpdated",
+    RECORD_CREATED: "common.recordCreated",
+    ERROR_SAVING: "common.errorSaving"
+  }
 };

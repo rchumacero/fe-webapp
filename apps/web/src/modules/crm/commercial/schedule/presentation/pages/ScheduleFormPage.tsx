@@ -9,14 +9,15 @@ import { ScheduleRepositoryImpl } from '@kplian/infrastructure';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Save, X, Loader2, Clock, Calendar as CalendarIcon, Hash, Users, Building } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { ArrowLeft, Save, X, Loader2, Clock, Calendar as CalendarIcon, Hash, Users, Building, AlignLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { useDomainParameters } from '@/hooks/use-domain-parameters';
-import { SCHEDULE_DOMAIN_PARAMETERS, P_DAY, P_UNIT_MEASURE } from '../../constants/parameter';
+import { SCHEDULE_DOMAIN_PARAMETERS, P_DAY, P_UNIT_MEASURE, P_TYPE } from '../../constants/parameter';
 import { useVendor } from '@/hooks/use-vendor';
 import { PersonRepositoryImpl } from '@/modules/crm/personal-data/person/infrastructure/repositories/PersonRepositoryImpl';
 import { Person } from '@/modules/crm/personal-data/person/domain/entities/Person';
@@ -35,6 +36,8 @@ const scheduleSchema = z.object({
   toDate: z.string().min(1, "To date is required"),
   quantity: z.coerce.number().min(0, "Quantity must be positive").optional().nullable(),
   status: z.string().optional().default('ACTIVE'),
+  type: z.string().optional().nullable(),
+  notes: z.string().max(2000, "Notes cannot exceed 2000 characters").optional().nullable(),
 });
 
 type ScheduleFormData = z.infer<typeof scheduleSchema>;
@@ -53,7 +56,7 @@ export default function ScheduleFormPage({ id }: ScheduleFormPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
 
-  const { vendor } = useVendor();
+  const { vendor, relatedVendors } = useVendor();
   const [persons, setPersons] = useState<Person[]>([]);
   const [isLoadingPersons, setIsLoadingPersons] = useState(false);
 
@@ -74,17 +77,33 @@ export default function ScheduleFormPage({ id }: ScheduleFormPageProps) {
   }, [vendor]);
 
   const fetchOrganizations = useCallback(async () => {
-    if (!vendor) return;
+    console.log("fetchOrganizations Page debug: vendor =", vendor, "relatedVendors =", relatedVendors);
+    let companyId = vendor;
+    if (relatedVendors && relatedVendors.length > 0) {
+      const currentVendorObj = relatedVendors.find(v => v.id === vendor);
+      console.log("fetchOrganizations Page debug: found currentVendorObj =", currentVendorObj);
+      if (currentVendorObj?.isSelf) {
+        const company = relatedVendors.find(v => !v.isSelf);
+        console.log("fetchOrganizations Page debug: found company =", company);
+        if (company) {
+          companyId = company.id;
+        }
+      }
+    }
+
+    console.log("fetchOrganizations Page debug: final companyId being queried =", companyId);
+    if (!companyId) return;
     setIsLoadingOrganizations(true);
     try {
-      const data = await organizationRepository.getAllByPersonId(vendor);
+      const data = await organizationRepository.getAllByPersonId(companyId);
+      console.log("fetchOrganizations Page debug: received data =", data);
       setOrganizations(data);
     } catch (error) {
-      console.error("Error fetching organizations by vendor:", error);
+      console.error("Error fetching organizations by companyId:", error);
     } finally {
       setIsLoadingOrganizations(false);
     }
-  }, [vendor]);
+  }, [vendor, relatedVendors]);
 
   useEffect(() => {
     fetchPersons();
@@ -110,6 +129,8 @@ export default function ScheduleFormPage({ id }: ScheduleFormPageProps) {
       toDate: new Date(Date.now() + 3600000).toISOString().slice(0, 16),
       quantity: 1,
       status: 'ACTIVE',
+      type: '',
+      notes: '',
     }
   });
 
@@ -126,6 +147,8 @@ export default function ScheduleFormPage({ id }: ScheduleFormPageProps) {
             toDate: data.toDate ? new Date(data.toDate).toISOString().slice(0, 16) : '',
             quantity: data.quantity || 1,
             status: data.status || 'ACTIVE',
+            type: data.type || '',
+            notes: data.notes || '',
           });
         } catch (error) {
           console.error("Error fetching schedule:", error);
@@ -304,7 +327,7 @@ export default function ScheduleFormPage({ id }: ScheduleFormPageProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-2">
                   <Hash size={14} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.QUANTITY)}
@@ -331,6 +354,46 @@ export default function ScheduleFormPage({ id }: ScheduleFormPageProps) {
                   )}
                 />
               </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-2">
+                  <Clock size={14} className="text-primary" /> Type
+                </label>
+                <Controller
+                  name="type"
+                  control={control}
+                  render={({ field }) => (
+                    <select
+                      {...field}
+                      value={field.value || ''}
+                      className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer appearance-none"
+                    >
+                      <option value="">Select Type</option>
+                      {(parametersData[P_TYPE] || []).map((param: any, idx: number) => {
+                        const val = param.code || param.CODE || param.value || param.id || param.fullCode || (typeof param === 'string' ? param : '');
+                        const label = param.name || param.NAME || param.label || param.description || val || `Item ${idx}`;
+                        return (
+                          <option key={`${val}-${idx}`} value={label}>
+                            {label}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  )}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-2">
+                <AlignLeft size={14} className="text-primary" /> {t(SCHEDULE_CONSTANTS.FORM.NOTES) || 'Notes'}
+              </label>
+              <Textarea
+                {...register("notes")}
+                className="flex w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all min-h-[100px] resize-y"
+                placeholder={t(SCHEDULE_CONSTANTS.FORM.NOTES) || 'Add any additional notes here...'}
+              />
+              {errors.notes && <p className="text-[10px] text-destructive font-medium ml-1">{errors.notes.message}</p>}
             </div>
           </CardContent>
           <CardFooter className="bg-primary/5 p-8 flex gap-4">

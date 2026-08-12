@@ -17,5 +17,7 @@ export const PARAMETER_CONSTANTS = {
   ROUTES: {
     BACK: -1,
     STRUCTURE: "/parameter/structure",
+    SECRETS: "/parameter/secrets",
+    VENDOR: "/parameter/vendor",
   }
 };

@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useTranslation } from '@kplian/i18n';
 import { useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import {
   ArrowLeft,
   Save,
@@ -24,6 +25,10 @@ import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { toast } from '@/hooks/use-toast';
 
+const MapPicker = dynamic(() => import('@/modules/crm/personal-data/address/presentation/components/MapPicker'), {
+  ssr: false,
+});
+
 const organizationSchema = z.object({
   personId: z.string().min(1, "Person ID is required"),
   code: z.string().trim().min(1, "Code is required").max(20, "Too long"),
@@ -34,6 +39,8 @@ const organizationSchema = z.object({
   ticketMethodCode: z.string().nullable().optional().or(z.literal('')),
   ticketCounter: z.number().nullable().optional().or(z.literal('')),
   type: z.string().trim().min(1, "Type is required"),
+  latitude: z.coerce.number().nullable().optional().or(z.literal('')),
+  longitude: z.coerce.number().nullable().optional().or(z.literal('')),
 });
 
 type OrganizationFormData = z.infer<typeof organizationSchema>;
@@ -69,6 +76,7 @@ export const OrganizationFormPage = ({ id, onSuccess, onCancel, defaultParentId 
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors, isDirty },
     control
   } = useForm<OrganizationFormData>({
@@ -83,6 +91,8 @@ export const OrganizationFormPage = ({ id, onSuccess, onCancel, defaultParentId 
       ticketMethodCode: '',
       ticketCounter: 0,
       type: '',
+      latitude: '',
+      longitude: '',
     }
   });
 
@@ -123,6 +133,8 @@ export const OrganizationFormPage = ({ id, onSuccess, onCancel, defaultParentId 
             ticketMethodCode: org.ticketMethodCode || '',
             ticketCounter: org.ticketCounter || 0,
             type: org.type || '',
+            latitude: org.latitude || '',
+            longitude: org.longitude || '',
           });
         } catch (error) {
           console.error("Error fetching organization:", error);
@@ -145,6 +157,8 @@ export const OrganizationFormPage = ({ id, onSuccess, onCancel, defaultParentId 
         organizationId: data.organizationId === '' ? null : data.organizationId,
         ticketMethodCode: data.ticketMethodCode === '' ? null : data.ticketMethodCode,
         address: data.address === '' ? null : data.address,
+        latitude: data.latitude === '' ? null : Number(data.latitude),
+        longitude: data.longitude === '' ? null : Number(data.longitude),
       };
 
       if (id) {
@@ -154,7 +168,7 @@ export const OrganizationFormPage = ({ id, onSuccess, onCancel, defaultParentId 
         await organizationRepository.create(payload as any);
         toast.success(t('common.recordCreated') || "Organization created successfully");
       }
-      
+
       if (onSuccess) {
         onSuccess();
       } else {
@@ -307,6 +321,32 @@ export const OrganizationFormPage = ({ id, onSuccess, onCancel, defaultParentId 
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(ORGANIZATION_CONSTANTS.FORM.ADDRESS)}</label>
                 <Input {...register("address")} />
               </div>
+              
+              {/* Map Coordinates Section */}
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Ubicación</label>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Latitude</label>
+                    <Input {...register("latitude")} type="number" step="any" readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Longitude</label>
+                    <Input {...register("longitude")} type="number" step="any" readOnly className="bg-muted" />
+                  </div>
+                </div>
+                <div className="h-[400px] w-full rounded-md border border-border/50 overflow-hidden">
+                  <MapPicker
+                    latitude={Number(watch('latitude')) || 0}
+                    longitude={Number(watch('longitude')) || 0}
+                    onChange={(lat, lng) => {
+                      setValue('latitude', lat, { shouldValidate: true, shouldDirty: true });
+                      setValue('longitude', lng, { shouldValidate: true, shouldDirty: true });
+                    }}
+                  />
+                </div>
+              </div>
+
             </div>
           </form>
         </CardContent>
@@ -327,8 +367,8 @@ export const OrganizationFormPage = ({ id, onSuccess, onCancel, defaultParentId 
         onOpenChange={setShowConfirmCancel}
         title={t(ORGANIZATION_CONSTANTS.FORM.CONFIRM_CANCEL)}
         description={t(ORGANIZATION_CONSTANTS.FORM.DIRTY_WARNING)}
-        confirmText={t(ORGANIZATION_CONSTANTS.FORM.YES_DISCARD)}
-        cancelText={t(ORGANIZATION_CONSTANTS.FORM.NO_STAY)}
+        confirmText={t(ORGANIZATION_CONSTANTS.FORM.YES)}
+        cancelText={t(ORGANIZATION_CONSTANTS.FORM.NO)}
         onConfirm={() => {
           setShowConfirmCancel(false);
           if (onCancel) {

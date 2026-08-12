@@ -226,6 +226,10 @@
       "quantity": "Quantité",
       "unitMeasure": "Unité de mesure",
       "configurationCode": "Code de configuration",
+      "scheduleTypeCode": "Type de calendrier",
+      "planScheduleCode": "Plan de planification",
+      "timeBasedCode": "Basé sur le temps",
+      "requireConfirmationCode": "Confirmation requise",
       "name": "Nom du produit commercial",
       "warehouseCode": "Entrepôt"
     },

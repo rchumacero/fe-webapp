@@ -16,7 +16,7 @@ import { useForm, Controller, SubmitHandler, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useDomainParameters } from '@/hooks/use-domain-parameters';
-import { CAMPAIGN_PRODUCT_DOMAIN_PARAMETERS, P_STATUS, P_UNIT_MEASURE } from '../../constants/parameter';
+import { CAMPAIGN_PRODUCT_DOMAIN_PARAMETERS, P_STATUS, P_UNIT_MEASURE, P_ITEM_CODE } from '../../constants/parameter';
 import { useVendor } from '@/hooks/use-vendor';
 
 const campaignProductRepository = new CampaignProductRepositoryImpl();
@@ -24,11 +24,10 @@ const productRepository = new ProductRepositoryImpl();
 
 const campaignProductSchema = z.object({
   commercialProductId: z.string().min(1, "Required"),
-  productCode: z.string().min(1, "Product is required"),
   cost: z.coerce.number().min(0, "Cost must be >= 0"),
   quantity: z.coerce.number().min(1, "Quantity must be >= 1"),
   unitMeasureCode: z.string().min(1, "Unit of measure is required"),
-  configurationCode: z.string().min(1, "Configuration code is required"),
+  itemCode: z.string().optional().nullable(),
   status: z.string().min(1, "Status is required"),
 });
 
@@ -42,7 +41,6 @@ interface CampaignProductFormProps {
 export default function CampaignProductFormPage({ id, commercialProductId }: CampaignProductFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { vendor } = useVendor();
 
   const { data: parametersData } = useDomainParameters({
     parameters: CAMPAIGN_PRODUCT_DOMAIN_PARAMETERS
@@ -50,8 +48,8 @@ export default function CampaignProductFormPage({ id, commercialProductId }: Cam
 
   const statusOptions = parametersData[P_STATUS] || [];
   const unitMeasureOptions = parametersData[P_UNIT_MEASURE] || [];
+  const itemCodeOptions = parametersData[P_ITEM_CODE] || [];
 
-  const [products, setProducts] = useState<Product[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -66,30 +64,13 @@ export default function CampaignProductFormPage({ id, commercialProductId }: Cam
     resolver: zodResolver(campaignProductSchema),
     defaultValues: {
       commercialProductId: commercialProductId,
-      productCode: '',
       cost: 0,
       quantity: 1,
       unitMeasureCode: '',
-      configurationCode: 'DEFAULT',
+      itemCode: '',
       status: 'ACTIVE',
     }
   });
-
-  const productCode = useWatch({ control, name: 'productCode' });
-
-  useEffect(() => {
-    if (vendor) {
-      const fetchBaseProducts = async () => {
-        try {
-          const data = await productRepository.getAll(vendor);
-          setProducts(data);
-        } catch (error) {
-          console.error("Error fetching base products:", error);
-        }
-      };
-      fetchBaseProducts();
-    }
-  }, [vendor]);
 
   useEffect(() => {
     if (id) {
@@ -99,11 +80,10 @@ export default function CampaignProductFormPage({ id, commercialProductId }: Cam
           const product = await campaignProductRepository.getById(id);
           reset({
             commercialProductId: product.commercialProductId,
-            productCode: product.productCode,
             cost: product.cost,
             quantity: product.quantity,
             unitMeasureCode: product.unitMeasureCode,
-            configurationCode: product.configurationCode,
+            itemCode: product.itemCode || '',
             status: product.status || 'ACTIVE',
           });
         } catch (error) {
@@ -170,37 +150,16 @@ export default function CampaignProductFormPage({ id, commercialProductId }: Cam
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.PRODUCT)}</label>
                 <Controller
-                  name="productCode"
+                  name="itemCode"
                   control={control}
                   render={({ field }) => (
                     <select
                       {...field}
+                      value={field.value || ''}
                       className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
                     >
                       <option value="">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.SELECT_OPTION)}</option>
-                      {products.map((p, idx) => (
-                        <option key={`${p.id}-${idx}`} value={p.code}>
-                          {p.name} ({p.code})
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                />
-                {errors.productCode && <p className="text-[10px] text-destructive font-medium ml-1">{errors.productCode.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.STATUS)}</label>
-                <Controller
-                  name="status"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
-                    >
-                      <option value="">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.SELECT_OPTION)}</option>
-                      {statusOptions.map((p: any, idx: number) => {
+                      {itemCodeOptions.map((p: any, idx: number) => {
                         const val = p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '');
                         const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
                         return <option key={`${val}-${idx}`} value={val}>{label}</option>;
@@ -209,17 +168,7 @@ export default function CampaignProductFormPage({ id, commercialProductId }: Cam
                   )}
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.COST)}</label>
-                <Input type="number" step="0.01" {...register("cost")} />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.QUANTITY)}</label>
-                <Input type="number" {...register("quantity")} />
-              </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.UNIT_MEASURE)}</label>
                 <Controller
@@ -242,9 +191,38 @@ export default function CampaignProductFormPage({ id, commercialProductId }: Cam
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.CONFIG_CODE)}</label>
-              <Input {...register("configurationCode")} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.COST)}</label>
+                <Input type="number" step="0.01" {...register("cost")} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.QUANTITY)}</label>
+                <Input type="number" {...register("quantity")} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.STATUS)}</label>
+                <Controller
+                  name="status"
+                  control={control}
+                  render={({ field }) => (
+                    <select
+                      {...field}
+                      className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                    >
+                      <option value="">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.SELECT_OPTION)}</option>
+                      {statusOptions.map((p: any, idx: number) => {
+                        const val = p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '');
+                        const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
+                        return <option key={`${val}-${idx}`} value={val}>{label}</option>;
+                      })}
+                    </select>
+                  )}
+                />
+              </div>
             </div>
           </CardContent>
           <CardFooter className="bg-primary/5 p-6 flex justify-end gap-3">

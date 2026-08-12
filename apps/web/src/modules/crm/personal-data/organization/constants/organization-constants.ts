@@ -14,6 +14,8 @@ export const ORGANIZATION_CONSTANTS = {
   NEW_NODE: "common.newNode",
   ADD_ROOT: "common.addRoot",
   VIEW_ORGANZATIONS: "crm.organization.view",
+  YES: "common.yes",
+  NO: "common.no",
   ROUTES: {
     ORGANIZATION: "/crm/organization",
   },
@@ -28,7 +30,7 @@ export const ORGANIZATION_CONSTANTS = {
     TYPE: "common.type",
     SUBMIT: "common.save",
     CANCEL: "common.cancel",
-    DIRTY_WARNING: "common.dirtyWarning",
+    DIRTY_WARNING: "common.dirty_warning",
     SELECT_OPTION: "common.selectOption",
   }
 };

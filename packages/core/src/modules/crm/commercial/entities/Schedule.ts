@@ -8,6 +8,7 @@ export class Schedule {
   status!: string;
   quantity?: number | null;
   until?: Date | null;
+  type?: string | null;
 }
 
 export interface CreateScheduleDto {
@@ -19,6 +20,7 @@ export interface CreateScheduleDto {
   status: string;
   quantity?: number | null;
   until?: Date | null;
+  type?: string | null;
 }
 
 export interface UpdateScheduleDto extends Partial<CreateScheduleDto> {

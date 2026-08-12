@@ -1,13 +1,13 @@
 import { useState, useCallback, useMemo } from 'react';
-import { 
-  Movement, 
-  CreateMovementDto, 
+import {
+  Movement,
+  CreateMovementDto,
   MovementDetail,
   CreateMovementDetailDto,
   Warehouse
 } from '@kplian/core';
-import { 
-  MovementRepositoryImpl, 
+import {
+  MovementRepositoryImpl,
   MovementDetailRepositoryImpl,
   WarehouseRepositoryImpl
 } from '@kplian/infrastructure';
@@ -56,8 +56,8 @@ export function useMovements(type: 'in' | 'out') {
   const [movementDraft, setMovementDraft] = useState<MovementDraft>({
     warehouseId: '',
     movementDate: new Date().toISOString().split('T')[0],
-    subtype: 'ING_COMPRAS',
-    currencyCode: 'BOB',
+    subtype: '',
+    currencyCode: '',
     description: '',
     warehousePersonCode: '',
     personCode: '',
@@ -100,7 +100,7 @@ export function useMovements(type: 'in' | 'out') {
       } else {
         data = await movementRepo.getAll(statuses);
       }
-      
+
       // Filter by type ('in' or 'out')
       const filtered = data.filter(m => m.type?.toLowerCase() === type.toLowerCase());
 
@@ -149,8 +149,8 @@ export function useMovements(type: 'in' | 'out') {
     setMovementDraft({
       warehouseId: warehouses.length > 0 ? warehouses[0].id : '',
       movementDate: new Date().toISOString().split('T')[0],
-      subtype: type === 'in' ? 'ING_COMPRAS' : 'EGR_VENTAS',
-      currencyCode: 'BOB',
+      subtype: '',
+      currencyCode: '',
       description: '',
       warehousePersonCode: '',
       personCode: '',
@@ -218,8 +218,8 @@ export function useMovements(type: 'in' | 'out') {
   const filteredMovements = useMemo(() => {
     if (!searchQuery.trim()) return movements;
     const query = searchQuery.toLowerCase();
-    return movements.filter(m => 
-      m.code.toLowerCase().includes(query) || 
+    return movements.filter(m =>
+      m.code.toLowerCase().includes(query) ||
       (m.description || '').toLowerCase().includes(query)
     );
   }, [movements, searchQuery]);

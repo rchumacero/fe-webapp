@@ -100,7 +100,12 @@
     "campaigns": "Campaigns",
     "collaborators": "Collaborators",
     "close": "Close",
-    "recordsFound": "Record(s) found"
+    "recordsFound": "Record(s) found",
+    "yes": "Yes",
+    "no": "No",
+    "notes": "Notes",
+    "schedule": "Schedule",
+    "selectLocation": "Select location"
   },
   "crm": {
     "code": "Person Code",
@@ -144,7 +149,7 @@
     "contactsList": "Associated Contacts",
     "contact": "Contact",
     "contactType": "Contact Type",
-    "contactPersonComp": "Linked Person ID",
+    "contactPersonComp": "Linked Person",
     "relationDescription": "Describe the relationship",
     "workExperience": "Work Experience",
     "workExperiencesList": "Employment History",
@@ -163,6 +168,23 @@
       "confirm_appointment": "Confirm Appointment",
       "success_message": "Appointment scheduled successfully!",
       "error_message": "Error scheduling appointment"
+    },
+    "personalData": {
+      "address": {
+        "listTitle": "Addresses",
+        "createTitle": "Add Address",
+        "editTitle": "Edit Address",
+        "deleteTitle": "Delete Address",
+        "deleteDescription": "Are you sure you want to delete this address?",
+        "emptyState": "No addresses found",
+        "form": {
+          "name": "Name (e.g. Home, Office)",
+          "description": "Detailed Address",
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "priority": "Priority"
+        }
+      }
     },
     "organization": {
       "maxAttention": "Max Attention",
@@ -268,16 +290,17 @@
       "uniqueProduct": "Unique Product",
       "combo": "Combo",
       "productCode": "Base Product",
-      "cost": "Product Cost",
-      "quantity": "Quantity",
+      "cost": "Cost",
+      "quantity": "Required quantity",
       "unitMeasure": "Unit of Measure",
       "configurationCode": "Configuration Code",
       "scheduleTypeCode": "Schedule Type",
+      "planScheduleCode": "Will be planned?",
       "timeBasedCode": "Time Based",
       "requireConfirmationCode": "Require Confirmation",
       "name": "Commercial Product Name",
       "warehouseCode": "Warehouse",
-      "attentionChannel": "Attention Channel"
+      "attentionChannel": "TICKET - Attention Channel"
     },
     "schedule": {
       "title": "Schedule",
@@ -357,5 +380,18 @@
         }
       }
     }
+  },
+  "warehouse": {
+    "title": "Warehouse",
+    "createTitle": "Warehouse",
+    "select_category": "Select Category",
+    "select_product": "Select Service",
+    "select_vendor": "Select Professional",
+    "select_schedule": "Select Schedule",
+    "confirm_appointment": "Confirm Appointment",
+    "success_message": "Appointment scheduled successfully!",
+    "error_message": "Error scheduling appointment",
+    "costMethodCode": "Method cost",
+    "listTitle": "Warehouses List"
   }
 }

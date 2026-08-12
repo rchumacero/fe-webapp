@@ -131,7 +131,10 @@ export default function SalesScreen({ onBack, onNavigate }: SalesScreenProps) {
     onSelect: () => {},
   });
 
+  const [currencyOptions, setCurrencyOptions] = useState<{ CODE: string; name: string }[]>([]);
+  const [paymentMethodOptions, setPaymentMethodOptions] = useState<{ CODE: string; name: string }[]>([]);
   const [itemOptions, setItemOptions] = useState<{ CODE: string; name: string }[]>([]);
+  const [paymentTypeOptions, setPaymentTypeOptions] = useState<{ CODE: string; name: string }[]>([]);
   const [customerSearchText, setCustomerSearchText] = useState('');
 
   // Load items from parameters on mount
@@ -140,7 +143,12 @@ export default function SalesScreen({ onBack, onNavigate }: SalesScreenProps) {
       try {
         const mapped = await loadDomainParameters(
           getBatchParameters,
-          [{ fullCode: 'WAR/MAIN/ITEM' }]
+          [
+            { fullCode: 'WAR/MAIN/ITEM' },
+            { fullCode: 'CRM/GEN/PAYT' },
+            { fullCode: 'FIN/CUR/CUR' },
+            { fullCode: 'CRM/GEN/PAY' }
+          ]
         );
         if (mapped['WAR/MAIN/ITEM']) {
           const list = mapped['WAR/MAIN/ITEM'].map((x: any) => ({
@@ -148,6 +156,27 @@ export default function SalesScreen({ onBack, onNavigate }: SalesScreenProps) {
             name: x.NAME || x.name || x.description || x.CODE || x.code
           }));
           setItemOptions(list);
+        }
+        if (mapped['CRM/GEN/PAYT']) {
+          const ptList = mapped['CRM/GEN/PAYT'].map((x: any) => ({
+            CODE: x.CODE || x.code,
+            name: x.NAME || x.name || x.description || x.CODE || x.code
+          }));
+          setPaymentTypeOptions(ptList);
+        }
+        if (mapped['FIN/CUR/CUR']) {
+          const cList = mapped['FIN/CUR/CUR'].map((x: any) => ({
+            CODE: x.CODE || x.code,
+            name: x.NAME || x.name || x.description || x.CODE || x.code
+          }));
+          setCurrencyOptions(cList);
+        }
+        if (mapped['CRM/GEN/PAY']) {
+          const pmList = mapped['CRM/GEN/PAY'].map((x: any) => ({
+            CODE: x.CODE || x.code,
+            name: x.NAME || x.name || x.description || x.CODE || x.code
+          }));
+          setPaymentMethodOptions(pmList);
         }
       } catch (err) {
         console.error('Failed to load item parameters:', err);
@@ -264,6 +293,28 @@ export default function SalesScreen({ onBack, onNavigate }: SalesScreenProps) {
       description: '',
       chargeAmount: '0',
       expenseIncomeCode: 'FIN/MAIN/EXPINC/OTH'
+    });
+  };
+
+  const handleSavePayment = () => {
+    if (parseFloat(localPayment.priceAmount) <= 0 || !localPayment.paymentDate.trim()) {
+      Alert.alert('Error', 'Debe proporcionar una fecha y monto válido para la cuota.');
+      return;
+    }
+    addPayment({
+      paymentDate: localPayment.paymentDate,
+      order: parseInt(localPayment.order) || (payments.length + 1),
+      priceAmount: parseFloat(localPayment.priceAmount),
+      interestAmount: parseFloat(localPayment.interestAmount) || 0,
+      status: localPayment.status,
+    });
+    setPaymentModalVisible(false);
+    setLocalPayment({
+      paymentDate: new Date().toISOString().split('T')[0],
+      order: (payments.length + 2).toString(),
+      priceAmount: '0',
+      interestAmount: '0',
+      status: 'PENDING'
     });
   };
 
@@ -795,32 +846,57 @@ export default function SalesScreen({ onBack, onNavigate }: SalesScreenProps) {
                 </View>
               </View>
 
-              {/* MONEDA Y PAGO buttons side-by-side */}
-              <Text style={styles.formInputHeading}>MONEDA Y PAGO</Text>
-              <View style={styles.currencyAndPaymentRow}>
-                <TouchableOpacity 
-                  style={styles.pickerSelectorButton}
-                  onPress={() => openDropdownPicker('Seleccionar Moneda', [
-                    { CODE: 'BOB', name: '$ BOB' },
-                    { CODE: 'USD', name: '$ USD' },
-                    { CODE: 'EUR', name: '€ EUR' }
-                  ], saleDraft.currencyCode, val => setSaleDraft((p: SaleDraft) => ({ ...p, currencyCode: val })))}
-                >
-                  <Text style={styles.pickerButtonIcon}>$</Text>
-                  <Text style={styles.pickerButtonText}>{saleDraft.currencyCode}</Text>
-                  <Ionicons name="chevron-down" size={16} color={Colors.muted} />
-                </TouchableOpacity>
+              <View style={[styles.gridRow, { marginTop: 16 }]}>
+                <View style={styles.gridCol}>
+                  <Text style={[styles.formFieldLabel, { marginBottom: 8 }]}>Moneda</Text>
+                  <TouchableOpacity 
+                    style={styles.pickerSelectorButton}
+                    onPress={() => openDropdownPicker('Seleccionar Moneda', currencyOptions.length > 0 ? currencyOptions : [
+                      { CODE: 'BOB', name: '$ BOB' },
+                      { CODE: 'USD', name: '$ USD' },
+                      { CODE: 'EUR', name: '€ EUR' }
+                    ], saleDraft.currencyCode, val => setSaleDraft((p: SaleDraft) => ({ ...p, currencyCode: val })))}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Text style={styles.pickerButtonIcon}>$</Text>
+                      <Text style={styles.pickerButtonText}>{saleDraft.currencyCode}</Text>
+                    </View>
+                    <Ionicons name="chevron-down" size={16} color={Colors.muted} />
+                  </TouchableOpacity>
+                </View>
 
+                <View style={styles.gridCol}>
+                  <Text style={[styles.formFieldLabel, { marginBottom: 8 }]}>Método de Pago</Text>
+                  <TouchableOpacity 
+                    style={styles.pickerSelectorButton}
+                    onPress={() => openDropdownPicker('Método de Pago', paymentMethodOptions.length > 0 ? paymentMethodOptions : [
+                      { CODE: 'Transferencia', name: 'Transferencia' },
+                      { CODE: 'Efectivo', name: 'Efectivo' },
+                      { CODE: 'QR/Tarjeta', name: 'QR/Tarjeta' }
+                    ], saleDraft.paymentMethodCode, val => setSaleDraft((p: SaleDraft) => ({ ...p, paymentMethodCode: val })))}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Ionicons name="card-outline" size={18} color={Colors.muted} />
+                      <Text style={styles.pickerButtonText}>{saleDraft.paymentMethodCode}</Text>
+                    </View>
+                    <Ionicons name="chevron-down" size={16} color={Colors.muted} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={{ marginTop: 16 }}>
+                <Text style={[styles.formFieldLabel, { marginBottom: 8 }]}>Tipo de pago</Text>
                 <TouchableOpacity 
                   style={styles.pickerSelectorButton}
-                  onPress={() => openDropdownPicker('Método de Pago', [
-                    { CODE: 'Transferencia', name: 'Transferencia' },
-                    { CODE: 'Efectivo', name: 'Efectivo' },
-                    { CODE: 'QR/Tarjeta', name: 'QR/Tarjeta' }
-                  ], saleDraft.paymentMethodCode, val => setSaleDraft((p: SaleDraft) => ({ ...p, paymentMethodCode: val })))}
+                  onPress={() => openDropdownPicker('Tipo de Pago', paymentTypeOptions.length > 0 ? paymentTypeOptions : [
+                    { CODE: 'complete', name: 'Al contado' },
+                    { CODE: 'install', name: 'En cuotas' }
+                  ], saleDraft.typePayment, val => setSaleDraft((p: SaleDraft) => ({ ...p, typePayment: val })))}
                 >
-                  <Ionicons name="card-outline" size={18} color={Colors.muted} />
-                  <Text style={styles.pickerButtonText}>{saleDraft.paymentMethodCode}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Ionicons name="list-outline" size={18} color={Colors.muted} />
+                    <Text style={styles.pickerButtonText}>{saleDraft.typePayment}</Text>
+                  </View>
                   <Ionicons name="chevron-down" size={16} color={Colors.muted} />
                 </TouchableOpacity>
               </View>
@@ -886,6 +962,32 @@ export default function SalesScreen({ onBack, onNavigate }: SalesScreenProps) {
               >
                 <Ionicons name="add-circle-outline" size={16} color={Colors.primary} />
                 <Text style={styles.addChargeLinkText}>Agregar cargo adicional</Text>
+              </TouchableOpacity>
+
+              {/* Payments trigger */}
+              {payments.length > 0 && (
+                <View style={styles.formChargesWrapper}>
+                  {payments.map((p, index) => (
+                    <View key={`payment-${index}`} style={styles.chargeRowForm}>
+                      <Text style={styles.chargeFormLabel}>{`Cuota ${p.order} - ${p.paymentDate}`}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
+                        <Text style={styles.chargeFormValue}>{`Bs ${(p.priceAmount + (p.interestAmount || 0)).toFixed(2)}`}</Text>
+                        <TouchableOpacity onPress={() => removePayment(index)}>
+                          <Ionicons name="close-circle" size={16} color={Colors.destructive} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Button to add payment schedule */}
+              <TouchableOpacity 
+                style={styles.addChargeLinkButton}
+                onPress={() => setPaymentModalVisible(true)}
+              >
+                <Ionicons name="calendar-outline" size={16} color={Colors.primary} />
+                <Text style={styles.addChargeLinkText}>Agregar pago programado (Cuota)</Text>
               </TouchableOpacity>
 
               {/* Summary table card matching Pantalla 2 */}
@@ -1074,6 +1176,73 @@ export default function SalesScreen({ onBack, onNavigate }: SalesScreenProps) {
                     <Text style={styles.subCancelText}>Cancelar</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.subSave} onPress={handleSaveCharge}>
+                    <Text style={styles.subSaveText}>Agregar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Submodal: ADD PAYMENT */}
+          {paymentModalVisible && (
+            <View style={styles.subModalContainer}>
+              <View style={styles.subModalContent}>
+                <Text style={styles.subModalTitle}>Agregar Pago Programado</Text>
+                
+                <View style={styles.gridRow}>
+                  <View style={styles.gridCol}>
+                    <Text style={styles.inputLabel}>Cuota #</Text>
+                    <TextInput 
+                      style={styles.textInput}
+                      value={localPayment.order}
+                      onChangeText={txt => setLocalPayment(p => ({ ...p, order: txt }))}
+                      keyboardType="numeric"
+                      placeholder="1"
+                      placeholderTextColor={Colors.muted}
+                    />
+                  </View>
+                  <View style={styles.gridCol}>
+                    <Text style={styles.inputLabel}>Fecha de Vencimiento</Text>
+                    <TextInput 
+                      style={styles.textInput}
+                      value={localPayment.paymentDate}
+                      onChangeText={txt => setLocalPayment(p => ({ ...p, paymentDate: txt }))}
+                      placeholder="YYYY-MM-DD"
+                      placeholderTextColor={Colors.muted}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.gridRow}>
+                  <View style={styles.gridCol}>
+                    <Text style={styles.inputLabel}>Monto (Capital)</Text>
+                    <TextInput 
+                      style={styles.textInput}
+                      value={localPayment.priceAmount}
+                      onChangeText={txt => setLocalPayment(p => ({ ...p, priceAmount: txt }))}
+                      keyboardType="numeric"
+                      placeholder="0.00"
+                      placeholderTextColor={Colors.muted}
+                    />
+                  </View>
+                  <View style={styles.gridCol}>
+                    <Text style={styles.inputLabel}>Interés</Text>
+                    <TextInput 
+                      style={styles.textInput}
+                      value={localPayment.interestAmount}
+                      onChangeText={txt => setLocalPayment(p => ({ ...p, interestAmount: txt }))}
+                      keyboardType="numeric"
+                      placeholder="0.00"
+                      placeholderTextColor={Colors.muted}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.subModalButtons}>
+                  <TouchableOpacity style={styles.subCancel} onPress={() => setPaymentModalVisible(false)}>
+                    <Text style={styles.subCancelText}>Cancelar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.subSave} onPress={handleSavePayment}>
                     <Text style={styles.subSaveText}>Agregar</Text>
                   </TouchableOpacity>
                 </View>
@@ -1904,14 +2073,14 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 1000,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    padding: 24,
   },
   pickerContent: {
     backgroundColor: Colors.sidebar,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderRadius: 24,
     padding: Spacing.md,
-    maxHeight: '50%',
+    maxHeight: '60%',
   },
   pickerTitle: {
     color: Colors.foreground,
@@ -1927,10 +2096,11 @@ const styles = StyleSheet.create({
   },
   pickerItem: {
     paddingVertical: 14,
-    alignItems: 'center',
+    paddingHorizontal: 16,
+    alignItems: 'flex-start',
   },
   activePickerItem: {
-    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    backgroundColor: Colors.card,
     borderRadius: 12,
   },
   pickerLabel: {

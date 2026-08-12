@@ -29,7 +29,8 @@ interface ProductScreenProps {
 
 export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps) {
   const { t } = useTranslation();
-  const { vendor: vendorId } = useVendor();
+  const { vendor: vendorId, vendorCode } = useVendor();
+  const currentVendorCode = vendorCode || vendorId;
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -69,15 +70,15 @@ export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps
       let data: Product[] = [];
       if (searchQuery.trim()) {
         const result = await productRepo.search({
-          vendorCode: vendorId || undefined,
+          vendorCode: currentVendorCode || undefined,
           name: searchQuery,
           size: 50
         });
         data = result.content || result.data || result.results || [];
       } else {
         data = await productRepo.getAll();
-        if (vendorId) {
-          data = data.filter(p => p.vendorCode === vendorId);
+        if (currentVendorCode) {
+          data = data.filter(p => p.vendorCode === currentVendorCode || p.vendorCode === vendorId);
         }
       }
       setProducts(data);
@@ -86,7 +87,7 @@ export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, vendorId]);
+  }, [searchQuery, vendorId, currentVendorCode]);
 
   // Load Domain Parameters
   useEffect(() => {
@@ -152,7 +153,7 @@ export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps
     try {
       if (modalMode === 'create') {
         await productRepo.create({
-          vendorCode: vendorId || 'SYSTEM',
+          vendorCode: currentVendorCode || 'SYSTEM',
           code: formCode,
           name: formName,
           type: formType || undefined,

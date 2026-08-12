@@ -30,6 +30,7 @@ export interface SaleDraft {
   status: string;
   paymentMethodCode: string;
   currencyCode: string;
+  typePayment: string;
 }
 
 export function useSales() {
@@ -72,6 +73,7 @@ export function useSales() {
     status: 'COMPLETED',
     paymentMethodCode: 'CASH',
     currencyCode: 'USD',
+    typePayment: 'complete',
   });
 
   const [details, setDetails] = useState<Omit<CreateSaleDetailDto, 'saleId'>[]>([]);
@@ -146,6 +148,7 @@ export function useSales() {
       status: 'COMPLETED',
       paymentMethodCode: 'CASH',
       currencyCode: 'USD',
+      typePayment: 'complete',
     });
     setDetails([]);
     setExtraCharges([]);
@@ -204,6 +207,7 @@ export function useSales() {
       status: saleDraft.status,
       paymentMethodCode: saleDraft.paymentMethodCode,
       currencyCode: saleDraft.currencyCode,
+      typePayment: saleDraft.typePayment,
       saleDetails: details.map(d => ({
         shoppingCartDetailId: d.shoppingCartDetailId || null,
         expenseIncomeCode: d.expenseIncomeCode,

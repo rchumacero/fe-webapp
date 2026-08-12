@@ -12,6 +12,7 @@ export interface Sale {
   status: string;
   paymentMethodCode: string;
   currencyCode: string;
+  typePayment?: string | null;
   
   details?: SaleDetail[];
   extraCharges?: ExtraCharge[];
@@ -34,6 +35,7 @@ export interface CreateSaleDto {
   status: string;
   paymentMethodCode: string;
   currencyCode: string;
+  typePayment?: string | null;
 }
 
 export interface UpdateSaleDto extends CreateSaleDto {

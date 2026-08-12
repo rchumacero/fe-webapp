@@ -16,12 +16,16 @@ import { Breadcrumb } from '@/components/shared/Breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { RefreshCw, Plus, Search, Edit2, Trash2, MoreHorizontal, Loader2, Package, DollarSign, Tag, Calendar, ArrowLeft } from 'lucide-react';
+import { RefreshCw, Plus, Search, Edit2, Trash2, MoreHorizontal, Loader2, Package, DollarSign, Tag, Calendar, ArrowLeft, Coins, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { SCHEDULE_ROUTES } from '../../../schedule/routes/schedule-routes';
 import { SCHEDULE_CONSTANTS } from '../../../schedule/constants/schedule-constants';
 import { COLLABORATOR_ROUTES } from '../../../collaborator/routes/collaborator-routes';
 import { COLLABORATOR_CONSTANTS } from '../../../collaborator/constants/collaborator-constants';
+import { COMMERCIAL_PRODUCT_PRICE_ROUTES } from '../../../commercial-product-price/routes/commercial-product-price-routes';
+import { COMMERCIAL_PRODUCT_PRICE_CONSTANTS } from '../../../commercial-product-price/constants/commercial-product-price-constants';
+import { COMMERCIAL_PRODUCT_PICTURE_ROUTES } from '../../../commercial-product-picture/routes/commercial-product-picture-routes';
+import { COMMERCIAL_PRODUCT_PICTURE_CONSTANTS } from '../../../commercial-product-picture/constants/commercial-product-picture-constants';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -173,6 +177,16 @@ export default function CommercialProductListPage({ campaignId }: CommercialProd
                   <DropdownMenuItem className="cursor-pointer">
                     <Link href={CAMPAIGN_PRODUCT_ROUTES.LIST(product.id)} className="flex items-center w-full">
                       <Package className="mr-2 h-4 w-4 text-orange-500" /> {t(COMMERCIAL_PRODUCT_CONSTANTS.VIEW_SUB_PRODUCTS) || 'View Sub Products'}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Link href={`${COMMERCIAL_PRODUCT_PRICE_ROUTES.LIST(campaignId)}?commercialProductId=${product.id}`} className="flex items-center w-full">
+                      <Coins className="mr-2 h-4 w-4 text-yellow-500" /> {t(COMMERCIAL_PRODUCT_PRICE_CONSTANTS.TITLE) || 'Pricing'}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Link href={COMMERCIAL_PRODUCT_PICTURE_ROUTES.LIST(product.id)} className="flex items-center w-full">
+                      <ImageIcon className="mr-2 h-4 w-4 text-sky-500" /> {t(COMMERCIAL_PRODUCT_PICTURE_CONSTANTS.TITLE) || 'Pictures'}
                     </Link>
                   </DropdownMenuItem>
                   {(product.planScheduleCode === 'YES' || product.planScheduleCode === 'Y') && product.scheduleTypeCode?.toLowerCase() === 'open' && (
