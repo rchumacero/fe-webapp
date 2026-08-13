@@ -6,9 +6,9 @@ import { PERSON_CONSTANTS } from "./modules/crm/personal-data/person/constants/p
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     ZitadelProvider({
-      issuer: process.env.ZITADEL_ISSUER || "https://api-dev-local.kplian.com",
-      clientId: process.env.ZITADEL_CLIENT_ID || "",
-      clientSecret: process.env.ZITADEL_CLIENT_SECRET || "",
+      get issuer() { return process.env.ZITADEL_ISSUER || "https://api-dev-local.kplian.com"; },
+      get clientId() { return process.env.ZITADEL_CLIENT_ID || ""; },
+      get clientSecret() { return process.env.ZITADEL_CLIENT_SECRET || ""; },
       authorization: {
         params: { scope: "openid email profile offline_access urn:zitadel:iam:org:project:id:zitadel:aud" },
       },
@@ -41,7 +41,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "fallback_secret_for_development_only",
+  get secret() { return process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "fallback_secret_for_development_only"; },
   trustHost: true,
   callbacks: {
     async signIn({ user, account, profile }) {
