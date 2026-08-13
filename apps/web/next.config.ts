@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   serverExternalPackages: ["lightningcss"],
+  transpilePackages: ["@kplian/core", "@kplian/infrastructure", "@kplian/ui", "@kplian/store", "@kplian/i18n"],
 };
 
 export default nextConfig;
