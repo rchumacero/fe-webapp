@@ -3,7 +3,11 @@ import ZitadelProvider from "next-auth/providers/zitadel";
 import { headers } from "next/headers";
 import { PERSON_CONSTANTS } from "./modules/crm/personal-data/person/constants/person-constants";
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+let authInstance: any;
+
+function getAuth() {
+  if (!authInstance) {
+    authInstance = NextAuth({
   providers: [
     ZitadelProvider({
       get issuer() { return process.env.ZITADEL_ISSUER || "https://api-dev-local.kplian.com"; },
@@ -245,5 +249,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   pages: {
     signIn: '/login',
-  },
-});
+    },
+  });
+  }
+  return authInstance;
+}
+
+export const handlers = {
+  GET: (req: any, ctx: any) => getAuth().handlers.GET(req, ctx),
+  POST: (req: any, ctx: any) => getAuth().handlers.POST(req, ctx),
+};
+
+export const signIn = (...args: any[]) => getAuth().signIn(...args);
+export const signOut = (...args: any[]) => getAuth().signOut(...args);
+export const auth = (...args: any[]) => getAuth().auth(...args);
