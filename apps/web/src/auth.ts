@@ -10,7 +10,7 @@ function getAuth() {
     authInstance = NextAuth({
   providers: [
     ZitadelProvider({
-      get issuer() { return process.env.ZITADEL_ISSUER || "https://api-dev-local.kplian.com"; },
+      get issuer() { return process.env.ZITADEL_ISSUER || process.env.NEXT_PUBLIC_ZITADEL_ISSUER || "https://dev-zitadel.kplian.com"; },
       get clientId() { return process.env.ZITADEL_CLIENT_ID || ""; },
       get clientSecret() { return process.env.ZITADEL_CLIENT_SECRET || ""; },
       authorization: {
