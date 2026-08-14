@@ -7,12 +7,16 @@ let authInstance: any;
 
 function getAuth() {
   if (!authInstance) {
+    console.log("[AUTH DEBUG] process.env keys:", Object.keys(process.env).join(", "));
+    console.log("[AUTH DEBUG] ZITADEL_CLIENT_ID length:", process.env.ZITADEL_CLIENT_ID?.length);
+    console.log("[AUTH DEBUG] ZITADEL_ISSUER:", process.env.ZITADEL_ISSUER);
+    
     authInstance = NextAuth({
   providers: [
     ZitadelProvider({
-      get issuer() { return process.env.ZITADEL_ISSUER || process.env.NEXT_PUBLIC_ZITADEL_ISSUER || "https://dev-zitadel.kplian.com"; },
-      get clientId() { return process.env.ZITADEL_CLIENT_ID || ""; },
-      get clientSecret() { return process.env.ZITADEL_CLIENT_SECRET || ""; },
+      get issuer() { return process.env["ZITADEL_ISSUER"] || process.env["NEXT_PUBLIC_ZITADEL_ISSUER"] || "https://dev-zitadel.kplian.com"; },
+      get clientId() { return process.env["ZITADEL_CLIENT_ID"] || ""; },
+      get clientSecret() { return process.env["ZITADEL_CLIENT_SECRET"] || ""; },
       authorization: {
         params: { scope: "openid email profile offline_access urn:zitadel:iam:org:project:id:zitadel:aud" },
       },
@@ -45,13 +49,13 @@ function getAuth() {
       },
     }),
   ],
-  get secret() { return process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "fallback_secret_for_development_only"; },
+  get secret() { return process.env["NEXTAUTH_SECRET"] || process.env["AUTH_SECRET"] || "fallback_secret_for_development_only"; },
   trustHost: true,
   callbacks: {
     async signIn({ user, account, profile }) {
       const userCode = (user as any).username || (profile as any)?.preferred_username;
       if (account?.provider === 'zitadel' && userCode) {
-        const crmApiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_GATEWAY_URL || 'https://api-dev-local.kplian.com';
+        const crmApiUrl = process.env["NEXT_PUBLIC_API_URL"] || process.env["NEXT_PUBLIC_API_GATEWAY_URL"] || process.env["API_GATEWAY_URL"] || 'https://api-dev-local.kplian.com';
         const token = account.access_token;
 
         try {
@@ -61,8 +65,10 @@ function getAuth() {
           });
 
           const checkText = await checkRes.text();
-          console.log('verdes');
+          console.log(`[AUTH JIT] checkUrl: ${checkUrl}, status: ${checkRes.status}, body length: ${checkText.length}`);
+          
           if (checkRes.status === 404 || (checkRes.ok && checkText.length === 0)) {
+            console.log(`[AUTH JIT] Person not found, creating a new one...`);
             // Safe cookie reading using headers() to avoid "immutable" error
             const headersList = await headers();
             const cookieHeader = headersList.get('cookie') || '';
@@ -98,13 +104,12 @@ function getAuth() {
               surname3: '',
               birthdate: zitadelProfile?.birthdate || "2024-01-01T00:00:00.000Z",
               gender: zitadelProfile?.gender || null,
-              type: 'nat',
+              type: 'person',
               cityOrigin: null,
               completeName: user.name || userCode
             };
 
             (user as any).vendorPersonName = user.name || userCode;
-
             (user as any).vendorPersonCode = userCode;
 
             // Use invitation endpoint if ID is present, otherwise standard create
@@ -112,7 +117,8 @@ function getAuth() {
               ? `${crmApiUrl}/crm/api/v1/persons/invitation/${invitationId}`
               : `${crmApiUrl}/crm/api/v1/persons`;
 
-            const createRes = await fetch(registrationUrl, {
+            console.log(`[AUTH JIT] Sending POST to: ${registrationUrl}`);
+            let createRes = await fetch(registrationUrl, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -121,32 +127,49 @@ function getAuth() {
               body: JSON.stringify(createBody)
             });
 
+            let createText = await createRes.text();
+            console.log(`[AUTH JIT] POST response status: ${createRes.status}, body: ${createText}`);
+
+            if (!createRes.ok && invitationId) {
+              console.warn(`[AUTH JIT] Invitation creation failed (status: ${createRes.status}). Falling back to standard person creation.`);
+              const fallbackUrl = `${crmApiUrl}/crm/api/v1/persons`;
+              createRes = await fetch(fallbackUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(createBody)
+              });
+              createText = await createRes.text();
+              console.log(`[AUTH JIT] Fallback POST response status: ${createRes.status}, body: ${createText}`);
+            }
+
             if (createRes.ok) {
-              const created = await createRes.json();
+              const created = JSON.parse(createText);
               (user as any).vendorPersonId = created?.id || null;
               (user as any).vendorPersonCode = created?.vendorCode || created?.code || userCode;
               (user as any).vendorPersonName = created?.completeName ||
                 (created?.name1 ? `${created.name1} ${created.surname1 || ""}`.trim() : null) ||
                 user.name ||
                 userCode;
-
-              // Clean up invitation cookie if successful
-              // Note: deletion is handled by expiration or a client-side action
-              // to avoid immutable header errors in NextAuth callbacks.
             }
           } else if (checkRes.ok && checkText.length > 0) {
             // Person exists — extract their id
             try {
               const existing = JSON.parse(checkText);
+              console.log(`[AUTH JIT] Person found, ID: ${existing?.id}`);
               (user as any).vendorPersonId = existing?.id || null;
               (user as any).vendorPersonCode = existing?.vendorCode || existing?.code || userCode;
               (user as any).vendorPersonName = existing?.completeName ||
                 (existing?.name1 ? `${existing.name1} ${existing.surname1 || ""}`.trim() : null) ||
                 user.name ||
                 userCode;
-            } catch {
-              // non-JSON response, ignore
+            } catch (err) {
+              console.error("[AUTH JIT] Failed to parse existing person JSON:", err);
             }
+          } else {
+            console.error(`[AUTH JIT] Failed to retrieve person. Status: ${checkRes.status}, Response: ${checkText}`);
           }
 
           // Check for related "COL" vendors
