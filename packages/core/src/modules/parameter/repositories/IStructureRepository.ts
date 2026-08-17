@@ -7,4 +7,5 @@ export interface IStructureRepository {
   create(data: CreateStructureDto): Promise<Structure>;
   update(data: UpdateStructureDto): Promise<Structure>;
   delete(id: number | string): Promise<void>;
+  getRootsByModuleCode(moduleCode: string): Promise<Structure[]>;
 }

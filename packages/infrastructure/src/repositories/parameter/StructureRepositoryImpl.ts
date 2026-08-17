@@ -32,4 +32,9 @@ export class StructureRepositoryImpl implements IStructureRepository {
   async delete(id: number | string): Promise<void> {
     await this.api.delete(`/structure/${id}`);
   }
+
+  async getRootsByModuleCode(moduleCode: string): Promise<Structure[]> {
+    const response = await this.api.get<Structure[]>(`/structure/module/${moduleCode}/roots`);
+    return response.data || [];
+  }
 }

@@ -16,7 +16,7 @@
   "devDependencies": {
     "prettier": "latest",
     "turbo": "latest",
-    "typescript": "latest"
+    "typescript": "^5"
   },
   "packageManager": "npm@10.5.0",
   "overrides": {

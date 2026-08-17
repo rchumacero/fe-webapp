@@ -7,10 +7,6 @@ let authInstance: any;
 
 function getAuth() {
   if (!authInstance) {
-    console.log("[AUTH DEBUG] process.env keys:", Object.keys(process.env).join(", "));
-    console.log("[AUTH DEBUG] ZITADEL_CLIENT_ID length:", process.env.ZITADEL_CLIENT_ID?.length);
-    console.log("[AUTH DEBUG] ZITADEL_ISSUER:", process.env.ZITADEL_ISSUER);
-    
     authInstance = NextAuth({
   providers: [
     ZitadelProvider({
@@ -65,10 +61,8 @@ function getAuth() {
           });
 
           const checkText = await checkRes.text();
-          console.log(`[AUTH JIT] checkUrl: ${checkUrl}, status: ${checkRes.status}, body length: ${checkText.length}`);
           
           if (checkRes.status === 404 || (checkRes.ok && checkText.length === 0)) {
-            console.log(`[AUTH JIT] Person not found, creating a new one...`);
             // Safe cookie reading using headers() to avoid "immutable" error
             const headersList = await headers();
             const cookieHeader = headersList.get('cookie') || '';
@@ -117,7 +111,6 @@ function getAuth() {
               ? `${crmApiUrl}/crm/api/v1/persons/invitation/${invitationId}`
               : `${crmApiUrl}/crm/api/v1/persons`;
 
-            console.log(`[AUTH JIT] Sending POST to: ${registrationUrl}`);
             let createRes = await fetch(registrationUrl, {
               method: 'POST',
               headers: {
@@ -128,10 +121,8 @@ function getAuth() {
             });
 
             let createText = await createRes.text();
-            console.log(`[AUTH JIT] POST response status: ${createRes.status}, body: ${createText}`);
 
             if (!createRes.ok && invitationId) {
-              console.warn(`[AUTH JIT] Invitation creation failed (status: ${createRes.status}). Falling back to standard person creation.`);
               const fallbackUrl = `${crmApiUrl}/crm/api/v1/persons`;
               createRes = await fetch(fallbackUrl, {
                 method: 'POST',
@@ -142,7 +133,6 @@ function getAuth() {
                 body: JSON.stringify(createBody)
               });
               createText = await createRes.text();
-              console.log(`[AUTH JIT] Fallback POST response status: ${createRes.status}, body: ${createText}`);
             }
 
             if (createRes.ok) {
@@ -158,7 +148,6 @@ function getAuth() {
             // Person exists — extract their id
             try {
               const existing = JSON.parse(checkText);
-              console.log(`[AUTH JIT] Person found, ID: ${existing?.id}`);
               (user as any).vendorPersonId = existing?.id || null;
               (user as any).vendorPersonCode = existing?.vendorCode || existing?.code || userCode;
               (user as any).vendorPersonName = existing?.completeName ||
@@ -166,10 +155,8 @@ function getAuth() {
                 user.name ||
                 userCode;
             } catch (err) {
-              console.error("[AUTH JIT] Failed to parse existing person JSON:", err);
+              // ignore parse errors
             }
-          } else {
-            console.error(`[AUTH JIT] Failed to retrieve person. Status: ${checkRes.status}, Response: ${checkText}`);
           }
 
           // Check for related "COL" vendors

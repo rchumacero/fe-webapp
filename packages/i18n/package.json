@@ -8,6 +8,6 @@
     "react-i18next": "^14.0.0"
   },
   "devDependencies": {
-    "typescript": "latest"
+    "typescript": "^5"
   }
 }
