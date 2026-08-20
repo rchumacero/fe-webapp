@@ -4,11 +4,8 @@ import { FormDropdownField } from './FormDropdownField';
 import { FormSwitchField } from './FormSwitchField';
 import { styles } from '../styles';
 import { ResourceFormState } from '../../presentation/screens/ResourceScreent';
-
-interface Option {
-  code: string;
-  label: string;
-}
+import { getParamLabel } from '../utils';
+import { Option } from '../types';
 
 interface ResourceCreateFormProps {
   form: ResourceFormState;
@@ -54,7 +51,7 @@ export function ResourceCreateForm({
 
       <FormDropdownField
         label="Type"
-        value={form.type}
+        value={getParamLabel(typeOptions, form.type)}
         options={typeOptions}
         placeholder="Select Type..."
         onPress={() => openDropdownPicker('Select Type', typeOptions, form.type, 'type')}
@@ -62,7 +59,7 @@ export function ResourceCreateForm({
 
       <FormDropdownField
         label="Module"
-        value={form.moduleCode}
+        value={getParamLabel(moduleOptions, form.moduleCode)}
         options={moduleOptions}
         placeholder="Select Module..."
         onPress={() => openDropdownPicker('Select Module', moduleOptions, form.moduleCode, 'moduleCode')}
@@ -70,7 +67,7 @@ export function ResourceCreateForm({
 
       <FormDropdownField
         label="Menu"
-        value={form.menuId}
+        value={getParamLabel(menuOptions, form.menuId)}
         options={menuOptions}
         placeholder="Select Menu..."
         onPress={() => openDropdownPicker('Select Menu', menuOptions, form.menuId, 'menuId')}

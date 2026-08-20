@@ -8,6 +8,7 @@ export interface Resource {
     readonly endpoint: string;
     readonly resourceId: string;
     readonly moduleCode: string;
+    readonly menuName: string;
     readonly menu: Menu;
     readonly menuId: string;
     readonly status: string;

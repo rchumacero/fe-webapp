@@ -1,18 +1,13 @@
 import { Text, View } from 'react-native';
 import { styles } from '../styles';
 import { Resource } from '@kplian/core/src/modules/access/entities/Resource';
+import { getParamLabel } from '../utils';
+import { Option } from '../types';
 
 interface ResourceDetailViewProps {
   selectedResource: Resource;
-  typeOptions: any[];
-  // locationOptions: any[];
-  // costMethodOptions: any[];
+  typeOptions: Option[];
 }
-
-const getParamLabel = (data: any[], val: string) => {
-  const item = data.find(i => i.CODE === val);
-  return item ? item.name : val;
-};
 
 export function ResourceDetailView({
   selectedResource: selectedResource,
@@ -22,10 +17,11 @@ export function ResourceDetailView({
     ['Code', selectedResource.code],
     ['Name', selectedResource.name],
     ['Description', selectedResource.description],
-    ['Type', getParamLabel(typeOptions, selectedResource.type || '') || 'None'],
-    ['Restricted', selectedResource.restricted],
+    ['Type', getParamLabel(typeOptions, selectedResource.type) || 'None'],
+    ['Restricted', selectedResource.restricted.toString()],
     ['Endpoind', selectedResource.endpoint],
-    ['ModuleCode',selectedResource.moduleCode],
+    ['ModuleCode', selectedResource.moduleCode],
+    ['menuName', selectedResource.menuName ],
     ['Status', selectedResource.status || 'ACTIVE'],
   ];
 
