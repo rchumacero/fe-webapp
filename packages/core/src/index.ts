@@ -48,6 +48,10 @@ export * from './modules/crm/sales/repositories/IPaymentRepository';
 // Access Module
 export * from './modules/access/entities/MenuItem';
 export * from './modules/access/api/accessService';
+export * from './modules/access/entities/Menu'
+export * from './modules/access/entities/Resource'
+export * from './modules/access/repositories/IMenuRepository'
+export * from './modules/access/repositories/IResourceRepository'
 
 // Auth Module
 export * from './modules/auth/entities/User';

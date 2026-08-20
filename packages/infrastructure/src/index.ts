@@ -55,6 +55,10 @@ export * from './repositories/warehouse/StockLevelRepositoryImpl';
 export * from './repositories/warehouse/StockLevelAlertRepositoryImpl';
 export * from './repositories/warehouse/WarehouseStockRepositoryImpl';
 
+// Access Repositories
+export * from './repositories/access/ResourceRepositoryImpl'
+export * from './repositories/access/MenuRepositoryImpl'
+
 // Production Repositories
 export * from './repositories/production/OperationRepositoryImpl';
 export * from './repositories/production/OperationDetailRepositoryImpl';
