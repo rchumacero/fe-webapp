@@ -206,24 +206,35 @@ export default function CampaignFormPage({ id, mode = 'custom' }: CampaignFormPr
                   <Controller
                     name="categoryCode"
                     control={control}
-                    render={({ field }) => (
-                      <select
-                        value={field.value || ''}
-                        onChange={field.onChange}
-                        className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
-                      >
-                        <option value="">{t(CAMPAIGN_CONSTANTS.FORM.SELECT_OPTION) || 'Select category'}</option>
-                        {categoryOptions.map((p: any, idx: number) => {
-                          const val = p.code || p.CODE || p.fullCode || p.value || p.id || (typeof p === 'string' ? p : '');
-                          const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
-                          return (
-                            <option key={`${val}-${idx}`} value={val}>
-                              {label}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    )}
+                    render={({ field }) => {
+                      const currentValue = field.value || '';
+                      const matchedOption = categoryOptions.find((opt: any) => {
+                        const val = opt.code || opt.CODE || opt.key || opt.KEY || opt.value || opt.VALUE || opt.id || opt.ID || '';
+                        return val.toString().toLowerCase() === currentValue.toLowerCase();
+                      });
+                      const selectedVal = matchedOption 
+                        ? (matchedOption.code || matchedOption.CODE || matchedOption.key || matchedOption.KEY || matchedOption.value || matchedOption.VALUE || matchedOption.id || matchedOption.ID || '')
+                        : currentValue;
+
+                      return (
+                        <select
+                          value={selectedVal}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                        >
+                          <option value="">{t(CAMPAIGN_CONSTANTS.FORM.SELECT_OPTION) || 'Select category'}</option>
+                          {categoryOptions.map((p: any, idx: number) => {
+                            const val = p.code || p.CODE || p.key || p.KEY || p.value || p.VALUE || p.id || p.ID || (typeof p === 'string' ? p : '');
+                            const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
+                            return (
+                              <option key={`${val}-${idx}`} value={val}>
+                                {label}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      );
+                    }}
                   />
                   {errors.categoryCode && <p className="text-[10px] text-destructive font-medium ml-1">{errors.categoryCode.message}</p>}
                 </div>
@@ -232,23 +243,35 @@ export default function CampaignFormPage({ id, mode = 'custom' }: CampaignFormPr
                   <Controller
                     name="status"
                     control={control}
-                    render={({ field }) => (
-                      <select
-                        {...field}
-                        className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
-                      >
-                        <option value="">{t(CAMPAIGN_CONSTANTS.FORM.SELECT_OPTION) || 'Select status'}</option>
-                        {statusOptions.map((p: any, idx: number) => {
-                          const val = p.code || p.CODE || p.fullCode || p.value || p.id || (typeof p === 'string' ? p : '');
-                          const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
-                          return (
-                            <option key={`${val}-${idx}`} value={val}>
-                              {label}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    )}
+                    render={({ field }) => {
+                      const currentValue = field.value || '';
+                      const matchedOption = statusOptions.find((opt: any) => {
+                        const val = opt.code || opt.CODE || opt.key || opt.KEY || opt.value || opt.VALUE || opt.id || opt.ID || '';
+                        return val.toString().toLowerCase() === currentValue.toLowerCase();
+                      });
+                      const selectedVal = matchedOption 
+                        ? (matchedOption.code || matchedOption.CODE || matchedOption.key || matchedOption.KEY || matchedOption.value || matchedOption.VALUE || matchedOption.id || matchedOption.ID || '')
+                        : currentValue;
+
+                      return (
+                        <select
+                          value={selectedVal}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                        >
+                          <option value="">{t(CAMPAIGN_CONSTANTS.FORM.SELECT_OPTION) || 'Select status'}</option>
+                          {statusOptions.map((p: any, idx: number) => {
+                            const val = p.code || p.CODE || p.key || p.KEY || p.value || p.VALUE || p.id || p.ID || (typeof p === 'string' ? p : '');
+                            const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
+                            return (
+                              <option key={`${val}-${idx}`} value={val}>
+                                {label}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      );
+                    }}
                   />
                   {errors.status && <p className="text-[10px] text-destructive font-medium ml-1">{errors.status.message}</p>}
                 </div>

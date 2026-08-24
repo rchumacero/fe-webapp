@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { RefreshCw, Plus, Search, Eye, Loader2, Trash2, Calendar, MapPin, Database, MoreHorizontal, Edit2, Save } from 'lucide-react';
+import { RefreshCw, Plus, Search, Eye, Loader2, Trash2, Calendar, MapPin, Database, MoreHorizontal, Edit2, Save, FileText } from 'lucide-react';
 import { formatDateTime } from '@kplian/core';
 import { InventoryRepositoryImpl, InventoryDetailRepositoryImpl, createApiClient } from '@kplian/infrastructure';
 import { toast } from '@/hooks/use-toast';
@@ -124,6 +124,83 @@ export default function InventoryPage() {
         console.error(err);
         toast.error('Failed to delete inventory record');
       }
+    }
+  };
+
+  const handleExportPDF = async (inventory: any) => {
+    try {
+      toast.success('Generando PDF...');
+      const detailsList = await detailRepo.getByInventory(inventory.id);
+      const whName = warehouses.find(w => w.id === inventory.warehouseId)?.name || inventory.warehouseId;
+
+      const columns = [
+        { header: 'Producto', dataKey: 'itemCode' },
+        { header: 'C. Sistema', dataKey: 'inventoryQuantity' },
+        { header: 'C. Física', dataKey: 'realQuantity' },
+        { header: 'Dif. Cant.', dataKey: 'diffQuantity' },
+        { header: 'C. Unitario', dataKey: 'unitCost' },
+        { header: 'V. Sistema', dataKey: 'systemValue' },
+        { header: 'V. Físico', dataKey: 'realValue' },
+        { header: 'V. Diferencia', dataKey: 'diffValue' }
+      ];
+
+      const { generatePDFReport, formatCurrency } = await import('@/lib/pdf-helper');
+
+      let totalSystemVal = 0;
+      let totalRealVal = 0;
+      let totalDiffVal = 0;
+
+      const rows = (detailsList || []).map((detail: any) => {
+        const sysQty = detail.inventoryQuantity ?? 0;
+        const realQty = detail.realQuantity ?? 0;
+        const diffQty = realQty - sysQty;
+        const cost = detail.unitCost ?? 0;
+
+        const sysVal = sysQty * cost;
+        const realVal = realQty * cost;
+        const diffVal = diffQty * cost;
+
+        totalSystemVal += sysVal;
+        totalRealVal += realVal;
+        totalDiffVal += diffVal;
+
+        return {
+          itemCode: detail.itemCode,
+          inventoryQuantity: String(sysQty),
+          realQuantity: String(realQty),
+          diffQuantity: diffQty > 0 ? `+${diffQty}` : String(diffQty),
+          unitCost: formatCurrency(cost),
+          systemValue: formatCurrency(sysVal),
+          realValue: formatCurrency(realVal),
+          diffValue: formatCurrency(diffVal)
+        };
+      });
+
+      const footerRows = [
+        [
+          { content: 'Total:', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: formatCurrency(totalSystemVal), styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: formatCurrency(totalRealVal), styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: formatCurrency(totalDiffVal), styles: { halign: 'right', fontStyle: 'bold' } }
+        ]
+      ];
+
+      const dateLabel = inventory.inventoryDate ? formatDateTime(inventory.inventoryDate).split(' ')[0] : 'N/A';
+
+      generatePDFReport({
+        title: `Inventario Físico - Hoja de Auditoría`,
+        subtitle: `Almacén: ${whName} | Fecha: ${dateLabel} | Estado: ${inventory.status || 'ACTIVE'}`,
+        filename: `Inventario_${whName.replace(/\s+/g, '_')}_${dateLabel}.pdf`,
+        columns,
+        rows,
+        themeColor: [36, 150, 237], // Docker blue
+        footerRows
+      });
+
+      toast.success('PDF generado con éxito');
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al generar PDF');
     }
   };
 
@@ -286,6 +363,9 @@ export default function InventoryPage() {
                   <DropdownMenuContent align="end" className="w-40 bg-card border-border/40">
                     <DropdownMenuItem onClick={() => handleOpenDetail(inv)} className="cursor-pointer text-foreground">
                       <Eye className="mr-2 h-4 w-4" /> View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExportPDF(inv)} className="cursor-pointer text-foreground">
+                      <FileText className="mr-2 h-4 w-4 text-emerald-500" /> Export PDF
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleOpenEdit(inv)} className="cursor-pointer text-foreground">
                       <Edit2 className="mr-2 h-4 w-4" /> Edit

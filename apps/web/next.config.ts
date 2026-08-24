@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ["lightningcss"],
   transpilePackages: ["@kplian/core", "@kplian/infrastructure", "@kplian/ui", "@kplian/store", "@kplian/i18n"],
+  webpack: (config: any, { dev }: { dev: boolean }) => {
+    if (dev) {
+      config.cache = false;
+    }
+    return config;
+  },
 };
 
 export default nextConfig;

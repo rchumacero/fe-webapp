@@ -197,6 +197,66 @@ export default function MovementListPage({ type }: MovementListPageProps) {
     }
   };
 
+  const handleExportPDF = async (movement: any) => {
+    try {
+      toast.success('Generando PDF...');
+      const detailsList = await detailRepo.getByMovement(movement.id);
+      const whName = warehouses.find(w => w.id === movement.warehouseId)?.name || movement.warehouseId;
+
+      const columns = [
+        { header: 'Item Code', dataKey: 'itemCode' },
+        { header: 'Cantidad', dataKey: 'quantity' },
+        { header: 'Moneda', dataKey: 'measureUnitCode' },
+        { header: 'Costo Unitario', dataKey: 'costAmount' },
+        { header: 'Costo Adicional', dataKey: 'extraCost' },
+        { header: 'Costo Total', dataKey: 'totalCost' }
+      ];
+
+      const { generatePDFReport, formatCurrency } = await import('@/lib/pdf-helper');
+
+      const rows = (detailsList || []).map((detail: any) => ({
+        itemCode: detail.itemCode,
+        quantity: detail.quantity ?? 0,
+        measureUnitCode: detail.measureUnitCode || '-',
+        costAmount: formatCurrency(detail.costAmount),
+        extraCost: formatCurrency(detail.extraCost),
+        totalCost: formatCurrency(detail.totalCost)
+      }));
+
+      const totalAmount = (detailsList || []).reduce((sum: number, detail: any) => {
+        const detailTotal = detail.totalCost !== undefined 
+          ? Number(detail.totalCost) 
+          : (Number(detail.quantity || 0) * Number(detail.costAmount || 0));
+        return sum + detailTotal;
+      }, 0);
+
+      const footerRows = [
+        [
+          { content: 'Total:', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: formatCurrency(totalAmount), styles: { halign: 'right', fontStyle: 'bold' } }
+        ]
+      ];
+
+      const typeLabel = movement.type === 'in' ? 'Entrada' : (movement.type === 'out' ? 'Salida' : movement.type);
+      const dateLabel = movement.movementDate ? formatDateTime(movement.movementDate).split(' ')[0] : 'N/A';
+
+      generatePDFReport({
+        title: `Detalle de Movimiento: ${movement.code}`,
+        subtitle: `Almacén: ${whName} | Tipo: ${typeLabel} | Fecha: ${dateLabel}`,
+        filename: `Movimiento_${movement.code}.pdf`,
+        columns,
+        rows,
+        themeColor: [36, 150, 237], // Docker blue
+        footerRows
+      });
+
+      toast.success('PDF generado con éxito');
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al generar PDF');
+    }
+  };
+
   const handleOpenEditDetail = (det: any) => {
     setEditingDetailItem(det);
     setEditDetailQty(det.quantity);
@@ -604,6 +664,9 @@ export default function MovementListPage({ type }: MovementListPageProps) {
                   <DropdownMenuContent align="end" className="w-40 bg-card border-border/40">
                     <DropdownMenuItem onClick={() => handleOpenDetail(movement)} className="cursor-pointer text-foreground">
                       <Eye className="mr-2 h-4 w-4" /> View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExportPDF(movement)} className="cursor-pointer text-foreground">
+                      <FileText className="mr-2 h-4 w-4 text-emerald-500" /> Export PDF
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleOpenEdit(movement)} className="cursor-pointer text-foreground">
                       <Edit2 className="mr-2 h-4 w-4" /> Edit

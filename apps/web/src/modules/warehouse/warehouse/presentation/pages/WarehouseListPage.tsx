@@ -161,6 +161,11 @@ export default function WarehouseListPage() {
                       <Edit2 className="mr-2 h-4 w-4" /> {t(WAREHOUSE_CONSTANTS.EDIT_RECORD) || 'Edit'}
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer text-foreground">
+                    <Link href={WAREHOUSE_ROUTES.MOVEMENT_REPORT(warehouse.id)} className="flex items-center w-full">
+                      <RefreshCw className="mr-2 h-4 w-4" /> Movimientos
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem className="text-destructive cursor-pointer focus:bg-destructive/10" onClick={() => handleDelete(warehouse.id)}>
                     <Trash2 className="mr-2 h-4 w-4" /> {t(WAREHOUSE_CONSTANTS.CONFIRM_DELETE) || 'Delete'}
                   </DropdownMenuItem>

@@ -178,9 +178,9 @@ function getAuth() {
                     c.personCompId;
 
                   return {
-                    id: c.personCompId,
+                    id: c.personId,
                     name: resolvedName,
-                    code: p?.vendorCode || p?.code || c.personCompCode || c.personCompId
+                    code: p?.vendorCode || p?.code || c.personCode || c.personId
                   };
                 });
 
