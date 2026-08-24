@@ -114,6 +114,9 @@ export const createApiClient = (moduleName: string) => {
 
   // Global Request Interceptor (Auth, Logging, etc.)
   instance.interceptors.request.use(async (config) => {
+    // Resolve base URL dynamically on every request
+    config.baseURL = `${getGatewayUrl()}/${moduleName}/api`;
+
     // If API is locked (e.g. session expired), abort immediately
     if (isApiLocked) {
       console.warn("Infrastructure: API is currently LOCKED. Aborting request to:", config.url);
@@ -228,6 +231,9 @@ export const createWarehouseApiClient = () => {
   });
 
   instance.interceptors.request.use(async (config) => {
+    // Resolve base URL dynamically on every request
+    config.baseURL = `${getGatewayUrl()}/warehouse/api`;
+
     if (isApiLocked) {
       console.warn("Infrastructure: API is currently LOCKED. Aborting request to:", config.url);
       const controller = new AbortController();
