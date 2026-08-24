@@ -1,6 +1,3 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-
 export interface PDFTableColumn {
   header: string;
   dataKey: string;
@@ -26,7 +23,7 @@ export interface PDFReportOptions {
   footerRows?: any[][]; // Optional footer rows (allows cell objects with specific styles)
 }
 
-export const generatePDFReport = (options: PDFReportOptions) => {
+export const generatePDFReport = async (options: PDFReportOptions) => {
   const { 
     title, 
     subtitle, 
@@ -36,6 +33,9 @@ export const generatePDFReport = (options: PDFReportOptions) => {
     themeColor = [99, 102, 241], // Elegant Indigo default theme Color
     footerRows
   } = options;
+
+  const jsPDF = (await import('jspdf')).default;
+  const autoTable = (await import('jspdf-autotable')).default;
 
   const doc = new jsPDF({
     orientation: 'portrait',

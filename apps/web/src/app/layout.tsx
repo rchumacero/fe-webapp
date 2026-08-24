@@ -3,8 +3,6 @@ import { Outfit } from "next/font/google";
 import "./globals.css";
 import "@kplian/i18n";
 
-export const runtime = 'edge';
-
 const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
