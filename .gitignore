@@ -13,6 +13,8 @@ out/
 # Production
 build/
 dist/
+.open-next/
+out_cloudflare/
 
 # Build caches
 .turbo/
