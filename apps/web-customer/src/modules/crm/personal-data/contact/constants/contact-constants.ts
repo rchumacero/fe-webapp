@@ -1,0 +1,30 @@
+export const CONTACT_CONSTANTS = {
+  TITLE: "crm.contact",
+  LIST_TITLE: "crm.contactsList",
+  CREATE_TITLE: "crm.contact",
+  DESCRIPTION_TITLE: "common.createDescription",
+  EDIT_TITLE: "crm.contact",
+  DESCRIPTION_EDIT: "common.editDescription",
+  SEARCH_PLACEHOLDER: "common.filter",
+  CONFIRM_DELETE: "common.confirmDelete",
+  RECORD_NOT_FOUND: "common.recordNotFound",
+  FORM: {
+    TYPE: "crm.contactType",
+    PERSON_COMP: "crm.contactPersonComp",
+    DESCRIPTION: "crm.relationDescription",
+    SUBMIT: "common.save",
+    CANCEL: "common.cancel",
+    DIRTY_WARNING: "common.dirty_warning",
+    SELECT_OPTION: "common.selectOption",
+    CONFIRM_CANCEL: "common.confirmCancel",
+    YES_DISCARD: "common.yesDiscard",
+    NO_STAY: "common.noStay",
+    EX_PERSON_COMP: "crm.contactPersonCompPlaceholder",
+    EX_DESCRIPTION: "crm.contactDescriptionPlaceholder",
+  },
+  ROUTES: {
+    BACK: -1,
+    CONTACT: "/crm/contact",
+    CONTACT_NEW: "/crm/contact/new",
+  }
+};

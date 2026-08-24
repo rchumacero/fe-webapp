@@ -18,4 +18,5 @@ export interface IWarehouseRepository {
   create(data: CreateWarehouseDto): Promise<Warehouse>;
   update(data: UpdateWarehouseDto): Promise<Warehouse>;
   delete(id: string): Promise<void>;
+  getWarehouseMovements(id: string): Promise<any[]>;
 }

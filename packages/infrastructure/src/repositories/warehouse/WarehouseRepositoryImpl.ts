@@ -103,4 +103,9 @@ export class WarehouseRepositoryImpl implements IWarehouseRepository {
   async delete(id: string): Promise<void> {
     await this.api.delete(`/v1/warehouse/${id}`);
   }
+
+  async getWarehouseMovements(id: string): Promise<any[]> {
+    const response = await this.api.get<any[]>(`/v1/warehouse/${id}/movement`);
+    return response.data || [];
+  }
 }

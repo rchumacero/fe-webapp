@@ -8,6 +8,13 @@ export { encrypt, decrypt } from './security/crypto';
 // General Utilities
 export { getRoute } from './utils/route';
 
+// Access Repositories
+export * from './repositories/access/AppRepositoryImpl';
+export * from './repositories/access/MenuRepositoryImpl';
+export * from './repositories/access/ResourceRepositoryImpl';
+export * from './repositories/access/RoleRepositoryImpl';
+export * from './repositories/access/ProfileRepositoryImpl';
+
 // CRM Repositories
 export * from './repositories/crm/commercial/CampaignRepositoryImpl';
 export * from './repositories/crm/commercial/CommercialProductRepositoryImpl';

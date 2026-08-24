@@ -1,0 +1,396 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Platform, Alert } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
+import { setTokenProvider, setLanguageProvider, setTimezoneProvider, setGlobalErrorHandler, setVendorProvider } from '@kplian/infrastructure';
+import i18n from '@kplian/i18n';
+import { User } from '@kplian/core';
+
+// Helper for cross-platform storage (SecureStore doesn't work in Web)
+const storage = {
+  getItem: async (key: string) => {
+    if (Platform.OS === 'web') {
+      return typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+    }
+    return await SecureStore.getItemAsync(key);
+  },
+  setItem: async (key: string, value: string) => {
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined') localStorage.setItem(key, value);
+      return;
+    }
+    await SecureStore.setItemAsync(key, value);
+  },
+  deleteItem: async (key: string) => {
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined') localStorage.removeItem(key);
+      return;
+    }
+    await SecureStore.deleteItemAsync(key);
+  }
+};
+
+// Ensure these environment variables are actually sourced properly in your mobile env
+const ZITADEL_ISSUER = process.env.EXPO_PUBLIC_ZITADEL_ISSUER || 'https://dev-zitadel.kplian.com';
+const ZITADEL_CLIENT_ID = process.env.EXPO_PUBLIC_ZITADEL_CLIENT_ID || '';
+
+// Deep Linking redirect URI
+const redirectUri = AuthSession.makeRedirectUri({
+  scheme: "com.mobile.crm", // Must match your scheme in app.json
+  path: 'oauth-callback',
+});
+
+console.log('[Auth Debug] Client ID:', ZITADEL_CLIENT_ID);
+console.log('[Auth Debug] Redirect URI:', redirectUri);
+
+// PKCE helpers for manual Web redirect flow
+const generateCodeVerifier = (): string => {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+};
+
+const generateCodeChallenge = async (verifier: string): Promise<string> => {
+  const data = new TextEncoder().encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+};
+
+interface AuthContextType {
+  user: User | null;
+  accessToken: string | null;
+  vendorId: string | null;
+  isLoading: boolean;
+  login: () => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+
+// Discovery document
+const discovery = {
+  authorizationEndpoint: `${ZITADEL_ISSUER}/oauth/v2/authorize`,
+  tokenEndpoint: `${ZITADEL_ISSUER}/oauth/v2/token`,
+  revocationEndpoint: `${ZITADEL_ISSUER}/oauth/v2/revoke`,
+};
+
+let isLoggingOut = false;
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [idToken, setIdToken] = useState<string | null>(null);
+  const [vendorId, setVendorId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const [request, response, promptAsync] = AuthSession.useAuthRequest(
+    {
+      clientId: ZITADEL_CLIENT_ID,
+      redirectUri,
+      scopes: ['openid', 'profile', 'email', 'offline_access', 'urn:zitadel:iam:org:project:id:zitadel:aud'],
+      usePKCE: true, // Native Client requirement
+    },
+    discovery
+  );
+
+  useEffect(() => {
+    const initialize = async () => {
+      // 1. Storage Setup: inject token getter for API client
+      setTokenProvider(async () => {
+        try {
+          return (await storage.getItem('accessToken')) || (await storage.getItem('idToken'));
+        } catch (e) {
+          return null;
+        }
+      });
+      setLanguageProvider(() => i18n.language || 'es');
+      setTimezoneProvider(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
+      setVendorProvider(async () => {
+        try {
+          return await storage.getItem('vendorPersonId');
+        } catch (e) {
+          return null;
+        }
+      });
+
+      setGlobalErrorHandler((message, code) => {
+        if (code === '401') {
+          if (!isLoggingOut) {
+            logout();
+          }
+        } else {
+          const finalMsg = message || 'Ha ocurrido un error inesperado.';
+          if (Platform.OS === 'web') {
+            window.alert(`Error: ${finalMsg}`);
+          } else {
+            Alert.alert('Error', finalMsg);
+          }
+        }
+      });
+
+      // 2. Handle OAuth callback on Web (direct redirect, not popup)
+      if (Platform.OS === 'web' && window.location.search.includes('code=')) {
+        const code = new URLSearchParams(window.location.search).get('code');
+        if (code) {
+          // Clean up URL immediately
+          window.history.replaceState({}, document.title, window.location.pathname);
+          // Retrieve PKCE verifier stored before redirect
+          const codeVerifier = await storage.getItem('pkce_verifier') || '';
+          await exchangeCode(code, codeVerifier);
+          await storage.deleteItem('pkce_verifier');
+          return; // Tokens already set, skip loadSession
+        }
+      }
+
+      // 3. Attempt to restore existing session from storage
+      await loadSession();
+    };
+
+    initialize();
+  }, []);
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { code } = response.params;
+      if (!code) return; // Prevent exchange if it's a logout redirect
+
+      // On Web, the redirect callback is handled in initialize() to ensure PKCE verifier is restored from storage.
+      if (Platform.OS !== 'web') {
+        exchangeCode(code, (response as any).authenticationRequest?.codeVerifier || request?.codeVerifier);
+      }
+    }
+  }, [response, request]);
+
+  const loadSession = async () => {
+    try {
+      const idToken = await storage.getItem('idToken');
+      const accessToken = await storage.getItem('accessToken');
+      if (idToken || accessToken) {
+        isLoggingOut = false;
+        setAccessToken(accessToken);
+        setIdToken(idToken);
+        const tokenForBackend = idToken || accessToken!;
+        
+        // If web, set axios defaults directly as fallback. We can import axios dynamically or avoid it.
+        // For mobile, client.ts handles interceptors.
+        
+        const userCode = await getUserInfo(accessToken!);
+        const vid = await loadVendor(accessToken! || idToken!, userCode);
+        setVendorId(vid);
+      }
+    } catch (e) {
+      console.error('Failed to load session:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const exchangeCode = async (code: string, codeVerifier?: string) => {
+    if (!code) return;
+    setIsLoading(true);
+    try {
+      const verifier = codeVerifier || request?.codeVerifier || '';
+      const tokenResult = await AuthSession.exchangeCodeAsync(
+        {
+          clientId: ZITADEL_CLIENT_ID,
+          code,
+          redirectUri,
+          scopes: ['openid', 'profile', 'email', 'offline_access', 'urn:zitadel:iam:org:project:id:zitadel:aud'],
+          extraParams: { code_verifier: verifier },
+        },
+        discovery
+      );
+      
+      await storage.setItem('accessToken', tokenResult.accessToken);
+      if (tokenResult.idToken) {
+        await storage.setItem('idToken', tokenResult.idToken);
+      }
+      if (tokenResult.refreshToken) {
+        await storage.setItem('refreshToken', tokenResult.refreshToken);
+      }
+      setAccessToken(tokenResult.accessToken);
+      setIdToken(tokenResult.idToken || null);
+      
+      if (tokenResult.accessToken || tokenResult.idToken) {
+        isLoggingOut = false;
+        const tokenForBackend = tokenResult.accessToken || tokenResult.idToken;
+        const userCode = await getUserInfo(tokenResult.accessToken);
+        const vid = await loadVendor(tokenResult.accessToken || tokenResult.idToken || '', userCode);
+        setVendorId(vid);
+      }
+    } catch (err) {
+      console.error("Error exchanging code", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getUserInfo = async (token: string) => {
+    try {
+      const res = await fetch(`${ZITADEL_ISSUER}/oidc/v1/userinfo`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      setUser({
+        id: data.sub,
+        username: data.preferred_username,
+        name: data.name || data.preferred_username,
+        email: data.email,
+        roles: data['urn:zitadel:iam:org:project:roles'] ? Object.keys(data['urn:zitadel:iam:org:project:roles']) : []
+      });
+      return data.preferred_username;
+    } catch (err) {
+      console.error("Error fetching user profile", err);
+      return null;
+    }
+  };
+
+  const loadVendor = async (token: string, userCode: string | null): Promise<string | null> => {
+    try {
+      const dots = (token || '').split('.').length - 1;
+      console.log('[Auth Debug] loadVendor Token:', { length: token?.length, dots, userCode });
+      
+      if (userCode) {
+        // 2. Fetch person by code from CRM using fetch since axios is not in package.json
+        const apiBase = process.env.EXPO_PUBLIC_API_GATEWAY_URL || process.env.EXPO_PUBLIC_API_URL || process.env.API_GATEWAY_URL || 'https://api-dev-local.kplian.com';
+        const encodedCode = encodeURIComponent(userCode);
+        
+        try {
+          const res = await fetch(`${apiBase}/crm/api/v1/persons/by-code/${encodedCode}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (res.status === 401) {
+            console.warn('[Auth Debug] Persons endpoint returned 401. Token might lack scopes or backend rejected it. Not logging out to prevent infinite loop.');
+            return null;
+          }
+          
+          if (res.ok) {
+            const person = await res.json();
+            if (person && person.id) {
+              await storage.setItem('vendorPersonId', String(person.id));
+              console.log('[Auth Debug] Vendor ID set:', person.id);
+              return String(person.id);
+            }
+          } else if (res.status === 404) {
+            console.log('[Auth Debug] Person not found. Provisioning JIT...');
+            const createBody = {
+              code: userCode,
+              vendorCode: userCode,
+              name1: 'Unknown',
+              surname1: 'Unknown',
+              completeName: userCode,
+              type: 'nat'
+            };
+            
+            const createRes = await fetch(`${apiBase}/crm/api/v1/persons`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify(createBody)
+            });
+            
+            if (createRes.ok) {
+              const newPerson = await createRes.json();
+              if (newPerson && newPerson.id) {
+                await storage.setItem('vendorPersonId', String(newPerson.id));
+                console.log('[Auth Debug] Vendor ID created JIT:', newPerson.id);
+                return String(newPerson.id);
+              }
+            } else {
+              console.warn('[Auth Debug] Failed to create vendor JIT', createRes.status);
+            }
+          } else {
+            console.warn('[Auth Debug] Failed to fetch vendor info', res.status);
+          }
+        } catch (err: any) {
+          console.warn('[Auth Debug] Network error fetching vendor info', err.message);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading vendor session", err);
+    }
+    return null;
+  };
+
+  const login = async () => {
+    if (Platform.OS === 'web') {
+      // On Web: use direct page redirect (browsers block window.open from useEffect)
+      // Manually build PKCE flow
+      const codeVerifier = generateCodeVerifier();
+      const codeChallenge = await generateCodeChallenge(codeVerifier);
+      
+      // Store verifier to use on callback
+      await storage.setItem('pkce_verifier', codeVerifier);
+      
+      const params = new URLSearchParams({
+        client_id: ZITADEL_CLIENT_ID,
+        redirect_uri: redirectUri,
+        response_type: 'code',
+        scope: 'openid profile email offline_access urn:zitadel:iam:org:project:id:zitadel:aud',
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256',
+      });
+      
+      window.location.href = `${discovery.authorizationEndpoint}?${params.toString()}`;
+    } else {
+      // On Native: use popup (Expo AuthSession handles this correctly)
+      await promptAsync();
+    }
+  };
+
+  const logout = async () => {
+    if (isLoggingOut) return;
+    isLoggingOut = true;
+
+    const currentIdToken = idToken || (await storage.getItem('idToken'));
+
+    await storage.deleteItem('accessToken');
+    await storage.deleteItem('idToken');
+    await storage.deleteItem('refreshToken');
+    await storage.deleteItem('vendorPersonId');
+    
+    if (Platform.OS === 'web') {
+      const postLogoutUrl = window.location.origin;
+      let logoutUrl = `${ZITADEL_ISSUER}/oidc/v1/end_session?post_logout_redirect_uri=${encodeURIComponent(postLogoutUrl)}`;
+      if (currentIdToken) {
+        logoutUrl += `&id_token_hint=${currentIdToken}`;
+      }
+      window.location.href = logoutUrl;
+    } else {
+      const postLogoutUrl = redirectUri;
+      let logoutUrl = `${ZITADEL_ISSUER}/oidc/v1/end_session?post_logout_redirect_uri=${encodeURIComponent(postLogoutUrl)}`;
+      if (currentIdToken) {
+        logoutUrl += `&id_token_hint=${currentIdToken}`;
+      }
+      try {
+        await WebBrowser.openAuthSessionAsync(logoutUrl, redirectUri);
+      } catch (e) {
+        console.warn('Failed to clear Zitadel session on Native:', e);
+      }
+    }
+    
+    setUser(null);
+    setAccessToken(null);
+    setIdToken(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, accessToken, vendorId, isLoading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => useContext(AuthContext);
+
+export const useVendor = () => {
+  const { vendorId, user } = useAuth();
+  return { 
+    vendor: vendorId, 
+    vendorCode: user?.username || user?.email || null 
+  };
+};

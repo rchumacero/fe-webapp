@@ -1,0 +1,1 @@
+export type { Process, CreateProcessDto, UpdateProcessDto } from "@kplian/core";

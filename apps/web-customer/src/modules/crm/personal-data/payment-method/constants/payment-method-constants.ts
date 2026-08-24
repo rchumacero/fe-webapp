@@ -1,0 +1,31 @@
+export const PAYMENT_METHOD_CONSTANTS = {
+  TITLE: "crm.paymentMethod",
+  LIST_TITLE: "crm.paymentMethodsList",
+  CREATE_TITLE: "crm.paymentMethod",
+  DESCRIPTION_TITLE: "common.createDescription",
+  EDIT_TITLE: "crm.paymentMethod",
+  DESCRIPTION_EDIT: "common.editDescription",
+  SEARCH_PLACEHOLDER: "common.filter",
+  CONFIRM_DELETE: "common.confirmDelete",
+  RECORD_NOT_FOUND: "common.recordNotFound",
+  FORM: {
+    NAME: "crm.paymentMethodName",
+    TYPE: "crm.paymentMethodType",
+    DATA: "crm.paymentMethodData",
+    PRIORITY: "crm.priority",
+    EX_DATA: "crm.exPaymentData",
+    EX_NAME: "crm.paymentMethodNamePlaceholder",
+    SUBMIT: "common.save",
+    CANCEL: "common.cancel",
+    DIRTY_WARNING: "common.dirty_warning",
+    SELECT_OPTION: "common.selectOption",
+    CONFIRM_CANCEL: "common.confirmCancel",
+    YES_DISCARD: "common.yesDiscard",
+    NO_STAY: "common.noStay",
+  },
+  ROUTES: {
+    BACK: -1,
+    PAYMENT_METHOD: "/crm/payment-method",
+    PAYMENT_METHOD_NEW: "/crm/payment-method/new",
+  }
+};

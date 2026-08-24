@@ -20,6 +20,19 @@ const getGatewayUrl = () => {
       if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
     }
   }
+  
+  // Dynamic fallback based on runtime location or production build mode
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1' && !host.startsWith('192.168.')) {
+      return 'https://api.kplian.com';
+    }
+  }
+
+  if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production') {
+    return 'https://api.kplian.com';
+  }
+
   return 'http://local-dev-gateway.kplian.com';
 };
 

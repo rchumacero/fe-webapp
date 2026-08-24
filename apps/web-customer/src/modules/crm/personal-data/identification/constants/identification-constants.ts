@@ -1,0 +1,32 @@
+export const IDENTIFICATION_CONSTANTS = {
+  TITLE: "crm.identification.title",
+  LIST_TITLE: "crm.identificationDocument",
+  CREATE_TITLE: "crm.identificationDocument",
+  DESCRIPTION_TITLE: "common.createDescription",
+  DESCRIPTION_EDIT: "common.editDescription",
+  SEARCH_PLACEHOLDER: "common.filter",
+  CONFIRM_DELETE: "common.confirmDelete",
+  RECORD_NOT_FOUND: "common.recordNotFound",
+  FORM: {
+    TYPE: "common.type",
+    NUMBER: "common.identificationNumber",
+    PREFIX: "common.prefix",
+    SUFIX: "common.sufix",
+    PRIORITY: "common.priority",
+    SUBMIT: "common.save",
+    CANCEL: "common.cancel",
+    DIRTY_WARNING: "common.dirty_warning",
+    EX_IDENT_NUMBER: "crm.identificationNumberPlaceholder",
+    EX_PREFIX: "crm.identificationPrefixPlaceholder",
+    EX_SUFIX: "crm.identificationSufixPlaceholder",
+    SELECT_OPTION: "common.selectOption",
+    CONFIRM_CANCEL: "common.confirmCancel",
+    YES_DISCARD: "common.yesDiscard",
+    NO_STAY: "common.noStay",
+  },
+  ROUTES: {
+    BACK: -1,
+    IDENTIFICATION: "/crm/identification",
+    IDENTIFICATION_NEW: "/crm/identification/new",
+  }
+};

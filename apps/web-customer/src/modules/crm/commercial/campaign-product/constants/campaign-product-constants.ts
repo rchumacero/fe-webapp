@@ -1,0 +1,42 @@
+export const CAMPAIGN_PRODUCT_CONSTANTS = {
+  TITLE: "crm.campaignProduct.title",
+  LIST_TITLE: "crm.campaignProduct.listTitle",
+  CREATE_TITLE: "common.product",
+  DESCRIPTION_TITLE: "common.createDescription",
+  EDIT_TITLE: "common.product",
+  DESCRIPTION_EDIT: "common.editDescription",
+  SEARCH_PLACEHOLDER: "common.filter",
+  CONFIRM_DELETE: "common.delete",
+  RECORD_NOT_FOUND: "common.recordNotFound",
+  END_OF_RECORDS: "common.endOfRecords",
+  ACTIONS: "commercial.campaign.actions",
+  COLUMNS: {
+    PRODUCT: "common.product",
+    COST: "crm.commercialProduct.cost",
+    QUANTITY: "crm.commercialProduct.quantity",
+    UNIT_MEASURE: "crm.commercialProduct.unitMeasure",
+    STATUS: "common.status",
+  },
+  FORM: {
+    PRODUCT: "common.product",
+    COST: "crm.commercialProduct.cost",
+    QUANTITY: "crm.commercialProduct.quantity",
+    UNIT_MEASURE: "crm.commercialProduct.unitMeasure",
+    CONFIG_CODE: "crm.commercialProduct.configurationCode",
+    STATUS: "common.status",
+    SUBMIT: "common.save",
+    CANCEL: "common.cancel",
+    DIRTY_WARNING: "common.dirty_warning",
+    CONFIRM_CANCEL: "common.confirmCancel",
+    YES_DISCARD: "common.yesDiscard",
+    NO_STAY: "common.noStay",
+    FORM_STATUS: "common.formStatus",
+    FORM_MODIFIED: "common.formModified",
+    SELECT_OPTION: "common.selectOption"
+  },
+  ROUTES: {
+    BACK: -1,
+    CAMPAIGN_PRODUCT: "/crm/commercial/campaign-product",
+  },
+  EDIT_RECORD: "common.editRecord"
+};

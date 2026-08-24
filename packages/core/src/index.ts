@@ -47,6 +47,16 @@ export * from './modules/crm/sales/repositories/IPaymentRepository';
 
 // Access Module
 export * from './modules/access/entities/MenuItem';
+export * from './modules/access/entities/App';
+export * from './modules/access/repositories/IAppRepository';
+export * from './modules/access/entities/Menu';
+export * from './modules/access/repositories/IMenuRepository';
+export * from './modules/access/entities/Resource';
+export * from './modules/access/repositories/IResourceRepository';
+export * from './modules/access/entities/Role';
+export * from './modules/access/repositories/IRoleRepository';
+export * from './modules/access/entities/Profile';
+export * from './modules/access/repositories/IProfileRepository';
 export * from './modules/access/api/accessService';
 
 // Auth Module
