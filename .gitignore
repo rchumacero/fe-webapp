@@ -15,6 +15,7 @@ build/
 dist/
 .open-next/
 out_cloudflare/
+.vercel/
 
 # Build caches
 .turbo/
