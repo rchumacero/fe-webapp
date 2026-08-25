@@ -1,8 +1,5 @@
-"use client";
-
-import React from 'react';
-import { DashboardPage } from '@/modules/crm/dashboard/presentation/pages/DashboardPage';
+import { redirect } from 'next/navigation';
 
 export default function Home() {
-  return <DashboardPage />;
+  redirect("/customer/crm/sales");
 }

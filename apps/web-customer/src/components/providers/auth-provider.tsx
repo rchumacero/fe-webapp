@@ -15,21 +15,7 @@ let isLoggingOut = false;
 // Register a global error handler to show toasts for API errors
 setGlobalErrorHandler((message, code) => {
   if (code === '401') {
-    const isCustomerPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/customer');
-    if (isCustomerPath) {
-      return;
-    }
-    if (!isLoggingOut) {
-      isLoggingOut = true;
-      toast.error('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.', { 
-        title: 'Sesión Expirada',
-        duration: 5000 
-      });
-      setTimeout(() => {
-        sessionStorage.removeItem('vendor_selected');
-        signOut({ redirect: true, callbackUrl: '/login' });
-      }, 1000);
-    }
+    // In web-customer, we do not redirect to login on 401 errors
     return;
   }
 
