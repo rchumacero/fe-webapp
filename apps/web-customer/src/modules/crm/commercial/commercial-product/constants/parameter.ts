@@ -8,6 +8,7 @@ export const P_PLAN_SCHEDULE = 'GEN/MAIN/YN';
 export const P_TIME_BASED = 'GEN/MAIN/YN';
 export const P_REQUIRE_CONFIRMATION = 'GEN/MAIN/YN';
 export const P_ITEM_CODE = 'WAR/MAIN/ITEM';
+export const P_PRODUCT_TYPE = 'PR/GEN/TYP';
 export const PRODUCT_TYPE_UNIQUE = 'UNIQUE';
 export const PRODUCT_TYPE_COMBO = 'COMBO';
 
@@ -50,6 +51,10 @@ export const COMMERCIAL_PRODUCT_DOMAIN_PARAMETERS = [
   },
   {
     fullCode: P_ITEM_CODE,
+    vendorCode: ''
+  },
+  {
+    fullCode: P_PRODUCT_TYPE,
     vendorCode: ''
   }
 ];

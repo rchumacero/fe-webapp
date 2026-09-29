@@ -40,6 +40,16 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
     }
   }, [status, session, pathname, router, isMounted]);
 
+  const isPublicPage = pathname === '/login' || pathname?.startsWith('/customer');
+
+  if (isPublicPage) {
+    return (
+      <main className="min-h-screen bg-background">
+        {children}
+      </main>
+    );
+  }
+
   // Handle loading/redirect states after mounting
   const isPendingSelection = isMounted && 
     status === 'authenticated' && 
@@ -55,16 +65,6 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
           {!isMounted || status === 'loading' ? 'Loading system...' : 'Verifying identity context...'}
         </p>
       </div>
-    );
-  }
-
-  const isPublicPage = pathname === '/login' || pathname?.startsWith('/customer');
-
-  if (isPublicPage) {
-    return (
-      <main className="min-h-screen bg-background">
-        {children}
-      </main>
     );
   }
 

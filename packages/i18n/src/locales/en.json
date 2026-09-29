@@ -68,6 +68,7 @@
     "category": "Category",
     "description": "Description",
     "product": "Product",
+    "version": "Version",
     "monday": "Monday",
     "tuesday": "Tuesday",
     "wednesday": "Wednesday",
@@ -279,6 +280,7 @@
     "commercialProduct": {
       "title": "Commercial Product",
       "listTitle": "Commercial Products List",
+      "productType": "Product Type",
       "create": "Register Commercial Product",
       "createDescription": "Add a new product to this campaign",
       "edit": "Edit Commercial Product",
@@ -311,12 +313,52 @@
       "appointment": "Appointment"
     },
     "campaignProduct": {
-      "listTitle": "Products List"
+      "listTitle": "Products List",
+      "itemWarehouse": "Item Warehouse",
+      "product": "Product",
+      "selectProduct": "Product",
+      "version": "Version"
     },
     "collaborator": {
       "view": "View Collaborator",
       "title": "Collaborators",
       "listTitle": "Collaborators"
+    },
+    "commercialProductPrice": {
+      "title": "Pricing",
+      "listTitle": "Commercial Products Prices",
+      "listDescription": "Manage commercial product prices for each campaign",
+      "form": {
+        "campaign": "Campaign",
+        "commercialProduct": "Commercial Product",
+        "price": "Price",
+        "discountPrice": "Discount Price",
+        "discountPercent": "Discount Percent",
+        "startDate": "Start Date",
+        "endDate": "End Date"
+      },
+      "validation": {
+        "campaignRequired": "Campaign is required",
+        "commercialProductRequired": "Commercial Product is required",
+        "priceRequired": "Price is required",
+        "startDateRequired": "Start Date is required",
+        "endDateRequired": "End Date is required"
+      }
+    },
+    "commercialProductPicture": {
+      "title": "Pictures",
+      "listTitle": "Commercial Products Pictures",
+      "listDescription": "Manage commercial product pictures for each campaign",
+      "form": {
+        "campaign": "Campaign",
+        "commercialProduct": "Commercial Product",
+        "file": "Picture"
+      },
+      "validation": {
+        "campaignRequired": "Campaign is required",
+        "commercialProductRequired": "Commercial Product is required",
+        "fileRequired": "Picture is required"
+      }
     }
   },
   "dashboard": {

@@ -8,6 +8,12 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "mobile": "npm --workspace=apps/mobile run start",
+    "mobile:web": "npm --workspace=apps/mobile run web",
+    "mobile:android": "npm --workspace=apps/mobile run android",
+    "mobile:ios": "npm --workspace=apps/mobile run ios",
+    "mobile-customer": "npm --workspace=apps/mobile-customer run start",
+    "mobile-customer:web": "npm --workspace=apps/mobile-customer run web",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "test": "turbo run test",

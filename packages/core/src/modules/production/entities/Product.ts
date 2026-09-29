@@ -6,6 +6,8 @@ export interface Product {
   type?: string;
   description?: string;
   unitMeasureCode?: string;
+  itemCode?: string;
+  version?: string;
   createdAt?: string;
   createdBy?: string;
   updatedAt?: string;
@@ -22,8 +24,21 @@ export interface CreateProductDto {
   type?: string;
   description?: string;
   unitMeasureCode?: string;
+  itemCode?: string;
 }
 
 export interface UpdateProductDto extends Partial<CreateProductDto> {
   id: string;
 }
+
+export interface ProductVersionDto {
+  id?: string;
+  code: string;
+  name: string;
+  description?: string;
+  codeConfiguration?: string;
+  configurationCode?: string;
+  version?: string;
+  unitMeasureCode?: string;
+}
+

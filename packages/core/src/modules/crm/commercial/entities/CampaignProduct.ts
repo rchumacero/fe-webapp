@@ -5,6 +5,8 @@ export interface CampaignProduct {
   quantity: number;
   unitMeasureCode: string;
   itemCode?: string | null;
+  productCode?: string | null;
+  version?: string | null;
   status?: string;
   createdAt?: string;
   createdBy?: string;
@@ -18,6 +20,8 @@ export interface CreateCampaignProductDto {
   quantity: number;
   unitMeasureCode: string;
   itemCode?: string | null;
+  productCode?: string | null;
+  version?: string | null;
   status?: string;
 }
 

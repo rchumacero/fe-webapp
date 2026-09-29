@@ -68,6 +68,7 @@
     "category": "Categoría",
     "description": "Descripción",
     "product": "Producto",
+    "version": "Versión",
     "monday": "Lunes",
     "tuesday": "Martes",
     "wednesday": "Miércoles",
@@ -275,6 +276,13 @@
       "time": "Hora",
       "noProductId": "No se proporcionó ID de Producto Comercial",
       "appointment": "Cita"
+    },
+    "campaignProduct": {
+      "listTitle": "Lista de Productos",
+      "itemWarehouse": "Almacén de Ítems",
+      "product": "Producto",
+      "selectProduct": "Producto",
+      "version": "Versión"
     },
     "collaborator": {
       "view": "Ver Colaborador",

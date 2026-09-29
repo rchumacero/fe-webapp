@@ -490,9 +490,6 @@ export default function SalesScreen({ onBack, onNavigate }: SalesScreenProps) {
         </View>
         <View style={styles.headerRightActions}>
           <TouchableOpacity style={styles.headerActionButton} onPress={() => {}}>
-            <Ionicons name="search" size={20} color={Colors.foreground} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.headerActionButton} onPress={() => {}}>
             <Ionicons name="funnel" size={20} color={Colors.foreground} />
           </TouchableOpacity>
         </View>

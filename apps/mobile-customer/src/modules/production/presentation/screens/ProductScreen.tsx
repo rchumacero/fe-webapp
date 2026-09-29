@@ -15,12 +15,13 @@ import {
 import { useTranslation } from '@kplian/i18n';
 import { MainLayout } from '../../../../shared/layout/MainLayout';
 import { Colors, Spacing, Typography } from '../../../../shared/theme/constants';
-import { ProductRepositoryImpl } from '@kplian/infrastructure';
-import { Product, loadDomainParameters, getBatchParameters } from '@kplian/core';
+import { ProductRepositoryImpl, WarehouseRepositoryImpl } from '@kplian/infrastructure';
+import { Product, Warehouse, loadDomainParameters, getBatchParameters } from '@kplian/core';
 import { Ionicons } from '@expo/vector-icons';
 import { useVendor } from '../../../../shared/auth/AuthContext';
 
 const productRepo = new ProductRepositoryImpl();
+const warehouseRepo = new WarehouseRepositoryImpl();
 
 interface ProductScreenProps {
   onBack: () => void;
@@ -36,9 +37,10 @@ export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Dropdown options loaded from parameters
+  // Dropdown options loaded from parameters and warehouse endpoint
   const [productTypes, setProductTypes] = useState<any[]>([]);
   const [unitMeasures, setUnitMeasures] = useState<any[]>([]);
+  const [warehouseItems, setWarehouseItems] = useState<Warehouse[]>([]);
 
   // Form State
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'detail' | null>(null);
@@ -47,6 +49,7 @@ export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps
   const [formCode, setFormCode] = useState('');
   const [formType, setFormType] = useState('');
   const [formUnitMeasure, setFormUnitMeasure] = useState('');
+  const [formItemCode, setFormItemCode] = useState('');
   const [formDescription, setFormDescription] = useState('');
 
   // Dropdown Picker Modal State
@@ -114,6 +117,20 @@ export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps
     fetchParameters();
   }, []);
 
+  // Load Warehouse Items
+  useEffect(() => {
+    const fetchWarehouseItems = async () => {
+      try {
+        const vendor = currentVendorCode || 'rodrychm@gmail.com';
+        const data = await warehouseRepo.getByVendor(vendor);
+        setWarehouseItems(data || []);
+      } catch (error) {
+        console.error('Failed to load warehouse items:', error);
+      }
+    };
+    fetchWarehouseItems();
+  }, [currentVendorCode]);
+
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
@@ -124,6 +141,7 @@ export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps
     setFormCode('');
     setFormType(productTypes[0]?.CODE || productTypes[0]?.code || '');
     setFormUnitMeasure(unitMeasures[0]?.CODE || unitMeasures[0]?.code || '');
+    setFormItemCode('');
     setFormDescription('');
     setModalMode('create');
   };
@@ -134,6 +152,7 @@ export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps
     setFormCode(product.code);
     setFormType(product.type || '');
     setFormUnitMeasure(product.unitMeasureCode || '');
+    setFormItemCode(product.itemCode || '');
     setFormDescription(product.description || '');
     setModalMode('edit');
   };
@@ -158,6 +177,7 @@ export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps
           name: formName,
           type: formType || undefined,
           unitMeasureCode: formUnitMeasure || undefined,
+          itemCode: formItemCode || undefined,
           description: formDescription || undefined
         });
         Alert.alert('Success', 'Product created successfully.');
@@ -169,6 +189,7 @@ export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps
           name: formName,
           type: formType || undefined,
           unitMeasureCode: formUnitMeasure || undefined,
+          itemCode: formItemCode || undefined,
           description: formDescription || undefined
         });
         Alert.alert('Success', 'Product updated successfully.');
@@ -233,6 +254,13 @@ export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps
     return item ? (item.NAME || item.name || item.description || val) : val;
   };
 
+  const getWarehouseLabel = (data: Warehouse[], val: string) => {
+    const item = data.find(
+      i => (i.code === val || i.id === val)
+    );
+    return item ? `${item.name} (${item.code})` : val;
+  };
+
   return (
     <MainLayout headerTitle={t('production.product.title', 'Product Management')}>
       <TouchableOpacity style={styles.backLink} onPress={onBack}>
@@ -286,6 +314,9 @@ export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps
               <View style={styles.productInfo}>
                 <Text style={styles.productName}>{product.name}</Text>
                 <Text style={styles.productDesc}>Code: {product.code}</Text>
+                {product.itemCode ? (
+                  <Text style={styles.productDesc}>Item: {getWarehouseLabel(warehouseItems, product.itemCode)}</Text>
+                ) : null}
                 {product.type && (
                   <Text style={styles.typeTag}>
                     {getParamLabel(productTypes, product.type)}
@@ -357,6 +388,12 @@ export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps
                   </Text>
                 </View>
                 <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Item / Warehouse</Text>
+                  <Text style={styles.detailValue}>
+                    {getWarehouseLabel(warehouseItems, selectedProduct.itemCode || '') || 'None'}
+                  </Text>
+                </View>
+                <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Unit of Measure</Text>
                   <Text style={styles.detailValue}>
                     {getParamLabel(unitMeasures, selectedProduct.unitMeasureCode || '') || 'None'}
@@ -380,6 +417,22 @@ export default function ProductScreen({ onBack, onNavigate }: ProductScreenProps
                 >
                   <Text style={styles.dropdownValue}>
                     {getParamLabel(productTypes, formType) || 'Select Type...'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color={Colors.muted} />
+                </TouchableOpacity>
+
+                <Text style={styles.inputLabel}>Item / Warehouse</Text>
+                <TouchableOpacity 
+                  style={styles.dropdownTrigger}
+                  onPress={() => openDropdownPicker(
+                    'Select Item',
+                    warehouseItems.map(w => ({ CODE: w.code, NAME: `${w.name} (${w.code})` })),
+                    formItemCode,
+                    setFormItemCode
+                  )}
+                >
+                  <Text style={styles.dropdownValue}>
+                    {getWarehouseLabel(warehouseItems, formItemCode) || 'Select Item / Warehouse...'}
                   </Text>
                   <Ionicons name="chevron-down" size={20} color={Colors.muted} />
                 </TouchableOpacity>

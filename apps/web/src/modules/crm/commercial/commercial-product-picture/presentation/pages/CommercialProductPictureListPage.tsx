@@ -54,6 +54,29 @@ export default function CommercialProductPictureListPage({ commercialProductId }
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [formOrder, setFormOrder] = useState('1');
 
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleDivClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        setSelectedFile(file);
+      } else {
+        toast.error("Please drop an image file.");
+      }
+    }
+  };
+
+
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -269,11 +292,17 @@ export default function CommercialProductPictureListPage({ commercialProductId }
           <form onSubmit={handleSave} className="space-y-4 pt-2">
             <div className="space-y-2">
               <Label>File</Label>
-              <div className="border-2 border-dashed border-border/45 rounded-lg p-6 hover:border-primary/50 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer bg-card/50 relative">
-                <Input
+              <div 
+                onClick={handleDivClick}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                className="border-2 border-dashed border-border/45 rounded-lg p-6 hover:border-primary/50 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer bg-card/50 relative"
+              >
+                <input
                   type="file"
+                  ref={fileInputRef}
                   accept="image/*"
-                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  style={{ display: 'none' }}
                   onChange={(e) => {
                     if (e.target.files && e.target.files.length > 0) {
                       setSelectedFile(e.target.files[0]);

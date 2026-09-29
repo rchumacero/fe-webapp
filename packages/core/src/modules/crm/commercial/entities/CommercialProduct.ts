@@ -5,19 +5,22 @@ export interface CommercialProduct {
   name: string;
   description: string;
   priceType: string;
-  totalCost: number;
   channelCode: string;
+  type?: string;
+  totalCost?: number;
   scheduleTypeCode?: string;
   timeBasedCode?: string;
   requireConfirmationCode?: string;
-  type: 'UNIQUE' | 'COMBO';
-  productCode?: string;
-  cost?: number;
-  quantity?: number;
-  unitMeasureCode?: string;
-  configurationCode?: string;
+  productTypeCode?: string;
   planScheduleCode?: string;
   warehouseCode?: string;
+  itemCode?: string | null;
+  productCode?: string | null;
+  version?: string | null;
+  cost?: number | null;
+  quantity?: number | null;
+  unitMeasureCode?: string | null;
+  configurationCode?: string | null;
   status?: string;
   createdAt?: string;
   createdBy?: string;
@@ -32,30 +35,21 @@ export interface CreateCommercialProductDto {
   name: string;
   description: string;
   priceType: string;
-  totalCost: number;
   channelCode: string;
   scheduleTypeCode?: string;
   timeBasedCode?: string;
   requireConfirmationCode?: string;
-  type: 'UNIQUE' | 'COMBO';
-  productCode?: string;
-  cost?: number;
-  quantity?: number;
-  unitMeasureCode?: string;
-  configurationCode?: string;
+  productTypeCode?: string;
   planScheduleCode?: string;
   warehouseCode?: string;
+  itemCode?: string | null;
+  productCode?: string | null;
+  version?: string | null;
+  cost?: number | null;
+  quantity?: number | null;
+  unitMeasureCode?: string | null;
+  configurationCode?: string | null;
   status: string;
-
-  campaignProduct?: {
-    commercialProductId?: string;
-    productCode: string;
-    cost: number;
-    quantity: number;
-    unitMeasureCode: string;
-    configurationCode: string;
-    planScheduleCode?: string;
-  };
 }
 
 export interface UpdateCommercialProductDto extends Partial<CreateCommercialProductDto> {

@@ -43,30 +43,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cachedVendor: string | null = null;
     let cachedToken: string | null = null;
     let lastFetch = 0;
+    let sessionPromise: Promise<{ token: string | null; vendor: string | null }> | null = null;
 
     const getOrFetchSession = async () => {
       const now = Date.now();
-      // Cache session for 2 seconds to avoid spamming /api/auth/session during bursts
-      if (now - lastFetch < 2000) {
+      // Cache session for 5 seconds to avoid spamming /api/auth/session during bursts
+      if (lastFetch > 0 && now - lastFetch < 5000) {
         return { token: cachedToken, vendor: cachedVendor };
       }
 
-      try {
-        const session = await getSession();
-        cachedToken = (session as any)?.accessToken || null;
-        cachedVendor = (session as any)?.vendor || null;
-        lastFetch = now;
-
-        // If we got a token, make sure API is unlocked
-        if (cachedToken) {
-          isLoggingOut = false;
-          unlockApi();
-        }
-      } catch (error) {
-        console.error("AuthProvider: Failed to fetch session", error);
+      // If a fetch is already in flight, reuse the same promise
+      if (sessionPromise) {
+        return sessionPromise;
       }
-      
-      return { token: cachedToken, vendor: cachedVendor };
+
+      sessionPromise = (async () => {
+        try {
+          const session = await getSession();
+          cachedToken = (session as any)?.accessToken || null;
+          cachedVendor = (session as any)?.vendor || null;
+          lastFetch = Date.now();
+
+          // If we got a token, make sure API is unlocked
+          if (cachedToken) {
+            isLoggingOut = false;
+            unlockApi();
+          }
+        } catch (error) {
+          console.error("AuthProvider: Failed to fetch session", error);
+        } finally {
+          sessionPromise = null;
+        }
+
+        return { token: cachedToken, vendor: cachedVendor };
+      })();
+
+      return sessionPromise;
     };
 
     // Inject providers

@@ -23,6 +23,8 @@ export const CAMPAIGN_PRODUCT_CONSTANTS = {
     QUANTITY: "crm.commercialProduct.quantity",
     UNIT_MEASURE: "crm.commercialProduct.unitMeasure",
     CONFIG_CODE: "crm.commercialProduct.configurationCode",
+    PRODUCT_CODE: "common.product",
+    VERSION: "common.version",
     STATUS: "common.status",
     SUBMIT: "common.save",
     CANCEL: "common.cancel",

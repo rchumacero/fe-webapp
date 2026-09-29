@@ -31,14 +31,22 @@ export const bucketService = {
   },
 
   getPresignedUrl: async (digitalContentCode: string) => {
-    const response = await bucketApi.get(`/v1/files/${digitalContentCode}/presigned-url`);
-    // response.data is expected to be an array [{ url: '...', type: '...' }, ...]
+    const response = await bucketApi.get(`/v1/files/public/${digitalContentCode}/presigned-url`);
     return response.data;
   },
 
   getPresignedUrlsBatch: async (ids: string[]) => {
-    const response = await bucketApi.post('/v1/files/presigned-urls-batch', { ids });
-    // response.data is expected to be [{ id: "...", presignedUrl: "..." }]
+    const response = await bucketApi.post('/v1/files/public/presigned-urls-batch', { ids });
+    return response.data;
+  },
+
+  getPublicPresignedUrl: async (digitalContentCode: string) => {
+    const response = await bucketApi.get(`/v1/files/public/${digitalContentCode}/presigned-url`);
+    return response.data;
+  },
+
+  getPublicPresignedUrlsBatch: async (ids: string[]) => {
+    const response = await bucketApi.post('/v1/files/public/presigned-urls-batch', { ids });
     return response.data;
   },
 };

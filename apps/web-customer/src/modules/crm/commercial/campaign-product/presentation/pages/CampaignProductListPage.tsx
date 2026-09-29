@@ -95,7 +95,8 @@ export default function CampaignProductListPage({ commercialProductId }: Campaig
     }
   }, [commercialProductId, fetchProducts, vendorCode, fetchBaseProducts]);
 
-  const getProductName = (productCode: string) => {
+  const getProductName = (productCode?: string | null) => {
+    if (!productCode) return '';
     const baseProduct = baseProducts.find(p => p.code === productCode);
     return baseProduct ? baseProduct.name : productCode;
   };

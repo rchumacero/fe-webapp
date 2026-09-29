@@ -9,6 +9,7 @@ export const PRODUCT_ROUTES = {
 // Backend Endpoints
 export const PRODUCT_API_ROUTES = {
   PRODUCT: '/v1/product',
+  PRODUCT_VERSIONS: '/v1/product/versions',
   PRODUCT_UPDATE: (id: string | number) => `/v1/product/${id}`,
   PRODUCT_DELETE: (id: string | number) => `/v1/product/${id}`,
   PRODUCT_BY_ID: (id: string | number) => `/v1/product/${id}`,

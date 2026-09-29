@@ -216,7 +216,7 @@ export default function CommercialProductListPage({ campaignId }: CommercialProd
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground mt-1">
                     <DollarSign size={14} className="text-primary/60" />
-                    <span>{getParameterLabel(P_PRICE_TYPE, product.priceType || '')}: {product.totalCost}</span>
+                    <span>{getParameterLabel(P_PRICE_TYPE, product.priceType || '')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground mt-1">
                     <Badge variant={String(product.status).toLowerCase() === 'active' || String(product.status).toLowerCase() === 'ac' ? 'default' : 'secondary'} className="text-[10px] py-0 h-4 mr-1">

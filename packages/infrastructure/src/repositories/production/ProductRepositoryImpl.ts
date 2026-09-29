@@ -1,5 +1,5 @@
 import { createApiClient } from "../../api/client";
-import { Product, CreateProductDto, UpdateProductDto, IProductRepository } from "@kplian/core";
+import { Product, CreateProductDto, UpdateProductDto, IProductRepository, ProductVersionDto } from "@kplian/core";
 
 export class ProductRepositoryImpl implements IProductRepository {
   private api = createApiClient('production');
@@ -7,6 +7,11 @@ export class ProductRepositoryImpl implements IProductRepository {
   async getAll(): Promise<Product[]> {
     const response = await this.api.get('/v1/product/search', { params: { size: 100 } });
     return response.data?.content || response.data?.data || response.data || [];
+  }
+
+  async getVersions(params?: { vendorCode?: string; page?: number; size?: number }): Promise<ProductVersionDto[]> {
+    const response = await this.api.get('/v1/product/versions', { params });
+    return Array.isArray(response.data) ? response.data : (response.data?.content || response.data?.data || []);
   }
 
   async getById(id: string): Promise<Product> {

@@ -19,11 +19,36 @@ export class ProductRepositoryImpl {
     }
   }
 
+  async getVersions(params?: { vendorCode?: string; page?: number; size?: number }): Promise<any[]> {
+    try {
+      const response = await this.api.get<any[]>(
+        PRODUCT_API_ROUTES.PRODUCT_VERSIONS,
+        { params }
+      );
+      return Array.isArray(response.data) ? response.data : ((response.data as any)?.content || (response.data as any)?.data || []);
+    } catch (error) {
+      console.error("ProductRepository: getVersions failed:", error);
+      return [];
+    }
+  }
+
   async getById(id: string): Promise<Product> {
     const response = await this.api.get<Product>(
       PRODUCT_API_ROUTES.PRODUCT_BY_ID(id)
     );
     return response.data;
+  }
+
+  async getByVendor(vendorCode: string): Promise<Product[]> {
+    try {
+      const response = await this.api.get<Product[]>(PRODUCT_API_ROUTES.PRODUCT, {
+        params: { vendorCode }
+      });
+      return response.data || [];
+    } catch (error) {
+      console.error("ProductRepository: getByVendor failed:", error);
+      return [];
+    }
   }
 
   async create(data: CreateProductDto): Promise<Product> {

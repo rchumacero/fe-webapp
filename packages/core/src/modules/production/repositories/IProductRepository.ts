@@ -1,4 +1,4 @@
-import { Product, CreateProductDto, UpdateProductDto } from "../entities/Product";
+import { Product, CreateProductDto, UpdateProductDto, ProductVersionDto } from "../entities/Product";
 
 export interface IProductRepository {
   getAll(): Promise<Product[]>;
@@ -6,6 +6,7 @@ export interface IProductRepository {
   getByCode(code: string): Promise<Product>;
   getByVendor(vendorCode: string): Promise<Product[]>;
   getByType(type: string): Promise<Product[]>;
+  getVersions(params?: { vendorCode?: string; page?: number; size?: number }): Promise<ProductVersionDto[]>;
   search(params: {
     vendorCode?: string;
     code?: string;

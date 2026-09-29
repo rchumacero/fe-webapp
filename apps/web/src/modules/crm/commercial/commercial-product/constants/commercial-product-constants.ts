@@ -32,6 +32,9 @@ export const COMMERCIAL_PRODUCT_CONSTANTS = {
     UNIQUE_PRODUCT: "crm.commercialProduct.uniqueProduct",
     COMBO: "crm.commercialProduct.combo",
     BASE_PRODUCT: "common.product",
+    PRODUCT_CODE: "common.product",
+    VERSION: "common.version",
+    ITEM_CODE: "common.product",
     COST: "crm.commercialProduct.cost",
     QUANTITY: "crm.commercialProduct.quantity",
     UNIT_MEASURE: "crm.commercialProduct.unitMeasure",
@@ -46,10 +49,13 @@ export const COMMERCIAL_PRODUCT_CONSTANTS = {
     FORM_MODIFIED: "common.formModified",
     SELECT_OPTION: "common.selectOption",
     SCHEDULE_TYPE_CODE: "crm.commercialProduct.scheduleTypeCode",
+    SCHEDULE_TYPE: "crm.commercialProduct.scheduleTypeCode",
     PLAN_SCHEDULE: "crm.commercialProduct.planScheduleCode",
     TIME_BASED: "crm.commercialProduct.timeBasedCode",
     REQUIRE_CONFIRMATION: "crm.commercialProduct.requireConfirmationCode",
-    WAREHOUSE: "crm.commercialProduct.warehouseCode"
+    WAREHOUSE: "crm.commercialProduct.warehouseCode",
+    PRODUCT_TYPE: "crm.commercialProduct.productType",
+    ADVANCED_CONFIG: "common.advancedConfig"
   },
   VALIDATION: {
     CAMPAIGN_REQUIRED: "crm.commercialProduct.validation.campaignRequired",

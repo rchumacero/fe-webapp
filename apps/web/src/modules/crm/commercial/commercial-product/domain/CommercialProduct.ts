@@ -5,19 +5,28 @@ export interface CommercialProduct {
   name: string;
   description: string;
   priceType: string;
-  totalCost: number;
   channelCode: string;
-  type: 'UNIQUE' | 'COMBO';
-  productCode?: string;
-  cost?: number;
-  quantity?: number;
-  unitMeasureCode?: string;
-  configurationCode?: string;
+  type?: string;
+  totalCost?: number;
+  productTypeCode?: string;
+  scheduleTypeCode?: string;
+  timeBasedCode?: string;
+  planScheduleCode?: string;
+  requireConfirmationCode?: string;
+  warehouseCode?: string;
+  itemCode?: string | null;
+  productCode?: string | null;
+  version?: string | null;
+  cost?: number | null;
+  quantity?: number | null;
+  unitMeasureCode?: string | null;
+  configurationCode?: string | null;
   status?: string;
   createdAt?: string;
   createdBy?: string;
   updatedAt?: string;
   updatedBy?: string;
+  numberProducts?: number;
 }
 
 export interface CreateCommercialProductDto {
@@ -26,14 +35,20 @@ export interface CreateCommercialProductDto {
   name: string;
   description: string;
   priceType: string;
-  totalCost: number;
   channelCode: string;
-  type: 'UNIQUE' | 'COMBO';
-  productCode?: string;
-  cost?: number;
-  quantity?: number;
-  unitMeasureCode?: string;
-  configurationCode?: string;
+  productTypeCode?: string;
+  scheduleTypeCode?: string;
+  timeBasedCode?: string;
+  planScheduleCode?: string;
+  requireConfirmationCode?: string;
+  warehouseCode?: string;
+  itemCode?: string | null;
+  productCode?: string | null;
+  version?: string | null;
+  cost?: number | null;
+  quantity?: number | null;
+  unitMeasureCode?: string | null;
+  configurationCode?: string | null;
   status: string;
 }
 

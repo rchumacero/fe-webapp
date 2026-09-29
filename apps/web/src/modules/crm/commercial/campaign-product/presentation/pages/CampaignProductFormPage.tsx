@@ -12,7 +12,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Save, X, ArrowLeft, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useForm, Controller, SubmitHandler, useWatch } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useDomainParameters } from '@/hooks/use-domain-parameters';
@@ -28,10 +28,12 @@ const campaignProductSchema = z.object({
   quantity: z.coerce.number().min(1, "Quantity must be >= 1"),
   unitMeasureCode: z.string().min(1, "Unit of measure is required"),
   itemCode: z.string().optional().nullable(),
+  productCode: z.string().optional().nullable(),
+  version: z.string().optional().nullable(),
   status: z.string().min(1, "Status is required"),
 });
 
-type CampaignProductFormData = z.infer<typeof campaignProductSchema>;
+type CampaignProductFormData = z.output<typeof campaignProductSchema>;
 
 interface CampaignProductFormProps {
   id?: string;
@@ -41,6 +43,7 @@ interface CampaignProductFormProps {
 export default function CampaignProductFormPage({ id, commercialProductId }: CampaignProductFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
+  const { vendorCode } = useVendor();
 
   const { data: parametersData } = useDomainParameters({
     parameters: CAMPAIGN_PRODUCT_DOMAIN_PARAMETERS
@@ -52,6 +55,22 @@ export default function CampaignProductFormPage({ id, commercialProductId }: Cam
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [sourceType, setSourceType] = useState<'ITEM_WAREHOUSE' | 'PRODUCT'>('ITEM_WAREHOUSE');
+  const [baseProducts, setBaseProducts] = useState<Product[]>([]);
+  const [productsList, setProductsList] = useState<Product[]>([]);
+
+  useEffect(() => {
+    if (vendorCode) {
+      productRepository
+        .getByVendor(vendorCode)
+        .then((data) => setBaseProducts(data || []))
+        .catch((err) => console.error('Error fetching base products by vendor:', err));
+    }
+    productRepository
+      .getVersions()
+      .then((data) => setProductsList(data || []))
+      .catch((err) => console.error('Error fetching product versions list:', err));
+  }, [vendorCode]);
 
   const {
     register,
@@ -61,13 +80,15 @@ export default function CampaignProductFormPage({ id, commercialProductId }: Cam
     setValue,
     formState: { errors, isDirty },
   } = useForm<CampaignProductFormData>({
-    resolver: zodResolver(campaignProductSchema),
+    resolver: zodResolver(campaignProductSchema) as any,
     defaultValues: {
       commercialProductId: commercialProductId,
       cost: 0,
       quantity: 1,
       unitMeasureCode: '',
       itemCode: '',
+      productCode: '',
+      version: '',
       status: 'ACTIVE',
     }
   });
@@ -84,6 +105,8 @@ export default function CampaignProductFormPage({ id, commercialProductId }: Cam
             quantity: product.quantity,
             unitMeasureCode: product.unitMeasureCode,
             itemCode: product.itemCode || '',
+            productCode: product.productCode || '',
+            version: product.version || '',
             status: product.status || 'ACTIVE',
           });
         } catch (error) {
@@ -147,29 +170,115 @@ export default function CampaignProductFormPage({ id, commercialProductId }: Cam
         <Card className="border-border/40 shadow-xl overflow-hidden bg-card/50 backdrop-blur-sm">
           <CardContent className="p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.PRODUCT)}</label>
-                <Controller
-                  name="itemCode"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      value={field.value || ''}
-                      className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
-                    >
-                      <option value="">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.SELECT_OPTION)}</option>
-                      {itemCodeOptions.map((p: any, idx: number) => {
-                        const val = p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '');
-                        const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
-                        return <option key={`${val}-${idx}`} value={val}>{label}</option>;
-                      })}
-                    </select>
-                  )}
+              {/* Type selector: Item Warehouse vs Product */}
+              <div className="space-y-2 col-span-full md:col-span-1">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                  {t('common.type') || 'Create Type'}
+                </label>
+                <select
+                  value={sourceType}
+                  onChange={(e) => {
+                    const newType = e.target.value as 'ITEM_WAREHOUSE' | 'PRODUCT';
+                    setSourceType(newType);
+                    setValue('itemCode', '');
+                    if (newType === 'ITEM_WAREHOUSE') {
+                      setValue('productCode', null);
+                      setValue('version', '', { shouldValidate: true, shouldDirty: true });
+                    }
+                  }}
+                  className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer font-medium"
+                >
+                  <option value="ITEM_WAREHOUSE">{t('crm.campaignProduct.itemWarehouse') || 'Item Warehouse'}</option>
+                  <option value="PRODUCT">{t('crm.campaignProduct.product') || 'Product'}</option>
+                </select>
+              </div>
+
+              {/* Conditional Field: Item Warehouse Dropdown */}
+              {sourceType === 'ITEM_WAREHOUSE' && (
+                <div className="space-y-2 col-span-full md:col-span-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                    {t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.PRODUCT) || 'Item Code / Warehouse'}
+                  </label>
+                  <Controller
+                    name="itemCode"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        value={field.value || ''}
+                        className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                      >
+                        <option value="">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.SELECT_OPTION)}</option>
+                        {itemCodeOptions.map((p: any, idx: number) => {
+                          const val = p.code || p.CODE || p.value || p.id || p.fullCode || (typeof p === 'string' ? p : '');
+                          const label = p.name || p.NAME || p.label || p.description || val || `Item ${idx}`;
+                          return <option key={`${val}-${idx}`} value={val}>{label}</option>;
+                        })}
+                      </select>
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* Conditional Field: Product Dropdown */}
+              {sourceType === 'PRODUCT' && (
+                <div className="space-y-2 col-span-full md:col-span-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                    {t('crm.campaignProduct.product') || t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.PRODUCT_CODE) || 'Product'}
+                  </label>
+                  <Controller
+                    name="productCode"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        value={field.value || ''}
+                        onChange={(e) => {
+                          const selectedCode = e.target.value;
+                          field.onChange(selectedCode);
+                          setValue('itemCode', selectedCode);
+                          const prods = productsList.length > 0 ? productsList : baseProducts;
+                          const selectedProd = prods.find((p) => p.code === selectedCode || p.id === selectedCode);
+                          if (selectedProd) {
+                            const prodVersion = (selectedProd as any).codeConfiguration || (selectedProd as any).code_configuration || (selectedProd as any).configurationCode || selectedProd.version || '';
+                            setValue('version', prodVersion, { shouldValidate: true, shouldDirty: true });
+                            if (selectedProd.unitMeasureCode) {
+                              setValue('unitMeasureCode', selectedProd.unitMeasureCode);
+                            }
+                          } else {
+                            setValue('version', '', { shouldValidate: true, shouldDirty: true });
+                          }
+                        }}
+                        className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
+                      >
+                        <option value="">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.SELECT_OPTION)}</option>
+                        {(productsList.length > 0 ? productsList : baseProducts).map((p: Product, idx: number) => {
+                          const codeVal = p.code || p.id || `PROD-${idx}`;
+                          const label = p.name ? `${p.name} (${codeVal})` : codeVal;
+                          return <option key={`${codeVal}-${idx}`} value={codeVal}>{label}</option>;
+                        })}
+                      </select>
+                    )}
+                  />
+                  {errors.productCode && <p className="text-[10px] text-destructive font-medium ml-1">{errors.productCode.message}</p>}
+                </div>
+              )}
+
+              {/* Version */}
+              <div className="space-y-2 col-span-full md:col-span-1">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                  {t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.VERSION)}
+                </label>
+                <Input
+                  disabled
+                  placeholder={t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.VERSION)}
+                  {...register("version")}
+                  className="bg-muted/50 cursor-not-allowed opacity-75"
                 />
               </div>
 
-              <div className="space-y-2">
+              {/* Unit of Measure */}
+              <div className="space-y-2 col-span-full md:col-span-1">
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.UNIT_MEASURE)}</label>
                 <Controller
                   name="unitMeasureCode"
@@ -177,6 +286,7 @@ export default function CampaignProductFormPage({ id, commercialProductId }: Cam
                   render={({ field }) => (
                     <select
                       {...field}
+                      value={field.value || ''}
                       className="flex h-11 w-full rounded-md border border-border/50 bg-card/80 px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer"
                     >
                       <option value="">{t(CAMPAIGN_PRODUCT_CONSTANTS.FORM.SELECT_OPTION)}</option>

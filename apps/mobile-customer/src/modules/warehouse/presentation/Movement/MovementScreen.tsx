@@ -873,9 +873,6 @@ export default function MovementScreen({ type, onBack, onNavigate }: MovementScr
           <Text style={styles.headerTitleText}>{titleText}</Text>
         </View>
         <View style={styles.headerRightActions}>
-          <TouchableOpacity style={styles.headerActionButton} onPress={() => {}}>
-            <Ionicons name="search" size={20} color={Colors.foreground} />
-          </TouchableOpacity>
         </View>
       </View>
 
