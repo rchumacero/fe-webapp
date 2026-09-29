@@ -67,7 +67,7 @@ function AppContent() {
     if (route === '/warehouse/movement/in' || route === 'warehouse/movement/in') {
       setCurrentScreen('MOVEMENT_IN');
     }
-    if (route === '/warehouse/movement/out' || route === 'warehouse/movement/out') {
+    if (route === '/warehouse/movement/issue' || route === 'warehouse/movement/issue') {
       setCurrentScreen('MOVEMENT_OUT');
     }
     if (route === '/warehouse/inventory' || route === 'warehouse/inventory') {

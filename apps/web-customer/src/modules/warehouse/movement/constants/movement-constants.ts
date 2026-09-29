@@ -6,6 +6,6 @@ export const MOVEMENT_CONSTANTS = {
   SEARCH_PLACEHOLDER: "common.filter",
   ROUTES: {
     IN: "/warehouse/movement/in",
-    OUT: "/warehouse/movement/out",
+    OUT: "/warehouse/movement/issue",
   }
 };
